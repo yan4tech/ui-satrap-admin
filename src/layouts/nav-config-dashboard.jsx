@@ -74,7 +74,6 @@ export const navData = [
           { title: 'Six', path: paths.dashboard.group.six },
         ],
       },
-
       {
         title: 'شعبه',
         path: paths.dashboard.branch.create,

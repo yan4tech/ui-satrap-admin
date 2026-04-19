@@ -24,9 +24,7 @@ import {
 
 import { DataGrid } from '@mui/x-data-grid';
 
-import EditIcon from '@mui/icons-material/Edit';
-import DeleteIcon from '@mui/icons-material/Delete';
-import VisibilityIcon from '@mui/icons-material/Visibility';
+import { Icon } from '@iconify/react';
 
 import { Form, Field } from 'src/components/hook-form';
 
@@ -47,13 +45,11 @@ const BranchSearch = () => {
   const [rowCount, setRowCount] = useState(0);
   const [cities, setCities] = useState([]);
 
-  // 🔥 pagination
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 5,
   });
 
-  // 🔥 delete dialog
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
     row: null,
@@ -64,9 +60,6 @@ const BranchSearch = () => {
     { id: 2, name: 'اصفهان' },
   ];
 
-  // --------------------------------------
-  // fake API
-  // --------------------------------------
   const fetchCitiesByProvince = async (provinceId) => {
     const data = {
       1: [
@@ -100,9 +93,6 @@ const BranchSearch = () => {
     };
   };
 
-  // --------------------------------------
-  // FORM
-  // --------------------------------------
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
     defaultValues: {
@@ -117,9 +107,6 @@ const BranchSearch = () => {
 
   const selectedProvince = watch('province');
 
-  // --------------------------------------
-  // load cities
-  // --------------------------------------
   useEffect(() => {
     if (!selectedProvince) return;
 
@@ -132,9 +119,6 @@ const BranchSearch = () => {
     load();
   }, [selectedProvince, setValue]);
 
-  // --------------------------------------
-  // FETCH DATA
-  // --------------------------------------
   const fetchData = useCallback(async () => {
     const filters = getValues();
 
@@ -148,24 +132,13 @@ const BranchSearch = () => {
     fetchData();
   }, [fetchData]);
 
-  // --------------------------------------
-  // SEARCH
-  // --------------------------------------
   const onSubmit = handleSubmit(() => {
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
     fetchData();
   });
 
-  // --------------------------------------
-  // ACTIONS
-  // --------------------------------------
-  const handleEdit = (row) => {
-    console.log('Edit:', row);
-  };
-
-  const handleDetails = (row) => {
-    console.log('Details:', row);
-  };
+  const handleEdit = (row) => console.log('Edit:', row);
+  const handleDetails = (row) => console.log('Details:', row);
 
   const openDeleteDialog = (row) => {
     setDeleteDialog({ open: true, row });
@@ -176,18 +149,11 @@ const BranchSearch = () => {
   };
 
   const confirmDelete = () => {
-    console.log('Delete:', deleteDialog.row);
-
-    // 🔥 مثال حذف از UI
     setRows((prev) => prev.filter((r) => r.id !== deleteDialog.row.id));
     setRowCount((prev) => prev - 1);
-
     closeDeleteDialog();
   };
 
-  // --------------------------------------
-  // GRID
-  // --------------------------------------
   const columns = [
     { field: 'title', headerName: 'عنوان', flex: 1 },
     { field: 'province', headerName: 'استان', flex: 1 },
@@ -207,19 +173,19 @@ const BranchSearch = () => {
         <>
           <Tooltip title="جزئیات">
             <IconButton onClick={() => handleDetails(params.row)}>
-              <VisibilityIcon />
+              <Icon icon="mdi:eye-outline" width="20" height="20" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="ویرایش">
             <IconButton onClick={() => handleEdit(params.row)}>
-              <EditIcon />
+              <Icon icon="mdi:pencil-outline" width="20" height="20" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="حذف">
             <IconButton color="error" onClick={() => openDeleteDialog(params.row)}>
-              <DeleteIcon />
+              <Icon icon="mdi:delete-outline" width="20" height="20" />
             </IconButton>
           </Tooltip>
         </>
@@ -227,9 +193,6 @@ const BranchSearch = () => {
     },
   ];
 
-  // --------------------------------------
-  // UI
-  // --------------------------------------
   return (
     <>
       <Card>
@@ -238,7 +201,6 @@ const BranchSearch = () => {
             جستجوی شعب
           </Typography>
 
-          {/* 🔍 FORM */}
           <Form methods={methods} onSubmit={onSubmit}>
             <Grid container spacing={2} sx={{ mb: 3 }}>
               <Grid item xs={12} md={3}>
@@ -281,7 +243,6 @@ const BranchSearch = () => {
             </Grid>
           </Form>
 
-          {/* 📊 GRID */}
           <Box sx={{ height: 400 }}>
             <DataGrid
               rows={rows}
@@ -296,7 +257,6 @@ const BranchSearch = () => {
         </CardContent>
       </Card>
 
-      {/* 🗑 DELETE DIALOG */}
       <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>
         <DialogTitle>حذف شعبه</DialogTitle>
         <DialogContent>

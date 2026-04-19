@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { paths } from 'src/routes/paths';
-
 import {
   Box,
   Button,
@@ -16,6 +14,7 @@ import {
   Grid,
   MenuItem,
   Typography,
+  ButtonGroup,
   IconButton,
   Tooltip,
   Dialog,
@@ -23,25 +22,38 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
+  Paper,
+  Stack,
+  Divider,
 } from '@mui/material';
 
+import { LoadingButton } from '@mui/lab';
 import { DataGrid } from '@mui/x-data-grid';
-
 import { Icon } from '@iconify/react';
 
 import { Form, Field } from 'src/components/hook-form';
+import { paths } from 'src/routes/paths';
 
-// --------------------------------------
-// SCHEMA
-// --------------------------------------
+// DATE PICKER (JALALI)
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+
+import dayjs from 'dayjs';
+import jalaliday from 'jalaliday';
+
+dayjs.extend(jalaliday);
+dayjs.calendar('jalali');
+
+// ---------------------- SCHEMA ----------------------
 const SearchSchema = zod.object({
   title: zod.string().optional(),
-  province: zod.string().optional(),
-  city: zod.string().optional(),
+  province: zod.number().optional(),
+  city: zod.number().optional(),
   is_active: zod.string().optional(),
+  from_date: zod.any().optional(),
+  to_date: zod.any().optional(),
 });
-
-// --------------------------------------
 
 const BranchSearch = () => {
   const router = useRouter();
@@ -65,6 +77,7 @@ const BranchSearch = () => {
     { id: 2, name: 'اصفهان' },
   ];
 
+  // mock cities
   const fetchCitiesByProvince = async (provinceId) => {
     const data = {
       1: [
@@ -79,6 +92,7 @@ const BranchSearch = () => {
     return data[provinceId] || [];
   };
 
+  // mock API
   const searchBranches = async (filters, page, pageSize) => {
     const allData = Array.from({ length: 37 }).map((_, i) => ({
       id: i + 1,
@@ -98,32 +112,42 @@ const BranchSearch = () => {
     };
   };
 
+  // FORM
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
     defaultValues: {
       title: '',
-      province: '',
-      city: '',
+      province: undefined,
+      city: undefined,
       is_active: '',
+      from_date: null,
+      to_date: null,
     },
   });
 
-  const { handleSubmit, watch, setValue, getValues } = methods;
+  const { handleSubmit, watch, setValue, getValues, reset } = methods;
 
   const selectedProvince = watch('province');
+  const isActiveValue = watch('is_active');
 
+  // sync cities
   useEffect(() => {
-    if (!selectedProvince) return;
-
     const load = async () => {
+      if (!selectedProvince) {
+        setCities([]);
+        setValue('city', undefined);
+        return;
+      }
+
       const res = await fetchCitiesByProvince(selectedProvince);
       setCities(res);
-      setValue('city', '');
+      setValue('city', undefined);
     };
 
     load();
   }, [selectedProvince, setValue]);
 
+  // fetch data
   const fetchData = useCallback(async () => {
     const filters = getValues();
 
@@ -137,32 +161,26 @@ const BranchSearch = () => {
     fetchData();
   }, [fetchData]);
 
+  // submit
   const onSubmit = handleSubmit(() => {
-    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    setPaginationModel((p) => ({ ...p, page: 0 }));
     fetchData();
   });
 
-  const handleEdit = (row) => {
-    router.push(paths.dashboard.branch.edit(row.id));
-  };
-  const handleDetails = (row) => {
-    router.push(paths.dashboard.branch.details(row.id));
-  };
+  // actions
+  const handleEdit = (row) => router.push(paths.dashboard.branch.edit(row.id));
+  const handleDetails = (row) => router.push(paths.dashboard.branch.details(row.id));
 
-  const openDeleteDialog = (row) => {
-    setDeleteDialog({ open: true, row });
-  };
-
-  const closeDeleteDialog = () => {
-    setDeleteDialog({ open: false, row: null });
-  };
+  const openDeleteDialog = (row) => setDeleteDialog({ open: true, row });
+  const closeDeleteDialog = () => setDeleteDialog({ open: false, row: null });
 
   const confirmDelete = () => {
-    setRows((prev) => prev.filter((r) => r.id !== deleteDialog.row.id));
-    setRowCount((prev) => prev - 1);
+    setRows((p) => p.filter((r) => r.id !== deleteDialog.row.id));
+    setRowCount((p) => p - 1);
     closeDeleteDialog();
   };
 
+  // columns
   const columns = [
     { field: 'title', headerName: 'عنوان', flex: 1 },
     { field: 'province', headerName: 'استان', flex: 1 },
@@ -171,30 +189,29 @@ const BranchSearch = () => {
     {
       field: 'is_active',
       headerName: 'وضعیت',
-      renderCell: (params) => (params.value ? 'فعال' : 'غیرفعال'),
+      renderCell: (p) => (p.value ? 'فعال' : 'غیرفعال'),
     },
     {
       field: 'actions',
       headerName: 'عملیات',
       flex: 1.5,
-      sortable: false,
       renderCell: (params) => (
         <>
           <Tooltip title="جزئیات">
             <IconButton onClick={() => handleDetails(params.row)}>
-              <Icon icon="mdi:eye-outline" width="20" height="20" />
+              <Icon icon="mdi:eye-outline" width="20" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="ویرایش">
             <IconButton onClick={() => handleEdit(params.row)}>
-              <Icon icon="mdi:pencil-outline" width="20" height="20" />
+              <Icon icon="mdi:pencil-outline" width="20" />
             </IconButton>
           </Tooltip>
 
           <Tooltip title="حذف">
             <IconButton color="error" onClick={() => openDeleteDialog(params.row)}>
-              <Icon icon="mdi:delete-outline" width="20" height="20" />
+              <Icon icon="mdi:delete-outline" width="20" />
             </IconButton>
           </Tooltip>
         </>
@@ -204,22 +221,21 @@ const BranchSearch = () => {
 
   return (
     <>
-      <Card>
-        <CardContent>
-          <Typography variant="h5" gutterBottom>
-            جستجوی شعب
-          </Typography>
+      <Paper sx={{ p: 2, mb: 3, border: '1px solid', borderColor: 'divider' }}>
+        <Form methods={methods} onSubmit={onSubmit}>
+          <Stack spacing={2}>
+            <Typography variant="h6">فیلتر جستجوی شعب</Typography>
+            <Divider />
 
-          <Form methods={methods} onSubmit={onSubmit}>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid container spacing={2}>
               <Grid item xs={12} md={3}>
-                <Field.Text name="title" label="عنوان" />
+                <Field.Text name="title" label="عنوان شعبه" />
               </Grid>
 
               <Grid item xs={12} md={3}>
-                <Field.Select name="province" label="استان" placeholder="همه استان‌ها">
+                <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                   {provinces.map((p) => (
-                    <MenuItem key={p.id} value={String(p.id)}>
+                    <MenuItem key={p.id} value={p.id}>
                       {p.name}
                     </MenuItem>
                   ))}
@@ -230,34 +246,112 @@ const BranchSearch = () => {
                 <Field.Select
                   name="city"
                   label="شهر"
-                  placeholder="همه شهرها"
                   disabled={!selectedProvince}
+                  placeholder="انتخاب شهر"
                 >
                   {cities.map((c) => (
-                    <MenuItem key={c.id} value={String(c.id)}>
+                    <MenuItem key={c.id} value={c.id}>
                       {c.name}
                     </MenuItem>
                   ))}
                 </Field.Select>
               </Grid>
+            </Grid>
 
-              <Grid item xs={12} md={3}>
-                <Field.Select name="is_active" label="وضعیت">
-                  <MenuItem value="">همه</MenuItem>
-                  <MenuItem value="true">فعال</MenuItem>
-                  <MenuItem value="false">غیرفعال</MenuItem>
-                </Field.Select>
+            {/* DATE */}
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Grid container spacing={2}>
+                <Grid item xs={12} md={3}>
+                  <DatePicker
+                    label="از تاریخ"
+                    value={watch('from_date')}
+                    onChange={(v) => setValue('from_date', v)}
+                    format="YYYY/MM/DD"
+                    slotProps={{ textField: { fullWidth: true } }}
+                  />
+                </Grid>
+
+                <Grid item xs={12} md={3}>
+                  <DatePicker
+                    label="تا تاریخ"
+                    value={watch('to_date')}
+                    onChange={(v) => setValue('to_date', v)}
+                    format="YYYY/MM/DD"
+                    slotProps={{ textField: { fullWidth: true } }}
+                  />
+                </Grid>
               </Grid>
+            </LocalizationProvider>
 
+            {/* STATUS (FIXED) */}
+            <Grid container>
               <Grid item xs={12}>
-                <Button type="submit" variant="contained">
-                  جستجو
-                </Button>
+                <Box
+                  sx={{
+                    p: 1.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                  }}
+                >
+                  <Box>
+                    <Typography sx={{ mb: 1 }}>وضعیت:</Typography>
+
+                    <ButtonGroup>
+                      <Button
+                        variant={isActiveValue === '' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('is_active', '')}
+                      >
+                        همه
+                      </Button>
+
+                      <Button
+                        color="success"
+                        variant={isActiveValue === 'true' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('is_active', 'true')}
+                      >
+                        فعال
+                      </Button>
+
+                      <Button
+                        color="error"
+                        variant={isActiveValue === 'false' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('is_active', 'false')}
+                      >
+                        غیرفعال
+                      </Button>
+                    </ButtonGroup>
+                  </Box>
+                </Box>
               </Grid>
             </Grid>
-          </Form>
 
-          <Box sx={{ height: 400 }}>
+            {/* ACTIONS */}
+            <Stack direction="row" justifyContent="flex-end" spacing={2}>
+              <Button
+                onClick={() => {
+                  reset();
+                  setCities([]);
+                }}
+              >
+                پاک کردن
+              </Button>
+
+              <LoadingButton type="submit" variant="contained">
+                جستجو
+              </LoadingButton>
+            </Stack>
+          </Stack>
+        </Form>
+      </Paper>
+
+      {/* TABLE */}
+      <Card>
+        <CardContent>
+          <Typography variant="h5">لیست شعب</Typography>
+
+          <Box sx={{ height: 420 }}>
             <DataGrid
               rows={rows}
               columns={columns}
@@ -265,20 +359,20 @@ const BranchSearch = () => {
               paginationMode="server"
               paginationModel={paginationModel}
               onPaginationModelChange={setPaginationModel}
-              pageSizeOptions={[5, 10, 20]}
             />
           </Box>
         </CardContent>
       </Card>
 
+      {/* DELETE DIALOG */}
       <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>
-        <DialogTitle>حذف شعبه</DialogTitle>
+        <DialogTitle>حذف</DialogTitle>
         <DialogContent>
-          <DialogContentText>آیا از حذف این شعبه مطمئن هستید؟</DialogContentText>
+          <DialogContentText>آیا مطمئن هستید؟</DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDeleteDialog}>انصراف</Button>
-          <Button color="error" variant="contained" onClick={confirmDelete}>
+          <Button color="error" onClick={confirmDelete}>
             حذف
           </Button>
         </DialogActions>

@@ -37,6 +37,7 @@ const ICONS = {
   ecommerce: icon('ic-ecommerce'),
   analytics: icon('ic-analytics'),
   dashboard: icon('ic-dashboard'),
+  branch: icon('ic-dashboard'),
 };
 
 // ----------------------------------------------------------------------
@@ -77,7 +78,7 @@ export const navData = [
       {
         title: 'شعبه',
         path: paths.dashboard.branch.create,
-        icon: ICONS.user,
+        icon: ICONS.branch,
         children: [
           { title: 'شعبه جدید', path: paths.dashboard.branch.create },
           { title: 'لیست شعبات', path: paths.dashboard.branch.search },

@@ -68,17 +68,6 @@ export const navData = [
   {
     subheader: 'مدیریت',
     items: [
-      // {
-      //   title: 'Group',
-      //   path: paths.dashboard.group.root,
-      //   icon: ICONS.user,
-      //   children: [
-      //     { title: 'Four', path: paths.dashboard.group.root },
-      //     { title: 'Five', path: paths.dashboard.group.five },
-      //     { title: 'Six', path: paths.dashboard.group.six },
-      //   ],
-      // },
-
       {
         title: 'مدیریت کاربران',
         path: paths.dashboard.user.search,

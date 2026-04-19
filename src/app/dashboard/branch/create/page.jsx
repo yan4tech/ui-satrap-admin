@@ -5,22 +5,34 @@ import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
-import { Box, Button, Card, CardContent, Typography, Grid, MenuItem, Alert } from '@mui/material';
+import {
+  Box,
+  Button,
+  Card,
+  CardContent,
+  Typography,
+  Grid,
+  MenuItem,
+  Alert,
+  Container,
+  Divider,
+  Stack,
+} from '@mui/material';
 
 import { Form, Field } from 'src/components/hook-form';
 
 // --------------------------------------
-// ✅ ZOD SCHEMA
+// ZOD
 // --------------------------------------
 export const BranchSchema = zod.object({
-  title: zod.string().min(1, { message: 'عنوان الزامی است' }),
-  province: zod.string().min(1, { message: 'استان الزامی است' }),
-  city: zod.string().min(1, { message: 'شهر الزامی است' }),
+  title: zod.string().min(1),
+  province: zod.string().min(1),
+  city: zod.string().min(1),
   ip: zod.string().optional(),
   phone: zod.string().optional(),
   address: zod.string().optional(),
   description: zod.string().optional(),
-  max_users: zod.string().min(1, { message: 'حداکثر کاربران الزامی است' }),
+  max_users: zod.string().min(1),
   is_active: zod.boolean(),
 });
 
@@ -28,13 +40,9 @@ export const BranchSchema = zod.object({
 
 const CreateBranch = () => {
   const [errorMessage, setErrorMessage] = useState(null);
-
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
 
-  // --------------------------------------
-  // fake API
-  // --------------------------------------
   const fetchProvinces = async () => [
     { id: 1, name: 'تهران' },
     { id: 2, name: 'اصفهان' },
@@ -54,9 +62,6 @@ const CreateBranch = () => {
     return data[provinceId] || [];
   };
 
-  // --------------------------------------
-  // FORM
-  // --------------------------------------
   const methods = useForm({
     resolver: zodResolver(BranchSchema),
     defaultValues: {
@@ -81,35 +86,23 @@ const CreateBranch = () => {
 
   const selectedProvince = watch('province');
 
-  // --------------------------------------
-  // load provinces
-  // --------------------------------------
   useEffect(() => {
-    const load = async () => {
+    (async () => {
       const res = await fetchProvinces();
       setProvinces(res);
-    };
-    load();
+    })();
   }, []);
 
-  // --------------------------------------
-  // load cities when province changes
-  // --------------------------------------
   useEffect(() => {
     if (!selectedProvince) return;
 
-    const loadCities = async () => {
+    (async () => {
       const res = await fetchCitiesByProvince(selectedProvince);
       setCities(res);
       setValue('city', '');
-    };
-
-    loadCities();
+    })();
   }, [selectedProvince, setValue]);
 
-  // --------------------------------------
-  // SUBMIT
-  // --------------------------------------
   const onSubmit = handleSubmit(async (data) => {
     try {
       const payload = {
@@ -118,90 +111,138 @@ const CreateBranch = () => {
         city: Number(data.city),
         max_users: Number(data.max_users),
       };
-
-      console.log('Submit Branch:', payload);
-    } catch (error) {
+      console.log(payload);
+    } catch {
       setErrorMessage('خطا در ثبت اطلاعات');
     }
   });
 
-  // --------------------------------------
-  // UI
-  // --------------------------------------
   return (
-    <Card>
-      <CardContent>
-        <Typography variant="h5" gutterBottom>
-          ایجاد شعبه جدید
-        </Typography>
+    <Container maxWidth="lg">
+      <Card sx={{ borderRadius: 3 }}>
+        <CardContent sx={{ p: 4 }}>
+          {/* HEADER */}
+          <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
+            اطلاعات شعبه
+          </Typography>
 
-        {!!errorMessage && (
-          <Alert severity="error" sx={{ mb: 2 }}>
-            {errorMessage}
-          </Alert>
-        )}
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+            لطفاً اطلاعات خواسته‌شده را تکمیل کنید
+          </Typography>
 
-        <Form methods={methods} onSubmit={onSubmit}>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Field.Text name="title" label="عنوان" />
-              </Grid>
+          <Divider sx={{ mb: 3 }} />
 
-              <Grid item xs={12} md={6}>
-                <Field.Text name="ip" label="IP" />
-              </Grid>
+          {!!errorMessage && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {errorMessage}
+            </Alert>
+          )}
 
-              <Grid item xs={12} md={6}>
-                <Field.Select name="province" label="استان">
-                  {provinces.map((p) => (
-                    <MenuItem key={p.id} value={String(p.id)}>
-                      {p.name}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Grid>
+          <Form methods={methods} onSubmit={onSubmit}>
+            <Stack spacing={4}>
+              {/* ================= ROW 1 ================= */}
+              <Box>
+                <Typography fontWeight={600} sx={{ mb: 2 }}>
+                  اطلاعات شخصی
+                </Typography>
 
-              <Grid item xs={12} md={6}>
-                <Field.Select name="city" label="شهر" disabled={!selectedProvince}>
-                  {cities.map((c) => (
-                    <MenuItem key={c.id} value={String(c.id)}>
-                      {c.name}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Grid>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={4}>
+                    <Field.Text name="title" label="نام" />
+                  </Grid>
 
-              <Grid item xs={12} md={6}>
-                <Field.Text name="phone" label="تلفن" />
-              </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Field.Text name="ip" label="نام خانوادگی" />
+                  </Grid>
 
-              <Grid item xs={12} md={6}>
-                <Field.Text name="max_users" label="حداکثر کاربران" type="number" />
-              </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Field.Text name="max_users" label="کد ملی" />
+                  </Grid>
+                </Grid>
+              </Box>
 
-              <Grid item xs={12}>
-                <Field.Text name="address" label="آدرس" />
-              </Grid>
+              <Divider />
 
-              <Grid item xs={12}>
-                <Field.Text name="description" label="توضیحات" multiline rows={3} />
-              </Grid>
+              {/* ================= ROW 2 ================= */}
+              <Box>
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={4}>
+                    <Field.Text name="phone" label="شماره تلفن" />
+                  </Grid>
 
-              <Grid item xs={12}>
-                <Field.Switch name="is_active" label="فعال / غیرفعال" />
-              </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Field.Select name="province" label="استان">
+                      {provinces.map((p) => (
+                        <MenuItem key={p.id} value={String(p.id)}>
+                          {p.name}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Grid>
 
-              <Grid item xs={12}>
-                <Button fullWidth type="submit" variant="contained" loading={isSubmitting}>
-                  ثبت شعبه
-                </Button>
-              </Grid>
-            </Grid>
-          </Box>
-        </Form>
-      </CardContent>
-    </Card>
+                  <Grid item xs={12} md={4}>
+                    <Field.Select name="city" label="شهر" disabled={!selectedProvince}>
+                      {cities.map((c) => (
+                        <MenuItem key={c.id} value={String(c.id)}>
+                          {c.name}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider />
+
+              {/* ================= BANK / ACCOUNT ================= */}
+              <Box
+                sx={{
+                  p: 2,
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 2,
+                }}
+              >
+                <Typography fontWeight={600} sx={{ mb: 2 }}>
+                  حساب بانکی
+                </Typography>
+
+                <Grid container spacing={2}>
+                  <Grid item xs={12} md={6}>
+                    <Field.Text name="address" label="شماره کارت" />
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Field.Text name="description" label="شماره شبا" />
+                  </Grid>
+                </Grid>
+              </Box>
+
+              <Divider />
+
+              {/* ================= ADDRESS ================= */}
+              <Box>
+                <Field.Text name="description" label="نشانی شعبه" multiline rows={4} />
+              </Box>
+
+              {/* ================= SUBMIT ================= */}
+              <Button
+                type="submit"
+                variant="contained"
+                size="large"
+                loading={isSubmitting}
+                sx={{
+                  py: 1.5,
+                  borderRadius: 2,
+                  fontWeight: 600,
+                }}
+              >
+                ثبت اطلاعات
+              </Button>
+            </Stack>
+          </Form>
+        </CardContent>
+      </Card>
+    </Container>
   );
 };
 

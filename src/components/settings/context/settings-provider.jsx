@@ -18,7 +18,9 @@ export function SettingsProvider({
 }) {
   const isCookieEnabled = !!cookieSettings;
   const useStorage = isCookieEnabled ? useCookies : useLocalStorage;
-  const initialSettings = isCookieEnabled ? cookieSettings : defaultSettings;
+  const initialSettings = isCookieEnabled
+    ? { ...cookieSettings, direction: 'rtl' }
+    : defaultSettings;
   const getStorageValue = isCookieEnabled ? getCookie : getStorage;
 
   const { state, setState, resetState, setField } = useStorage(storageKey, initialSettings);
@@ -52,6 +54,12 @@ export function SettingsProvider({
         onReset();
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => {
+    setField('direction', 'rtl');
+    // Intentionally once after hydration so browser cookie cannot restore `ltr`.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

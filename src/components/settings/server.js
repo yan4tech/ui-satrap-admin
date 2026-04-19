@@ -9,5 +9,9 @@ export async function detectSettings(storageKey = SETTINGS_STORAGE_KEY) {
 
   const settingsStore = cookieStore.get(storageKey);
 
-  return settingsStore ? JSON.parse(settingsStore?.value) : defaultSettings;
+  const merged = settingsStore
+    ? { ...defaultSettings, ...JSON.parse(settingsStore.value) }
+    : defaultSettings;
+
+  return { ...merged, direction: 'rtl' };
 }

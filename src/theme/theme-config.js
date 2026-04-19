@@ -6,7 +6,7 @@ export const themeConfig = {
    *************************************** */
   defaultMode: 'light',
   modeStorageKey: 'theme-mode',
-  direction: 'ltr',
+  direction: 'rtl',
   classesPrefix: 'minimal',
   /** **************************************
    * Css variables

@@ -40,7 +40,7 @@ export function SettingsDrawer({ sx, defaultSettings }) {
     contrast: hasKeys(defaultSettings, ['contrast']),
     navColor: hasKeys(defaultSettings, ['navColor']),
     fontSize: hasKeys(defaultSettings, ['fontSize']),
-    direction: hasKeys(defaultSettings, ['direction']),
+    direction: false,
     navLayout: hasKeys(defaultSettings, ['navLayout']),
     fontFamily: hasKeys(defaultSettings, ['fontFamily']),
     primaryColor: hasKeys(defaultSettings, ['primaryColor']),

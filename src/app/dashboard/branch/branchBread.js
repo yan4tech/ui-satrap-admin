@@ -36,7 +36,7 @@ const BranchBread = () => {
             gap: 0.5,
             cursor: 'pointer',
           }}
-          onClick={() => router.push('/main/branch/search')}
+          onClick={() => router.push('/dashboard/branch/search')}
         >
           <Icon icon="mdi:account-outline" width="18" height="18" />
           لیست شعبات

@@ -54,6 +54,8 @@ export const paths = {
       create: `${ROOTS.DASHBOARD}/branch/create`,
       search: `${ROOTS.DASHBOARD}/branch/search`,
       edit: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}`,
+      /** Same screen as edit, read-only (no save). */
+      details: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}?view=1`,
     },
   },
 };

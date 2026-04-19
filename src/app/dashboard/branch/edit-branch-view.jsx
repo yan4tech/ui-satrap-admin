@@ -27,7 +27,7 @@ export const BranchSchema = zod.object({
 
 // --------------------------------------
 
-const EditBranchView = ({ branch }) => {
+const EditBranchView = ({ branch, readOnly = false }) => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [documents, setDocuments] = useState([]);
 
@@ -118,6 +118,7 @@ const EditBranchView = ({ branch }) => {
   // --------------------------------------
   useEffect(() => {
     if (!selectedProvince) return;
+    if (readOnly) return;
 
     const loadCities = async () => {
       const res = await fetchCitiesByProvince(selectedProvince);
@@ -126,7 +127,7 @@ const EditBranchView = ({ branch }) => {
     };
 
     loadCities();
-  }, [selectedProvince, setValue]);
+  }, [selectedProvince, setValue, readOnly]);
 
   // --------------------------------------
   // SUBMIT
@@ -155,7 +156,7 @@ const EditBranchView = ({ branch }) => {
     <Card>
       <CardContent>
         <Typography variant="h5" gutterBottom>
-          ویرایش شعبه
+          {readOnly ? 'جزئیات شعبه' : 'ویرایش شعبه'}
         </Typography>
 
         {!!errorMessage && (
@@ -164,19 +165,19 @@ const EditBranchView = ({ branch }) => {
           </Alert>
         )}
 
-        <Form methods={methods} onSubmit={onSubmit}>
+        <Form methods={methods} onSubmit={readOnly ? (e) => e.preventDefault() : onSubmit}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <Field.Text name="title" label="عنوان" />
+                <Field.Text name="title" label="عنوان" disabled={readOnly} />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Field.Text name="ip" label="IP" />
+                <Field.Text name="ip" label="IP" disabled={readOnly} />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Field.Select name="province" label="استان">
+                <Field.Select name="province" label="استان" disabled={readOnly}>
                   {provinces.map((p) => (
                     <MenuItem key={p.id} value={String(p.id)}>
                       {p.name}
@@ -186,7 +187,7 @@ const EditBranchView = ({ branch }) => {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Field.Select name="city" label="شهر" disabled={!selectedProvince}>
+                <Field.Select name="city" label="شهر" disabled={readOnly || !selectedProvince}>
                   {cities.map((c) => (
                     <MenuItem key={c.id} value={String(c.id)}>
                       {c.name}
@@ -196,49 +197,53 @@ const EditBranchView = ({ branch }) => {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Field.Text name="phone" label="تلفن" />
+                <Field.Text name="phone" label="تلفن" disabled={readOnly} />
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Field.Text name="max_users" label="حداکثر کاربران" type="number" />
+                <Field.Text name="max_users" label="حداکثر کاربران" type="number" disabled={readOnly} />
               </Grid>
 
               <Grid item xs={12}>
-                <Field.Text name="address" label="آدرس" />
+                <Field.Text name="address" label="آدرس" disabled={readOnly} />
               </Grid>
 
               <Grid item xs={12}>
-                <Field.Text name="description" label="توضیحات" multiline rows={3} />
+                <Field.Text name="description" label="توضیحات" multiline rows={3} disabled={readOnly} />
               </Grid>
 
               <Grid item xs={12}>
-                <Field.Switch name="is_active" label="فعال / غیرفعال" />
+                <Field.Switch name="is_active" label="فعال / غیرفعال" disabled={readOnly} />
               </Grid>
 
-              {/* فایل */}
-              <Grid item xs={12}>
-                <Button variant="outlined" component="label">
-                  تغییر مدارک
-                  <input
-                    type="file"
-                    hidden
-                    multiple
-                    onChange={(e) => setDocuments(Array.from(e.target.files))}
-                  />
-                </Button>
-              </Grid>
+              {!readOnly && (
+                <>
+                  {/* فایل */}
+                  <Grid item xs={12}>
+                    <Button variant="outlined" component="label">
+                      تغییر مدارک
+                      <input
+                        type="file"
+                        hidden
+                        multiple
+                        onChange={(e) => setDocuments(Array.from(e.target.files))}
+                      />
+                    </Button>
+                  </Grid>
 
-              <Grid item xs={12}>
-                <Button
-                  fullWidth
-                  type="submit"
-                  variant="contained"
-                  color="warning"
-                  loading={isSubmitting}
-                >
-                  ویرایش شعبه
-                </Button>
-              </Grid>
+                  <Grid item xs={12}>
+                    <Button
+                      fullWidth
+                      type="submit"
+                      variant="contained"
+                      color="warning"
+                      loading={isSubmitting}
+                    >
+                      ویرایش شعبه
+                    </Button>
+                  </Grid>
+                </>
+              )}
             </Grid>
           </Box>
         </Form>

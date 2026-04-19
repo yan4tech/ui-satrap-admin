@@ -145,7 +145,9 @@ const BranchSearch = () => {
   const handleEdit = (row) => {
     router.push(paths.dashboard.branch.edit(row.id));
   };
-  const handleDetails = (row) => console.log('Details:', row);
+  const handleDetails = (row) => {
+    router.push(paths.dashboard.branch.details(row.id));
+  };
 
   const openDeleteDialog = (row) => {
     setDeleteDialog({ open: true, row });

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 
 import { Box, CircularProgress, Typography } from '@mui/material';
 
@@ -31,7 +31,9 @@ async function fetchBranchById(rawId) {
 
 export default function BranchEditPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const rawId = params?.id;
+  const readOnly = searchParams.get('view') === '1';
   const [branch, setBranch] = useState(null);
   const [status, setStatus] = useState('loading');
 
@@ -74,5 +76,5 @@ export default function BranchEditPage() {
     );
   }
 
-  return <EditBranchView branch={branch} />;
+  return <EditBranchView branch={branch} readOnly={readOnly} />;
 }

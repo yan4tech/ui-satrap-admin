@@ -1,11 +1,12 @@
 import { useEffect, useCallback } from 'react';
 import { usePopoverHover } from 'minimal-shared/hooks';
-import { isActiveLink, isExternalLink } from 'minimal-shared/utils';
+import { isExternalLink } from 'minimal-shared/utils';
 
 import { useTheme } from '@mui/material/styles';
 
 import { usePathname } from 'src/routes/hooks';
 
+import { isNavItemOrDescendantActive } from '../utils';
 import { NavItem } from './nav-item';
 import { navSectionClasses } from '../styles';
 import { NavUl, NavLi, NavDropdown, NavDropdownPaper } from '../components';
@@ -25,7 +26,7 @@ export function NavList({
 
   const pathname = usePathname();
 
-  const isActive = isActiveLink(pathname, data.path, data.deepMatch ?? !!data.children);
+  const isActive = isNavItemOrDescendantActive(pathname, data);
 
   const { open, onOpen, onClose, anchorEl, elementRef: navItemRef } = usePopoverHover();
 
@@ -138,7 +139,7 @@ function NavSubList({
     <NavUl sx={{ gap: 0.5 }}>
       {data.map((list) => (
         <NavList
-          key={list.title}
+          key={list.path ?? list.title}
           data={list}
           render={render}
           depth={depth + 1}

@@ -46,6 +46,7 @@ const CreateBranch = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
+  const [villages, setVillages] = useState([]);
 
   // 👇 خدمات
   const servicesList = [
@@ -76,6 +77,19 @@ const CreateBranch = () => {
     return data[provinceId] || [];
   };
 
+  const fetchVillagesByCity = async (cityId) => {
+    const data = {
+      10: [
+        { id: 100, name: 'روستای A' },
+        { id: 101, name: 'روستای B' },
+      ],
+      20: [
+        { id: 200, name: 'روستای C' },
+        { id: 201, name: 'روستای D' },
+      ],
+    };
+    return data[cityId] || [];
+  };
   const methods = useForm({
     resolver: zodResolver(BranchSchema),
     defaultValues: {
@@ -101,6 +115,7 @@ const CreateBranch = () => {
   } = methods;
 
   const selectedProvince = watch('province');
+  const selectedCity = watch('city');
 
   useEffect(() => {
     (async () => {
@@ -118,6 +133,23 @@ const CreateBranch = () => {
       setValue('city', '');
     })();
   }, [selectedProvince, setValue]);
+
+  // city -> village
+  useEffect(() => {
+    const load = async () => {
+      if (!selectedCity) {
+        setVillages([]);
+        setValue('village', undefined);
+        return;
+      }
+
+      const res = await fetchVillagesByCity(selectedCity);
+      setVillages(res);
+      setValue('village', undefined);
+    };
+
+    load();
+  }, [selectedCity, setValue]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -205,6 +237,20 @@ const CreateBranch = () => {
                       {cities.map((c) => (
                         <MenuItem key={c.id} value={String(c.id)}>
                           {c.name}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Field.Select
+                      name="village"
+                      label="روستا"
+                      disabled={!selectedCity}
+                      placeholder="انتخاب روستا/ده"
+                    >
+                      {villages.map((v) => (
+                        <MenuItem key={v.id} value={v.id}>
+                          {v.name}
                         </MenuItem>
                       ))}
                     </Field.Select>

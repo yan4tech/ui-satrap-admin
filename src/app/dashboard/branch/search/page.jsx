@@ -35,7 +35,6 @@ import { Icon } from '@iconify/react';
 import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
 
-// DATE PICKER (JALALI)
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
@@ -51,6 +50,7 @@ const SearchSchema = zod.object({
   title: zod.string().optional(),
   province: zod.number().optional(),
   city: zod.number().optional(),
+  village: zod.number().optional(),
   is_active: zod.string().optional(),
   from_date: zod.any().optional(),
   to_date: zod.any().optional(),
@@ -61,7 +61,9 @@ const BranchSearch = () => {
 
   const [rows, setRows] = useState([]);
   const [rowCount, setRowCount] = useState(0);
+
   const [cities, setCities] = useState([]);
+  const [villages, setVillages] = useState([]);
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -92,6 +94,20 @@ const BranchSearch = () => {
     return data[provinceId] || [];
   };
 
+  const fetchVillagesByCity = async (cityId) => {
+    const data = {
+      10: [
+        { id: 100, name: 'روستای A' },
+        { id: 101, name: 'روستای B' },
+      ],
+      20: [
+        { id: 200, name: 'روستای C' },
+        { id: 201, name: 'روستای D' },
+      ],
+    };
+    return data[cityId] || [];
+  };
+
   const searchBranches = async (filters, page, pageSize) => {
     const allData = Array.from({ length: 37 }).map((_, i) => ({
       id: i + 1,
@@ -117,6 +133,7 @@ const BranchSearch = () => {
       title: '',
       province: undefined,
       city: undefined,
+      village: undefined,
       is_active: '',
       from_date: null,
       to_date: null,
@@ -126,23 +143,47 @@ const BranchSearch = () => {
   const { handleSubmit, watch, setValue, getValues, reset } = methods;
 
   const selectedProvince = watch('province');
+  const selectedCity = watch('city');
   const isActiveValue = watch('is_active');
 
+  // province -> city
   useEffect(() => {
     const load = async () => {
       if (!selectedProvince) {
         setCities([]);
         setValue('city', undefined);
+        setVillages([]);
+        setValue('village', undefined);
         return;
       }
 
       const res = await fetchCitiesByProvince(selectedProvince);
       setCities(res);
       setValue('city', undefined);
+
+      setVillages([]);
+      setValue('village', undefined);
     };
 
     load();
   }, [selectedProvince, setValue]);
+
+  // city -> village
+  useEffect(() => {
+    const load = async () => {
+      if (!selectedCity) {
+        setVillages([]);
+        setValue('village', undefined);
+        return;
+      }
+
+      const res = await fetchVillagesByCity(selectedCity);
+      setVillages(res);
+      setValue('village', undefined);
+    };
+
+    load();
+  }, [selectedCity, setValue]);
 
   const fetchData = useCallback(async () => {
     const filters = getValues();
@@ -183,17 +224,13 @@ const BranchSearch = () => {
       field: 'is_active',
       headerName: 'وضعیت',
       flex: 1,
-      renderCell: (params) => {
-        const active = params.value;
-
-        return (
-          <Chip
-            label={active ? 'فعال' : 'غیرفعال'}
-            color={active ? 'success' : 'error'}
-            size="small"
-          />
-        );
-      },
+      renderCell: (params) => (
+        <Chip
+          label={params.value ? 'فعال' : 'غیرفعال'}
+          color={params.value ? 'success' : 'error'}
+          size="small"
+        />
+      ),
     },
     {
       field: 'actions',
@@ -225,7 +262,7 @@ const BranchSearch = () => {
 
   return (
     <>
-      <Paper sx={{ p: 2, mb: 3, border: '1px solid', borderColor: 'divider' }}>
+      <Paper sx={{ p: 2, mb: 3 }}>
         <Form methods={methods} onSubmit={onSubmit}>
           <Stack spacing={2}>
             <Typography variant="h6">فیلتر جستجوی شعب</Typography>
@@ -260,6 +297,21 @@ const BranchSearch = () => {
                   ))}
                 </Field.Select>
               </Grid>
+
+              <Grid item xs={12} md={3}>
+                <Field.Select
+                  name="village"
+                  label="روستا"
+                  disabled={!selectedCity}
+                  placeholder="انتخاب روستا/ده"
+                >
+                  {villages.map((v) => (
+                    <MenuItem key={v.id} value={v.id}>
+                      {v.name}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+              </Grid>
             </Grid>
 
             <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -286,6 +338,7 @@ const BranchSearch = () => {
               </Grid>
             </LocalizationProvider>
 
+            {/* وضعیت */}
             <Grid container>
               <Grid item xs={12}>
                 <Box
@@ -334,6 +387,7 @@ const BranchSearch = () => {
                 onClick={() => {
                   reset();
                   setCities([]);
+                  setVillages([]);
                 }}
               >
                 پاک کردن
@@ -351,17 +405,15 @@ const BranchSearch = () => {
         <CardContent>
           <Typography variant="h5">لیست شعب</Typography>
 
-          <Box>
-            <DataGrid
-              rows={rows}
-              columns={columns}
-              rowCount={rowCount}
-              paginationMode="server"
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              autoHeight
-            />
-          </Box>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            rowCount={rowCount}
+            paginationMode="server"
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            autoHeight
+          />
         </CardContent>
       </Card>
 

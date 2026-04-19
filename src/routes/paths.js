@@ -75,5 +75,10 @@ export const paths = {
       edit: (id) => `${ROOTS.DASHBOARD}/user/edit/${id}`,
       details: (id) => `${ROOTS.DASHBOARD}/user/edit/${id}?view=1`,
     },
+    processDefinition: {
+      search: `${ROOTS.DASHBOARD}/process-definition/search`,
+      edit: (id) => `${ROOTS.DASHBOARD}/process-definition/edit/${id}`,
+      details: (id) => `${ROOTS.DASHBOARD}/process-definition/edit/${id}?view=1`,
+    },
   },
 };

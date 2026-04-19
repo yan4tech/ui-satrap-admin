@@ -122,6 +122,11 @@ export const navData = [
           { title: 'لیست شعبات', path: paths.dashboard.branch.search },
         ],
       },
+      {
+        title: 'لیست خدمات',
+        path: paths.dashboard.processDefinition.search,
+        icon: ICONS.menuItem,
+      },
     ],
   },
 ];

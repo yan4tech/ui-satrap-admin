@@ -171,7 +171,7 @@ const CreateBranch = () => {
                   </Grid>
 
                   <Grid item xs={12} md={4}>
-                    <Field.Select name="province" label="استان">
+                    <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                       {provinces.map((p) => (
                         <MenuItem key={p.id} value={String(p.id)}>
                           {p.name}
@@ -181,7 +181,12 @@ const CreateBranch = () => {
                   </Grid>
 
                   <Grid item xs={12} md={4}>
-                    <Field.Select name="city" label="شهر" disabled={!selectedProvince}>
+                    <Field.Select
+                      name="city"
+                      label="شهر"
+                      placeholder="انتخاب شهر"
+                      disabled={!selectedProvince}
+                    >
                       {cities.map((c) => (
                         <MenuItem key={c.id} value={String(c.id)}>
                           {c.name}

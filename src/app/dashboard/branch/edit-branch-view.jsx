@@ -177,7 +177,12 @@ const EditBranchView = ({ branch, readOnly = false }) => {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Field.Select name="province" label="استان" disabled={readOnly}>
+                <Field.Select
+                  name="province"
+                  label="استان"
+                  placeholder="انتخاب استان"
+                  disabled={readOnly}
+                >
                   {provinces.map((p) => (
                     <MenuItem key={p.id} value={String(p.id)}>
                       {p.name}
@@ -187,7 +192,12 @@ const EditBranchView = ({ branch, readOnly = false }) => {
               </Grid>
 
               <Grid item xs={12} md={6}>
-                <Field.Select name="city" label="شهر" disabled={readOnly || !selectedProvince}>
+                <Field.Select
+                  name="city"
+                  label="شهر"
+                  placeholder="انتخاب شهر"
+                  disabled={readOnly || !selectedProvince}
+                >
                   {cities.map((c) => (
                     <MenuItem key={c.id} value={String(c.id)}>
                       {c.name}

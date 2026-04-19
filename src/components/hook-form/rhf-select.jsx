@@ -1,3 +1,6 @@
+import { Children, isValidElement, useMemo, useRef, useState } from 'react';
+import { flushSync } from 'react-dom';
+
 import { merge } from 'es-toolkit';
 import { Controller, useFormContext } from 'react-hook-form';
 
@@ -14,43 +17,144 @@ import { HelperText } from './help-text';
 
 // ----------------------------------------------------------------------
 
-export function RHFSelect({ name, children, helperText, slotProps = {}, ...other }) {
+function getMenuItemLabel(selectChildren, selected) {
+  let label = null;
+
+  Children.forEach(selectChildren, (child) => {
+    if (label != null) return;
+    if (!isValidElement(child) || child.props.value === undefined) return;
+    if (String(child.props.value) !== String(selected)) return;
+    label = child.props.children;
+  });
+
+  return label;
+}
+
+export function RHFSelect({ name, children, helperText, placeholder, slotProps = {}, sx, ...other }) {
   const { control } = useFormContext();
 
   const labelId = `${name}-select`;
+  const rootRef = useRef(null);
+  const [menuPaperMinPx, setMenuPaperMinPx] = useState(undefined);
 
-  const baseSlotProps = {
-    select: {
-      sx: { textTransform: 'capitalize' },
-      MenuProps: {
-        slotProps: {
-          paper: {
-            sx: [{ maxHeight: 220 }],
+  const baseSlotProps = useMemo(
+    () => ({
+      select: {
+        sx: { width: '100%', textTransform: 'capitalize' },
+        ...(placeholder
+          ? {
+              displayEmpty: true,
+              renderValue: (selected) => {
+                if (selected === '' || selected == null) {
+                  return (
+                    <Box component="span" sx={{ color: 'text.disabled' }}>
+                      {placeholder}
+                    </Box>
+                  );
+                }
+
+                const label = getMenuItemLabel(children, selected);
+                if (label != null) {
+                  return label;
+                }
+
+                return selected;
+              },
+            }
+          : {}),
+        MenuProps: {
+          slotProps: {
+            paper: {
+              sx: [
+                { maxHeight: 280 },
+                (theme) => ({
+                  bgcolor: 'background.paper',
+                  color: 'text.primary',
+                  ...theme.mixins.paperStyles(theme, { dropdown: true }),
+                }),
+              ],
+            },
           },
         },
       },
-    },
-    htmlInput: { id: labelId },
-    inputLabel: { htmlFor: labelId },
-  };
+      htmlInput: { id: labelId },
+      inputLabel: { htmlFor: labelId },
+    }),
+    [placeholder, children, labelId]
+  );
+
+  const mergedSlotProps = useMemo(() => {
+    const merged = merge(baseSlotProps, slotProps);
+    const selectProps = merged.select ?? {};
+    const userOnOpen = selectProps.onOpen;
+    const userOnClose = selectProps.onClose;
+    const menuProps = selectProps.MenuProps ?? {};
+    const paperSlot = menuProps.slotProps?.paper;
+    const paperObject = typeof paperSlot === 'function' ? null : paperSlot ?? {};
+
+    const paperSlotMerged =
+      paperObject === null
+        ? paperSlot
+        : {
+            ...paperObject,
+            style: {
+              ...paperObject.style,
+              ...(menuPaperMinPx != null ? { minWidth: menuPaperMinPx } : {}),
+            },
+          };
+
+    return {
+      ...merged,
+      select: {
+        ...selectProps,
+        onOpen: (event) => {
+          const w = rootRef.current?.offsetWidth ?? 0;
+          flushSync(() => setMenuPaperMinPx(w > 0 ? w * 2 : undefined));
+          userOnOpen?.(event);
+        },
+        onClose: (event) => {
+          setMenuPaperMinPx(undefined);
+          userOnClose?.(event);
+        },
+        MenuProps: {
+          ...menuProps,
+          slotProps: {
+            ...menuProps.slotProps,
+            paper: paperSlotMerged,
+          },
+        },
+      },
+    };
+  }, [baseSlotProps, slotProps, menuPaperMinPx]);
 
   return (
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <TextField
-          {...field}
-          select
-          fullWidth
-          error={!!error}
-          helperText={error?.message ?? helperText}
-          slotProps={merge(baseSlotProps, slotProps)}
-          {...other}
-        >
-          {children}
-        </TextField>
-      )}
+      render={({ field, fieldState: { error } }) => {
+        const { ref: fieldRef, ...fieldRest } = field;
+
+        const handleRef = (node) => {
+          rootRef.current = node;
+          fieldRef(node);
+        };
+
+        return (
+          <TextField
+            ref={handleRef}
+            {...fieldRest}
+            select
+            fullWidth
+            error={!!error}
+            helperText={error?.message ?? helperText}
+            slotProps={mergedSlotProps}
+            sx={[{ width: '100%' }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
+            {...other}
+          >
+            {children}
+          </TextField>
+        );
+      }}
     />
   );
 }

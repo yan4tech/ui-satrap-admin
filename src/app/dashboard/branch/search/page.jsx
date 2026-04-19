@@ -217,7 +217,7 @@ const BranchSearch = () => {
               </Grid>
 
               <Grid item xs={12} md={3}>
-                <Field.Select name="province" label="استان">
+                <Field.Select name="province" label="استان" placeholder="همه استان‌ها">
                   {provinces.map((p) => (
                     <MenuItem key={p.id} value={String(p.id)}>
                       {p.name}
@@ -227,7 +227,12 @@ const BranchSearch = () => {
               </Grid>
 
               <Grid item xs={12} md={3}>
-                <Field.Select name="city" label="شهر" disabled={!selectedProvince}>
+                <Field.Select
+                  name="city"
+                  label="شهر"
+                  placeholder="همه شهرها"
+                  disabled={!selectedProvince}
+                >
                   {cities.map((c) => (
                     <MenuItem key={c.id} value={String(c.id)}>
                       {c.name}

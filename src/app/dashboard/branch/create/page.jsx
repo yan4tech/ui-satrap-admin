@@ -2,7 +2,7 @@
 
 import { z as zod } from 'zod';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
@@ -17,7 +17,10 @@ import {
   Container,
   Divider,
   Stack,
+  TextField,
 } from '@mui/material';
+
+import Autocomplete from '@mui/material/Autocomplete';
 
 import { Form, Field } from 'src/components/hook-form';
 
@@ -34,6 +37,7 @@ export const BranchSchema = zod.object({
   description: zod.string().optional(),
   max_users: zod.string().min(1),
   is_active: zod.boolean(),
+  services: zod.array(zod.string()).optional(),
 });
 
 // --------------------------------------
@@ -42,6 +46,16 @@ const CreateBranch = () => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
+
+  // 👇 خدمات
+  const servicesList = [
+    { id: 1, name: 'خدمت شماره 1' },
+    { id: 2, name: 'خدمت شماره 2' },
+    { id: 3, name: 'خدمت شماره 3' },
+    { id: 4, name: 'خدمت شماره 4' },
+    { id: 5, name: 'پشتیبانی فنی' },
+    { id: 6, name: 'مشاوره' },
+  ];
 
   const fetchProvinces = async () => [
     { id: 1, name: 'تهران' },
@@ -74,6 +88,7 @@ const CreateBranch = () => {
       phone: '',
       is_active: false,
       max_users: '',
+      services: [],
     },
   });
 
@@ -81,6 +96,7 @@ const CreateBranch = () => {
     handleSubmit,
     watch,
     setValue,
+    control,
     formState: { isSubmitting },
   } = methods;
 
@@ -121,7 +137,6 @@ const CreateBranch = () => {
     <Container maxWidth="lg">
       <Card sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 4 }}>
-          {/* HEADER */}
           <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
             اطلاعات شعبه
           </Typography>
@@ -140,7 +155,7 @@ const CreateBranch = () => {
 
           <Form methods={methods} onSubmit={onSubmit}>
             <Stack spacing={4}>
-              {/* ================= ROW 1 ================= */}
+              {/* ================= PERSONAL ================= */}
               <Box>
                 <Typography fontWeight={600} sx={{ mb: 2 }}>
                   اطلاعات شخصی
@@ -163,7 +178,7 @@ const CreateBranch = () => {
 
               <Divider />
 
-              {/* ================= ROW 2 ================= */}
+              {/* ================= LOCATION ================= */}
               <Box>
                 <Grid container spacing={2}>
                   <Grid item xs={12} md={4}>
@@ -184,8 +199,8 @@ const CreateBranch = () => {
                     <Field.Select
                       name="city"
                       label="شهر"
-                      placeholder="انتخاب شهر"
                       disabled={!selectedProvince}
+                      placeholder="انتخاب شهر"
                     >
                       {cities.map((c) => (
                         <MenuItem key={c.id} value={String(c.id)}>
@@ -199,7 +214,40 @@ const CreateBranch = () => {
 
               <Divider />
 
-              {/* ================= BANK / ACCOUNT ================= */}
+              {/* ================= SERVICES (SEARCH MULTI SELECT) ================= */}
+              <Box>
+                <Typography fontWeight={600} sx={{ mb: 2 }}>
+                  خدمات قابل ارائه
+                </Typography>
+
+                <Controller
+                  name="services"
+                  control={control}
+                  render={({ field }) => (
+                    <Autocomplete
+                      multiple
+                      options={servicesList}
+                      getOptionLabel={(option) => option.name}
+                      value={servicesList.filter((s) => field.value?.includes(String(s.id)))}
+                      onChange={(_, value) => {
+                        field.onChange(value.map((v) => String(v.id)));
+                      }}
+                      filterSelectedOptions
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="جستجو و انتخاب خدمات"
+                          placeholder="مثلاً پشتیبانی..."
+                        />
+                      )}
+                    />
+                  )}
+                />
+              </Box>
+
+              <Divider />
+
+              {/* ================= BANK ================= */}
               <Box
                 sx={{
                   p: 2,

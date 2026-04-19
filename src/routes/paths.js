@@ -57,5 +57,23 @@ export const paths = {
       /** Same screen as edit, read-only (no save). */
       details: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}?view=1`,
     },
+    role: {
+      create: `${ROOTS.DASHBOARD}/role/create`,
+      search: `${ROOTS.DASHBOARD}/role/search`,
+      edit: (id) => `${ROOTS.DASHBOARD}/role/edit/${id}`,
+      details: (id) => `${ROOTS.DASHBOARD}/role/edit/${id}?view=1`,
+    },
+    permission: {
+      create: `${ROOTS.DASHBOARD}/permission/create`,
+      search: `${ROOTS.DASHBOARD}/permission/search`,
+      edit: (id) => `${ROOTS.DASHBOARD}/permission/edit/${id}`,
+      details: (id) => `${ROOTS.DASHBOARD}/permission/edit/${id}?view=1`,
+    },
+    user: {
+      create: `${ROOTS.DASHBOARD}/user/create`,
+      search: `${ROOTS.DASHBOARD}/user/search`,
+      edit: (id) => `${ROOTS.DASHBOARD}/user/edit/${id}`,
+      details: (id) => `${ROOTS.DASHBOARD}/user/edit/${id}?view=1`,
+    },
   },
 };

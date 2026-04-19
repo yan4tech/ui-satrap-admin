@@ -25,6 +25,7 @@ import {
   Paper,
   Stack,
   Divider,
+  Chip,
 } from '@mui/material';
 
 import { LoadingButton } from '@mui/lab';
@@ -64,7 +65,7 @@ const BranchSearch = () => {
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
 
   const [deleteDialog, setDeleteDialog] = useState({
@@ -77,7 +78,6 @@ const BranchSearch = () => {
     { id: 2, name: 'اصفهان' },
   ];
 
-  // mock cities
   const fetchCitiesByProvince = async (provinceId) => {
     const data = {
       1: [
@@ -92,7 +92,6 @@ const BranchSearch = () => {
     return data[provinceId] || [];
   };
 
-  // mock API
   const searchBranches = async (filters, page, pageSize) => {
     const allData = Array.from({ length: 37 }).map((_, i) => ({
       id: i + 1,
@@ -112,7 +111,6 @@ const BranchSearch = () => {
     };
   };
 
-  // FORM
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
     defaultValues: {
@@ -130,7 +128,6 @@ const BranchSearch = () => {
   const selectedProvince = watch('province');
   const isActiveValue = watch('is_active');
 
-  // sync cities
   useEffect(() => {
     const load = async () => {
       if (!selectedProvince) {
@@ -147,7 +144,6 @@ const BranchSearch = () => {
     load();
   }, [selectedProvince, setValue]);
 
-  // fetch data
   const fetchData = useCallback(async () => {
     const filters = getValues();
 
@@ -161,13 +157,11 @@ const BranchSearch = () => {
     fetchData();
   }, [fetchData]);
 
-  // submit
   const onSubmit = handleSubmit(() => {
     setPaginationModel((p) => ({ ...p, page: 0 }));
     fetchData();
   });
 
-  // actions
   const handleEdit = (row) => router.push(paths.dashboard.branch.edit(row.id));
   const handleDetails = (row) => router.push(paths.dashboard.branch.details(row.id));
 
@@ -180,7 +174,6 @@ const BranchSearch = () => {
     closeDeleteDialog();
   };
 
-  // columns
   const columns = [
     { field: 'title', headerName: 'عنوان', flex: 1 },
     { field: 'province', headerName: 'استان', flex: 1 },
@@ -189,7 +182,18 @@ const BranchSearch = () => {
     {
       field: 'is_active',
       headerName: 'وضعیت',
-      renderCell: (p) => (p.value ? 'فعال' : 'غیرفعال'),
+      flex: 1,
+      renderCell: (params) => {
+        const active = params.value;
+
+        return (
+          <Chip
+            label={active ? 'فعال' : 'غیرفعال'}
+            color={active ? 'success' : 'error'}
+            size="small"
+          />
+        );
+      },
     },
     {
       field: 'actions',
@@ -233,7 +237,7 @@ const BranchSearch = () => {
               </Grid>
 
               <Grid item xs={12} md={3}>
-                <Field.Select name="province" label="استان" placeholder="انتخاب استان">
+                <Field.Select name="province" label="استان">
                   {provinces.map((p) => (
                     <MenuItem key={p.id} value={p.id}>
                       {p.name}
@@ -243,12 +247,7 @@ const BranchSearch = () => {
               </Grid>
 
               <Grid item xs={12} md={3}>
-                <Field.Select
-                  name="city"
-                  label="شهر"
-                  disabled={!selectedProvince}
-                  placeholder="انتخاب شهر"
-                >
+                <Field.Select name="city" label="شهر" disabled={!selectedProvince}>
                   {cities.map((c) => (
                     <MenuItem key={c.id} value={c.id}>
                       {c.name}
@@ -258,7 +257,6 @@ const BranchSearch = () => {
               </Grid>
             </Grid>
 
-            {/* DATE */}
             <LocalizationProvider dateAdapter={AdapterDayjs}>
               <Grid container spacing={2}>
                 <Grid item xs={12} md={3}>
@@ -283,7 +281,6 @@ const BranchSearch = () => {
               </Grid>
             </LocalizationProvider>
 
-            {/* STATUS (FIXED) */}
             <Grid container>
               <Grid item xs={12}>
                 <Box
@@ -327,7 +324,6 @@ const BranchSearch = () => {
               </Grid>
             </Grid>
 
-            {/* ACTIONS */}
             <Stack direction="row" justifyContent="flex-end" spacing={2}>
               <Button
                 onClick={() => {
@@ -346,12 +342,11 @@ const BranchSearch = () => {
         </Form>
       </Paper>
 
-      {/* TABLE */}
       <Card>
         <CardContent>
           <Typography variant="h5">لیست شعب</Typography>
 
-          <Box sx={{ height: 420 }}>
+          <Box>
             <DataGrid
               rows={rows}
               columns={columns}
@@ -359,12 +354,12 @@ const BranchSearch = () => {
               paginationMode="server"
               paginationModel={paginationModel}
               onPaginationModelChange={setPaginationModel}
+              autoHeight
             />
           </Box>
         </CardContent>
       </Card>
 
-      {/* DELETE DIALOG */}
       <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>
         <DialogTitle>حذف</DialogTitle>
         <DialogContent>

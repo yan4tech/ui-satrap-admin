@@ -2,8 +2,11 @@
 
 import { z as zod } from 'zod';
 import { useEffect, useState, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+
+import { paths } from 'src/routes/paths';
 
 import {
   Box,
@@ -41,6 +44,8 @@ const SearchSchema = zod.object({
 // --------------------------------------
 
 const BranchSearch = () => {
+  const router = useRouter();
+
   const [rows, setRows] = useState([]);
   const [rowCount, setRowCount] = useState(0);
   const [cities, setCities] = useState([]);
@@ -137,7 +142,9 @@ const BranchSearch = () => {
     fetchData();
   });
 
-  const handleEdit = (row) => console.log('Edit:', row);
+  const handleEdit = (row) => {
+    router.push(paths.dashboard.branch.edit(row.id));
+  };
   const handleDetails = (row) => console.log('Details:', row);
 
   const openDeleteDialog = (row) => {

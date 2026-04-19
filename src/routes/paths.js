@@ -53,6 +53,7 @@ export const paths = {
     branch: {
       create: `${ROOTS.DASHBOARD}/branch/create`,
       search: `${ROOTS.DASHBOARD}/branch/search`,
+      edit: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}`,
     },
   },
 };

@@ -27,7 +27,7 @@ export const BranchSchema = zod.object({
 
 // --------------------------------------
 
-const EditBranch = ({ branch }) => {
+const EditBranchView = ({ branch }) => {
   const [errorMessage, setErrorMessage] = useState(null);
   const [documents, setDocuments] = useState([]);
 
@@ -247,4 +247,4 @@ const EditBranch = ({ branch }) => {
   );
 };
 
-export default EditBranch;
+export default EditBranchView;

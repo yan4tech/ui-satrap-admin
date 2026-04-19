@@ -3,7 +3,7 @@ import { Breadcrumb, Card } from 'antd';
 import { Link } from 'react-router-dom';
 import { HomeOutlined, UserOutlined } from '@ant-design/icons';
 
-const DriverBread = () => {
+const BranchBread = () => {
   return (
     <Card className="gx-card">
       <Breadcrumb>
@@ -29,4 +29,4 @@ const DriverBread = () => {
   );
 };
 
-export default DriverBread;
+export default BranchBread;

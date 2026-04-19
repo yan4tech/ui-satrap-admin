@@ -74,6 +74,16 @@ export const navData = [
           { title: 'Six', path: paths.dashboard.group.six },
         ],
       },
+
+      {
+        title: 'شعبه',
+        path: paths.dashboard.branch.create,
+        icon: ICONS.user,
+        children: [
+          { title: 'شعبه جدید', path: paths.dashboard.branch.create },
+          { title: 'لیست شعبات', path: paths.dashboard.branch.search },
+        ],
+      },
     ],
   },
 ];

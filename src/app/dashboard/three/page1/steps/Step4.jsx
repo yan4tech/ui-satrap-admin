@@ -9,9 +9,9 @@ const ACCESS_REQUEST_OPTIONS = [
 ];
 
 const PEOPLE_OPTIONS = [
-  { value: 'person1', label: 'شخص 1' },
-  { value: 'person2', label: 'شخص 2' },
-  { value: 'person3', label: 'شخص 3' },
+  'شخص 1',
+  'شخص 2',
+  'شخص 3',
 ];
 
 // ---------------- COMPONENT ----------------
@@ -37,20 +37,18 @@ export default function Page4() {
 
       {/* لیست افراد (multi select) */}
       <Grid item xs={12} md={12}>
-        <Field.Select
+        <Typography variant="body2" sx={{ mb: 1 }}>
+          لیست افراد
+        </Typography>
+        <Field.Autocomplete
           name="access_people"
-          label="لیست افراد"
+          label="انتخاب افراد"
+          placeholder="یک یا چند نفر را انتخاب کنید"
+          options={PEOPLE_OPTIONS}
           multiple
-          renderValue={(selected) =>
-            selected?.map((val) => PEOPLE_OPTIONS.find((p) => p.value === val)?.label).join(', ')
-          }
-        >
-          {PEOPLE_OPTIONS.map((o) => (
-            <MenuItem key={o.value} value={o.value}>
-              {o.label}
-            </MenuItem>
-          ))}
-        </Field.Select>
+          disableCloseOnSelect
+          filterSelectedOptions
+        />
       </Grid>
     </Grid>
   );

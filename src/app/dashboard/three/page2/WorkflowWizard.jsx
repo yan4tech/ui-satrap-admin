@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { Alert, Box, Button, Chip, Grid, Stack, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
 
 const REVIEW_STATUS = {
   PENDING: 'pending',
@@ -144,64 +144,73 @@ export default function WorkflowWizardPage2() {
       </Stack>
 
       <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
-        <Box
-          sx={{
-            border: '1px solid',
-            borderColor: 'text.primary',
-            borderRadius: 999,
-            py: 0.5,
-            px: 1.5,
-            width: 'fit-content',
-            maxWidth: '100%',
-          }}
-        >
+        <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
           <Typography variant="body2">
-            متقاضی/کارشناس می‌تواند با بارگذاری تصاویر ملک مورد تقاضا مطابقت بنا با ملک را تایید کند.
+            متقاضی/کارشناس می‌تواند با بارگذاری تصاویر ملک مورد تقاضا مطابقت بنا با ملک را تایید
+            کند.
           </Typography>
-        </Box>
+        </Alert>
 
-        <Typography variant="body2" textAlign="center">
+        <Typography variant="body2" textAlign="center" sx={{ mt: 5 }}>
           چهار عکس از زوایای مختلف به همراه اطلاعات متقاضی ملک
         </Typography>
 
-        <Grid container spacing={2}>
-          <Grid item xs={12} md={6}>
-            <UploadBox name="survey.image_1" label="عکس 1 :" helperText="انتخاب فایل تصویر" accept="image/*" />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <UploadBox name="survey.image_2" label="عکس 2 :" helperText="انتخاب فایل تصویر" accept="image/*" />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <UploadBox name="survey.image_3" label="عکس 3 :" helperText="انتخاب فایل تصویر" accept="image/*" />
-          </Grid>
-          <Grid item xs={12} md={6}>
-            <UploadBox name="survey.image_4" label="عکس 4 :" helperText="انتخاب فایل تصویر" accept="image/*" />
-          </Grid>
-        </Grid>
+        <Box
+          sx={{
+            mt: 1,
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+            columnGap: 4,
+            rowGap: 3,
+          }}
+        >
+          <Box>
+            <UploadBox
+              name="survey.image_1"
+              label="عکس 1 :"
+              helperText="انتخاب فایل تصویر"
+              accept="image/*"
+            />
+          </Box>
+          <Box>
+            <UploadBox
+              name="survey.image_2"
+              label="عکس 2 :"
+              helperText="انتخاب فایل تصویر"
+              accept="image/*"
+            />
+          </Box>
+          <Box>
+            <UploadBox
+              name="survey.image_3"
+              label="عکس 3 :"
+              helperText="انتخاب فایل تصویر"
+              accept="image/*"
+            />
+          </Box>
+          <Box>
+            <UploadBox
+              name="survey.image_4"
+              label="عکس 4 :"
+              helperText="انتخاب فایل تصویر"
+              accept="image/*"
+            />
+          </Box>
+        </Box>
 
-        <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary', mt: 1, pt: 1 }}>
+        {/* <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary', mt: 1, pt: 1 }}>
           <Typography variant="body2" textAlign="center">
             نقشه به همراه اطلاعات توصیفی آن
           </Typography>
-        </Box>
+        </Box> */}
 
-        <Box
-          sx={{
-            border: '1px solid',
-            borderColor: 'text.primary',
-            borderRadius: 999,
-            py: 0.5,
-            px: 1.5,
-            width: 'fit-content',
-            maxWidth: '100%',
-          }}
-        >
+        <Alert severity="info" variant="outlined" sx={{ mt: 3 }}>
           <Typography variant="body2">
             نقشه و اطلاعات توصیفی آن باید با اسناد استنادی فایل سامانه مطابقت داشته باشد.
           </Typography>
-        </Box>
+        </Alert>
 
-        <Box sx={{ maxWidth: 520 }}>
+        <Box sx={{ maxWidth: 520, mt: 2 }}>
           <UploadBox
             name="survey.map_file"
             label="نقشه :"
@@ -218,6 +227,7 @@ export default function WorkflowWizardPage2() {
               fullWidth
               multiline
               rows={6}
+              sx={{ mt: 2 }}
               label="توصیفات :"
               placeholder="توضیحات کامل وضعیت ملک، مشکلات احتمالی، مغایرت‌ها و سایر موارد مرتبط را ثبت کنید."
               error={!!error}
@@ -238,7 +248,12 @@ export default function WorkflowWizardPage2() {
             <Typography variant="body2" fontWeight={700}>
               نتیجه بررسی نقشه‌برداری
             </Typography>
-            <Chip label={currentMeta.label} color={currentMeta.color} size="small" variant="outlined" />
+            <Chip
+              label={currentMeta.label}
+              color={currentMeta.color}
+              size="small"
+              variant="outlined"
+            />
           </Stack>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 1.5 }}>
             <Button
@@ -251,7 +266,9 @@ export default function WorkflowWizardPage2() {
             <Button
               variant={review.status === REVIEW_STATUS.NEEDS_CORRECTION ? 'contained' : 'outlined'}
               color="info"
-              onClick={() => setReview((prev) => ({ ...prev, status: REVIEW_STATUS.NEEDS_CORRECTION }))}
+              onClick={() =>
+                setReview((prev) => ({ ...prev, status: REVIEW_STATUS.NEEDS_CORRECTION }))
+              }
             >
               نیاز به اصلاح
             </Button>
@@ -285,7 +302,12 @@ export default function WorkflowWizardPage2() {
               <Typography variant="body2" fontWeight={700}>
                 نتیجه بررسی نقشه‌برداری
               </Typography>
-              <Chip label={currentMeta.label} color={currentMeta.color} size="small" variant="outlined" />
+              <Chip
+                label={currentMeta.label}
+                color={currentMeta.color}
+                size="small"
+                variant="outlined"
+              />
             </Stack>
           </Alert>
           <TextField

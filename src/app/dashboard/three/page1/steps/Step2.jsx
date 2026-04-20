@@ -21,68 +21,69 @@ const CITIES = [
 
 export default function Page2() {
   return (
-    <Grid container spacing={2}>
-      {/* ---------------- استان ---------------- */}
-      <Grid item xs={12} md={6}>
-        <Field.Select name="province" label="استان">
-          {PROVINCES.map((o) => (
-            <MenuItem key={o.value} value={o.value}>
-              {o.label}
-            </MenuItem>
-          ))}
-        </Field.Select>
-      </Grid>
+    <>
+      <Grid container spacing={2}>
+        {/* ---------------- استان ---------------- */}
+        <Grid item xs={12} md={6}>
+          <Field.Select name="province" label="استان">
+            {PROVINCES.map((o) => (
+              <MenuItem key={o.value} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </Field.Select>
+        </Grid>
 
-      {/* ---------------- شهرستان ---------------- */}
-      <Grid item xs={12} md={6}>
-        <Field.Select name="county" label="شهرستان">
-          {COUNTIES.map((o) => (
-            <MenuItem key={o.value} value={o.value}>
-              {o.label}
-            </MenuItem>
-          ))}
-        </Field.Select>
-      </Grid>
+        {/* ---------------- شهرستان ---------------- */}
+        <Grid item xs={12} md={6}>
+          <Field.Select name="county" label="شهرستان">
+            {COUNTIES.map((o) => (
+              <MenuItem key={o.value} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </Field.Select>
+        </Grid>
 
-      {/* ---------------- شهر / روستا ---------------- */}
-      <Grid item xs={12} md={6}>
-        <Field.Select name="city" label="شهر / روستا">
-          {CITIES.map((o) => (
-            <MenuItem key={o.value} value={o.value}>
-              {o.label}
-            </MenuItem>
-          ))}
-        </Field.Select>
-      </Grid>
+        {/* ---------------- شهر / روستا ---------------- */}
+        <Grid item xs={12} md={6}>
+          <Field.Select name="city" label="شهر / روستا">
+            {CITIES.map((o) => (
+              <MenuItem key={o.value} value={o.value}>
+                {o.label}
+              </MenuItem>
+            ))}
+          </Field.Select>
+        </Grid>
 
-      {/* ---------------- کد پستی ---------------- */}
-      <Grid item xs={12} md={6}>
-        <Field.Text name="postal_code" label="کد پستی" />
-      </Grid>
+        {/* ---------------- کد پستی ---------------- */}
+        <Grid item xs={12} md={6}>
+          <Field.Text name="postal_code" label="کد پستی" />
+        </Grid>
 
-      {/* ---------------- مختصات جغرافیایی ---------------- */}
-      <Grid item xs={12}>
-        <Box sx={{ border: '1px solid', borderColor: 'divider', p: 2, borderRadius: 2 }}>
-          <Typography variant="subtitle1" fontWeight={600} mb={2}>
-            مختصات جغرافیایی یک نقطه از ملک
-          </Typography>
+        {/* ---------------- مختصات جغرافیایی ---------------- */}
+        <Grid item xs={12}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', p: 2, borderRadius: 2 }}>
+            <Typography variant="subtitle1" fontWeight={600} mb={2}>
+              مختصات جغرافیایی یک نقطه از ملک
+            </Typography>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Field.Text name="longitude" label="طول جغرافیایی" />
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={6}>
+                <Field.Text name="longitude" label="طول جغرافیایی" />
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <Field.Text name="latitude" label="عرض جغرافیایی" />
+              </Grid>
             </Grid>
-
-            <Grid item xs={12} md={6}>
-              <Field.Text name="latitude" label="عرض جغرافیایی" />
-            </Grid>
-          </Grid>
-        </Box>
+          </Box>
+        </Grid>
       </Grid>
 
-      {/* ---------------- نشانی ملک ---------------- */}
-      <Grid item xs={12}>
-        <Field.Text name="property_address" label="نشانی ملک" multiline rows={4} />
-      </Grid>
-    </Grid>
+      <Box sx={{ mt: 2 }}>
+        <Field.Text name="property_address" label="نشانی ملک" multiline rows={6} fullWidth />
+      </Box>
+    </>
   );
 }

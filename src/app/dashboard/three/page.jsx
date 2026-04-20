@@ -25,11 +25,9 @@ const steps = [
   'درخواست خدمت شماره 1',
   'پرداخت',
   'اطلاعات اولیه',
-  'تایید توسط شرکت',
   'تایید توسط سازمان ثبت',
   'پرداخت مرحله نقشه برداری',
   'نقشه برداری',
-  'تایید نقشه برداری توسط شرکت',
   'تایید نقشه برداری توسط سازمان ثبت',
 ];
 
@@ -43,7 +41,7 @@ const stepSchemas = steps.map(() => z.object({}));
 export default function WorkflowWizard() {
   const [activeStep, setActiveStep] = useState(0);
   const [approvalState, setApprovalState] = useState({});
-  const approvalSteps = [3, 4, 7, 8];
+  const approvalSteps = [3, 6];
 
   const methods = useForm({
     resolver: zodResolver(stepSchemas[activeStep] || z.object({})),
@@ -103,36 +101,20 @@ export default function WorkflowWizard() {
       case 3:
         return (
           <Typography color={approvalState[3] ? 'success.main' : 'text.primary'}>
-            {approvalState[3] ? 'تایید توسط شرکت انجام شد.' : 'در انتظار تایید شرکت...'}
+            {approvalState[3] ? 'تایید توسط سازمان ثبت انجام شد.' : 'در انتظار تایید سازمان ثبت...'}
           </Typography>
         );
 
       case 4:
-        return (
-          <Typography color={approvalState[4] ? 'success.main' : 'text.primary'}>
-            {approvalState[4] ? 'تایید توسط سازمان ثبت انجام شد.' : 'در انتظار تایید سازمان ثبت...'}
-          </Typography>
-        );
-
-      case 5:
         return <Typography>شروع نقشه برداری ...</Typography>;
 
-      case 6:
+      case 5:
         return <Page2 />;
 
-      case 7:
+      case 6:
         return (
-          <Typography color={approvalState[7] ? 'success.main' : 'text.primary'}>
-            {approvalState[7]
-              ? 'تایید نقشه برداری توسط شرکت انجام شد.'
-              : 'تایید نقشه برداری توسط شرکت'}
-          </Typography>
-        );
-
-      case 8:
-        return (
-          <Typography color={approvalState[8] ? 'success.main' : 'text.primary'}>
-            {approvalState[8]
+          <Typography color={approvalState[6] ? 'success.main' : 'text.primary'}>
+            {approvalState[6]
               ? 'تایید نقشه برداری توسط سازمان ثبت انجام شد.'
               : 'تایید نقشه برداری توسط سازمان ثبت'}
           </Typography>

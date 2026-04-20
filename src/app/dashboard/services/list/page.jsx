@@ -375,7 +375,7 @@ export default function ServicesListPage() {
                 </Box>
                 <Box sx={{ width: { xs: '100%', md: '35%' } }}></Box>
 
-                <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
                   <Field.Select name="requestStatus" label="وضعیت">
                     {REQUEST_STATUS.map((item) => (
                       <MenuItem key={item} value={item}>

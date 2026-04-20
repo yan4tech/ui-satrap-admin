@@ -201,9 +201,13 @@ const CreateBranch = () => {
                   <Grid item xs={12} md={4}>
                     <Field.Text name="ip" label="نام خانوادگی" />
                   </Grid>
+                  <Box sx={{ width: { xs: '100%', md: '33%' } }}></Box>
 
                   <Grid item xs={12} md={4}>
                     <Field.Text name="max_users" label="کد ملی" />
+                  </Grid>
+                  <Grid item xs={12} md={4}>
+                    <Field.Text name="phone" label="شماره تلفن" />
                   </Grid>
                 </Grid>
               </Box>
@@ -213,11 +217,7 @@ const CreateBranch = () => {
               {/* ================= LOCATION ================= */}
               <Box>
                 <Grid container spacing={2}>
-                  <Grid item xs={12} md={4}>
-                    <Field.Text name="phone" label="شماره تلفن" />
-                  </Grid>
-
-                  <Grid item xs={12} md={4}>
+                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
                     <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                       {provinces.map((p) => (
                         <MenuItem key={p.id} value={String(p.id)}>
@@ -225,9 +225,9 @@ const CreateBranch = () => {
                         </MenuItem>
                       ))}
                     </Field.Select>
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={4}>
+                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
                     <Field.Select
                       name="city"
                       label="شهر"
@@ -240,8 +240,8 @@ const CreateBranch = () => {
                         </MenuItem>
                       ))}
                     </Field.Select>
-                  </Grid>
-                  <Grid item xs={12} md={3}>
+                  </Box>
+                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
                     <Field.Select
                       name="village"
                       label="روستا"
@@ -254,7 +254,7 @@ const CreateBranch = () => {
                         </MenuItem>
                       ))}
                     </Field.Select>
-                  </Grid>
+                  </Box>
                 </Grid>
               </Box>
 

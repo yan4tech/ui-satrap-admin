@@ -112,9 +112,10 @@ export const navData = [
       },
       {
         title: 'خدمات',
-        path: paths.dashboard.services.one,
+        path: paths.dashboard.services.list,
         icon: ICONS.menuItem,
         children: [
+          { title: 'لیست', path: paths.dashboard.services.list },
           {
             title: 'خدمت شماره یک',
             path: paths.dashboard.services.one,

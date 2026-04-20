@@ -16,6 +16,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Page1 from './page1/WorkflowWizard';
+import Page2 from './page2/WorkflowWizard';
 import { Field } from 'src/components/hook-form';
 
 // ---------------- STEPS ----------------
@@ -50,6 +51,14 @@ export default function WorkflowWizard() {
       request: { title: '' },
       payment: { amount: '' },
       info: { description: '' },
+      survey: {
+        image_1: null,
+        image_2: null,
+        image_3: null,
+        image_4: null,
+        map_file: null,
+        description: '',
+      },
     },
   });
 
@@ -109,7 +118,7 @@ export default function WorkflowWizard() {
         return <Typography>شروع نقشه برداری ...</Typography>;
 
       case 6:
-        return <Typography>در حال نقشه برداری...</Typography>;
+        return <Page2 />;
 
       case 7:
         return (

@@ -46,6 +46,7 @@ dayjs.calendar('jalali');
 
 // ---------------------- SCHEMA ----------------------
 const SearchSchema = zod.object({
+  branch_number: zod.string().optional(),
   title: zod.string().optional(),
   province: zod.number().optional(),
   city: zod.number().optional(),
@@ -111,6 +112,7 @@ const BranchSearch = () => {
   const searchBranches = async (filters, page, pageSize) => {
     const allData = Array.from({ length: 37 }).map((_, i) => ({
       id: i + 1,
+      branch_number: `BR-${String(i + 1).padStart(4, '0')}`,
       title: `شعبه ${i + 1}`,
       province: i % 2 === 0 ? 'تهران' : 'اصفهان',
       city: i % 2 === 0 ? 'تهران' : 'کاشان',
@@ -118,18 +120,34 @@ const BranchSearch = () => {
       is_active: i % 2 === 0,
     }));
 
+    const filteredData = allData.filter((item) => {
+      if (
+        filters.branch_number &&
+        !item.branch_number.toLowerCase().includes(filters.branch_number.toLowerCase())
+      ) {
+        return false;
+      }
+
+      if (filters.title && !item.title.toLowerCase().includes(filters.title.toLowerCase())) {
+        return false;
+      }
+
+      return true;
+    });
+
     const start = page * pageSize;
     const end = start + pageSize;
 
     return {
-      data: allData.slice(start, end),
-      total: allData.length,
+      data: filteredData.slice(start, end),
+      total: filteredData.length,
     };
   };
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
     defaultValues: {
+      branch_number: '',
       title: '',
       province: undefined,
       city: undefined,
@@ -216,6 +234,7 @@ const BranchSearch = () => {
   };
 
   const columns = [
+    { field: 'branch_number', headerName: 'شماره شعبه', flex: 1 },
     { field: 'title', headerName: 'عنوان', flex: 1 },
     { field: 'province', headerName: 'استان', flex: 1 },
     { field: 'city', headerName: 'شهر', flex: 1 },
@@ -312,10 +331,15 @@ const BranchSearch = () => {
                   }}
                 >
                   <Grid item xs={12} md={3}>
-                    <Field.Text name="title" label="عنوان شعبه" />
+                    <Field.Text name="branch_number" label="شماره شعبه" />
                   </Grid>
 
-                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                  <Grid item xs={12} md={3}>
+                    <Field.Text name="title" label="عنوان شعبه" />
+                  </Grid>
+                  <Box sx={{ width: { xs: '100%', md: '33%' } }}></Box>
+
+                  <Box sx={{ width: { xs: '100%', md: '30%' } }}>
                     <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                       {provinces.map((p) => (
                         <MenuItem key={p.id} value={p.id}>
@@ -325,7 +349,7 @@ const BranchSearch = () => {
                     </Field.Select>
                   </Box>
 
-                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                  <Box sx={{ width: { xs: '100%', md: '30%' } }}>
                     <Field.Select
                       name="city"
                       label="شهر"
@@ -340,7 +364,7 @@ const BranchSearch = () => {
                     </Field.Select>
                   </Box>
 
-                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                  <Box sx={{ width: { xs: '100%', md: '30%' } }}>
                     <Field.Select
                       name="village"
                       label="روستا"
@@ -354,9 +378,8 @@ const BranchSearch = () => {
                       ))}
                     </Field.Select>
                   </Box>
-                </Grid>
 
-                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
                   <Grid
                     container
                     spacing={2}
@@ -387,18 +410,8 @@ const BranchSearch = () => {
                       />
                     </Grid>
                   </Grid>
-                </LocalizationProvider>
+                </LocalizationProvider> */}
 
-                <Box
-                  sx={{
-                    // p: 2,
-                    borderRadius: 2,
-                    border: '1px dashed',
-                    borderColor: 'divider',
-                    display: 'flex',
-                    justifyContent: 'flex-start',
-                  }}
-                >
                   <Box>
                     <Typography sx={{ mb: 1 }}>وضعیت:</Typography>
                     <ButtonGroup>
@@ -426,7 +439,7 @@ const BranchSearch = () => {
                       </Button>
                     </ButtonGroup>
                   </Box>
-                </Box>
+                </Grid>
 
                 <Box
                   sx={{

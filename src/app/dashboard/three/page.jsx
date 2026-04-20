@@ -41,6 +41,8 @@ const stepSchemas = steps.map(() => z.object({}));
 
 export default function WorkflowWizard() {
   const [activeStep, setActiveStep] = useState(0);
+  const [approvalState, setApprovalState] = useState({});
+  const approvalSteps = [3, 4, 7, 8];
 
   const methods = useForm({
     resolver: zodResolver(stepSchemas[activeStep] || z.object({})),
@@ -57,6 +59,10 @@ export default function WorkflowWizard() {
   const handleNext = async () => {
     const valid = await trigger();
     if (!valid) return;
+
+    if (approvalSteps.includes(activeStep)) {
+      setApprovalState((prev) => ({ ...prev, [activeStep]: true }));
+    }
 
     setActiveStep((prev) => prev + 1);
   };
@@ -86,10 +92,18 @@ export default function WorkflowWizard() {
         return <Page1 />;
 
       case 3:
-        return <Typography>در انتظار تایید شرکت...</Typography>;
+        return (
+          <Typography color={approvalState[3] ? 'success.main' : 'text.primary'}>
+            {approvalState[3] ? 'تایید توسط شرکت انجام شد.' : 'در انتظار تایید شرکت...'}
+          </Typography>
+        );
 
       case 4:
-        return <Typography>در انتظار تایید سازمان ثبت...</Typography>;
+        return (
+          <Typography color={approvalState[4] ? 'success.main' : 'text.primary'}>
+            {approvalState[4] ? 'تایید توسط سازمان ثبت انجام شد.' : 'در انتظار تایید سازمان ثبت...'}
+          </Typography>
+        );
 
       case 5:
         return <Typography>شروع نقشه برداری ...</Typography>;
@@ -98,10 +112,20 @@ export default function WorkflowWizard() {
         return <Typography>در حال نقشه برداری...</Typography>;
 
       case 7:
-        return <Typography>تایید نقشه برداری توسط شرکت</Typography>;
+        return (
+          <Typography color={approvalState[7] ? 'success.main' : 'text.primary'}>
+            {approvalState[7] ? 'تایید نقشه برداری توسط شرکت انجام شد.' : 'تایید نقشه برداری توسط شرکت'}
+          </Typography>
+        );
 
       case 8:
-        return <Typography>تایید نقشه برداری توسط سازمان ثبت</Typography>;
+        return (
+          <Typography color={approvalState[8] ? 'success.main' : 'text.primary'}>
+            {approvalState[8]
+              ? 'تایید نقشه برداری توسط سازمان ثبت انجام شد.'
+              : 'تایید نقشه برداری توسط سازمان ثبت'}
+          </Typography>
+        );
 
       default:
         return null;

@@ -8,11 +8,7 @@ const ACCESS_REQUEST_OPTIONS = [
   { value: 'no', label: 'خیر' },
 ];
 
-const PEOPLE_OPTIONS = [
-  'شخص 1',
-  'شخص 2',
-  'شخص 3',
-];
+const PEOPLE_OPTIONS = ['شخص 1', 'شخص 2', 'شخص 3'];
 
 // ---------------- COMPONENT ----------------
 export default function Page4() {
@@ -23,10 +19,7 @@ export default function Page4() {
         <Typography variant="body2" sx={{ mb: 1 }}>
           آیا متقاضی درخواست اعطای دسترسی اشخاص دیگر به نقشه را دارد؟
         </Typography>
-        <Field.Select
-          name="has_map_access_request"
-          label="وضعیت درخواست دسترسی"
-        >
+        <Field.Select name="has_map_access_request" label="وضعیت درخواست دسترسی">
           {ACCESS_REQUEST_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
               {o.label}
@@ -36,7 +29,7 @@ export default function Page4() {
       </Grid>
 
       {/* لیست افراد (multi select) */}
-      <Grid item xs={12} md={12}>
+      <Grid item xs={6} sm={6} md={6}>
         <Typography variant="body2" sx={{ mb: 1 }}>
           لیست افراد
         </Typography>

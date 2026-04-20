@@ -259,7 +259,7 @@ export default function WorkflowWizard() {
   };
 
   return (
-    <Container maxWidth="lg" sx={{ py: 3 }}>
+    <Container maxWidth="lg" dir="rtl" sx={{ py: 3 }}>
       <Card
         sx={{
           borderRadius: 3,

@@ -30,7 +30,32 @@ function getMenuItemLabel(selectChildren, selected) {
   return label;
 }
 
-export function RHFSelect({ name, children, helperText, placeholder, slotProps = {}, sx, ...other }) {
+function renderAlignedValue(content, muted = false) {
+  return (
+    <Box
+      component="span"
+      sx={{
+        width: '100%',
+        display: 'block',
+        direction: 'rtl',
+        textAlign: 'right',
+        ...(muted ? { color: 'text.disabled' } : {}),
+      }}
+    >
+      {content}
+    </Box>
+  );
+}
+
+export function RHFSelect({
+  name,
+  children,
+  helperText,
+  placeholder,
+  slotProps = {},
+  sx,
+  ...other
+}) {
   const { control } = useFormContext();
   const effectivePlaceholder = placeholder || 'انتخاب کنید';
 
@@ -54,54 +79,72 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
     return () => observer.disconnect();
   }, []);
 
+  //mostafa
   const baseSlotProps = useMemo(
     () => ({
       select: {
-        sx: { width: '100%', textTransform: 'capitalize' },
+        sx: {
+          width: '100%',
+          direction: 'rtl',
+          textAlign: 'right',
+          textTransform: 'none',
+          '& .MuiSelect-select': {
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'flex-end',
+            textAlign: 'right',
+            direction: 'rtl',
+          },
+          '& .MuiSelect-icon': {
+            right: 'auto',
+            left: 10,
+          },
+        },
         ...(placeholder
           ? {
               displayEmpty: true,
               renderValue: (selected) => {
                 if (selected === '' || selected == null) {
-                  return (
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      {placeholder}
-                    </Box>
-                  );
+                  return renderAlignedValue(placeholder, true);
                 }
 
                 const label = getMenuItemLabel(children, selected);
                 if (label != null) {
-                  return label;
+                  return renderAlignedValue(label);
                 }
 
-                return selected;
+                return renderAlignedValue(selected);
               },
             }
           : {
               displayEmpty: true,
               renderValue: (selected) => {
                 if (selected === '' || selected == null) {
-                  return (
-                    <Box component="span" sx={{ color: 'text.disabled' }}>
-                      {effectivePlaceholder}
-                    </Box>
-                  );
+                  return renderAlignedValue(effectivePlaceholder, true);
                 }
 
                 const label = getMenuItemLabel(children, selected);
                 if (label != null) {
-                  return label;
+                  return renderAlignedValue(label);
                 }
 
-                return selected;
+                return renderAlignedValue(selected);
               },
             }),
         MenuProps: {
+          PaperProps: {
+            dir: 'rtl',
+          },
+          MenuListProps: {
+            dir: 'rtl',
+            sx: {
+              textAlign: 'right',
+            },
+          },
           slotProps: {
             paper: {
               sx: [
-                { maxHeight: 280 },
+                { maxHeight: 280, direction: 'rtl', textAlign: 'right' },
                 (theme) => ({
                   bgcolor: 'background.paper',
                   color: 'text.primary',
@@ -115,11 +158,18 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
       htmlInput: { id: labelId },
       inputLabel: {
         htmlFor: labelId,
+        shrink: true,
         sx: {
+          direction: 'rtl',
+          textAlign: 'right',
+          width: 'calc(100% - 28px)',
           whiteSpace: 'normal',
           overflow: 'visible',
           textOverflow: 'clip',
           lineHeight: 1.3,
+          right: 14,
+          left: 'auto',
+          transformOrigin: 'top right',
         },
       },
     }),
@@ -133,7 +183,7 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
     const userOnClose = selectProps.onClose;
     const menuProps = selectProps.MenuProps ?? {};
     const paperSlot = menuProps.slotProps?.paper;
-    const paperObject = typeof paperSlot === 'function' ? null : paperSlot ?? {};
+    const paperObject = typeof paperSlot === 'function' ? null : (paperSlot ?? {});
 
     const paperSlotMerged =
       paperObject === null
@@ -145,7 +195,11 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
               ...(menuPaperMinPx != null ? { minWidth: menuPaperMinPx } : {}),
             },
             sx: [
-              ...(Array.isArray(paperObject.sx) ? paperObject.sx : paperObject.sx ? [paperObject.sx] : []),
+              ...(Array.isArray(paperObject.sx)
+                ? paperObject.sx
+                : paperObject.sx
+                  ? [paperObject.sx]
+                  : []),
               ...(menuPaperMinPx != null ? [{ minWidth: `${menuPaperMinPx}px` }] : []),
             ],
           };
@@ -190,13 +244,33 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
           <TextField
             ref={handleRef}
             {...fieldRest}
-            value={other.multiple ? (Array.isArray(fieldRest.value) ? fieldRest.value : []) : (fieldRest.value ?? '')}
+            value={
+              other.multiple
+                ? Array.isArray(fieldRest.value)
+                  ? fieldRest.value
+                  : []
+                : (fieldRest.value ?? '')
+            }
             select
             fullWidth
             error={!!error}
             helperText={error?.message ?? helperText}
             slotProps={mergedSlotProps}
-            sx={[{ width: '100%' }, ...(Array.isArray(sx) ? sx : sx ? [sx] : [])]}
+            sx={[
+              {
+                width: '100%',
+                direction: 'rtl',
+                '& .MuiInputLabel-root': {
+                  direction: 'rtl',
+                  textAlign: 'right',
+                  right: 14,
+                  left: 'auto',
+                  transformOrigin: 'top right',
+                  width: 'calc(100% - 28px)',
+                },
+              },
+              ...(Array.isArray(sx) ? sx : sx ? [sx] : []),
+            ]}
             {...other}
           >
             {children}

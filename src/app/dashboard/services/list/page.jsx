@@ -48,8 +48,7 @@ const MOCK_ROWS = [
   {
     id: 1,
     requestNumber: '252142544',
-    firstName: 'علیرضا',
-    lastName: 'علی',
+    requester: 'شعبه 1',
     requestType: 'خدمت شماره یک',
     requestStatus: 'در انتظار تایید مرحله اطلاعات اولیه',
     nationalId: '1234567890',
@@ -57,8 +56,7 @@ const MOCK_ROWS = [
   {
     id: 2,
     requestNumber: '5644545455',
-    firstName: 'حمدی',
-    lastName: 'محمد',
+    requester: 'شعبه 2',
     requestType: 'خدمت شماره سه',
     requestStatus: 'تایید شده مرحله اطلاعات اولیه',
     nationalId: '2234567890',
@@ -66,8 +64,7 @@ const MOCK_ROWS = [
   {
     id: 3,
     requestNumber: '5454212555',
-    firstName: 'اسماعیل',
-    lastName: 'رضا',
+    requester: 'شعبه 3',
     requestType: 'خدمت شماره دو',
     requestStatus: 'در انتظار تایید مرحله نقشه برداری',
     nationalId: '3234567890',
@@ -75,8 +72,7 @@ const MOCK_ROWS = [
   {
     id: 4,
     requestNumber: '6562102122',
-    firstName: 'ویزدانه',
-    lastName: 'محمدرضا',
+    requester: 'شعبه 1',
     requestType: 'خدمت شماره سه',
     requestStatus: 'تایید شده مرحله نقشه برداری',
     nationalId: '4234567890',
@@ -94,8 +90,7 @@ const MOCK_ROWS = [
     return {
       id,
       requestNumber: `70000${id}${id + 11}`,
-      firstName: `نام ${id}`,
-      lastName: `خانوادگی ${id}`,
+      requester: BRANCHES[index % BRANCHES.length],
       requestType: requestTypes[index % requestTypes.length],
       requestStatus: statuses[index % statuses.length],
       nationalId: `99${String(id).padStart(8, '0')}`,
@@ -106,14 +101,12 @@ const MOCK_ROWS = [
 const defaultFilters = {
   requestNumber: '',
   nationalId: '',
-  firstName: '',
-  lastName: '',
   requestType: '',
   requestStatus: '',
   province: '',
   county: '',
   cityOrVillage: '',
-  branch: '',
+  requester: '',
   fromDate: null,
   toDate: null,
 };
@@ -122,14 +115,12 @@ const SearchSchema = zod
   .object({
     requestNumber: zod.string().optional(),
     nationalId: zod.string().optional(),
-    firstName: zod.string().optional(),
-    lastName: zod.string().optional(),
     requestType: zod.string().optional(),
     requestStatus: zod.string().optional(),
     province: zod.string().optional(),
     county: zod.string().optional(),
     cityOrVillage: zod.string().optional(),
-    branch: zod.string().optional(),
+    requester: zod.string().optional(),
     fromDate: zod.any().nullable().optional(),
     toDate: zod.any().nullable().optional(),
   })
@@ -182,18 +173,7 @@ export default function ServicesListPage() {
       ) {
         return false;
       }
-      if (
-        submittedFilters.firstName &&
-        !row.firstName.toLowerCase().includes(submittedFilters.firstName.toLowerCase())
-      ) {
-        return false;
-      }
-      if (
-        submittedFilters.lastName &&
-        !row.lastName.toLowerCase().includes(submittedFilters.lastName.toLowerCase())
-      ) {
-        return false;
-      }
+      if (submittedFilters.requester && row.requester !== submittedFilters.requester) return false;
       if (submittedFilters.requestType && row.requestType !== submittedFilters.requestType)
         return false;
       if (submittedFilters.requestStatus && row.requestStatus !== submittedFilters.requestStatus)
@@ -255,8 +235,8 @@ export default function ServicesListPage() {
 
   const columns = [
     { field: 'requestNumber', headerName: 'شماره درخواست', flex: 1 },
-    { field: 'firstName', headerName: 'نام', flex: 1 },
-    { field: 'lastName', headerName: 'نام خانوادگی', flex: 1 },
+    { field: 'requester', headerName: 'درخواست‌دهنده', flex: 1 },
+    { field: 'nationalId', headerName: 'شماره ملی', flex: 1 },
     {
       field: 'requestStatus',
       headerName: 'وضعیت درخواست',
@@ -337,17 +317,20 @@ export default function ServicesListPage() {
                   borderColor: 'divider',
                 }}
               >
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <Field.Text name="requestNumber" label="شماره درخواست" />
               </Grid>
-              <Grid item xs={12} md={4}>
+              <Grid item xs={12} md={6}>
                 <Field.Text name="nationalId" label="شماره ملی" />
               </Grid>
               <Grid item xs={12} md={4}>
-                <Field.Text name="firstName" label="نام" />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Field.Text name="lastName" label="نام خانوادگی" />
+                <Field.Select name="requester" label="درخواست‌دهنده">
+                  {BRANCHES.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
               </Grid>
 
               <Box sx={{ width: { xs: '100%', md: '25%' } }}>
@@ -368,16 +351,6 @@ export default function ServicesListPage() {
                   ))}
                 </Field.Select>
               </Box>
-              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
-                <Field.Select name="branch" label="انتخاب شعبه">
-                  {BRANCHES.map((item) => (
-                    <MenuItem key={item} value={item}>
-                      {item}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
-
               <Box sx={{ width: { xs: '100%', md: '25%' } }}>
                 <Field.Select name="province" label="استان">
                   {PROVINCES.map((item) => (

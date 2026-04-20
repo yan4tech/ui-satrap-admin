@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { z as zod } from 'zod';
+import { Controller, useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Box,
   Button,
@@ -11,19 +14,22 @@ import {
   IconButton,
   MenuItem,
   Stack,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  TextField,
   Typography,
   Tooltip,
 } from '@mui/material';
 import { Icon } from '@iconify/react';
+import { DataGrid } from '@mui/x-data-grid';
+import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
+import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { DatePicker } from '@mui/x-date-pickers/DatePicker';
+import dayjs from 'dayjs';
+import jalaliday from 'jalaliday';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
+import { Field, Form } from 'src/components/hook-form';
+
+dayjs.extend(jalaliday);
+dayjs.calendar('jalali');
 
 const REQUEST_TYPES = ['خدمت شماره یک', 'خدمت شماره دو', 'خدمت شماره سه'];
 const REQUEST_STATUS = [
@@ -40,7 +46,7 @@ const TOWNS = ['روستا 1', 'روستا 2'];
 const MOCK_ROWS = [
   {
     id: 1,
-    financialCode: '252142544',
+    requestNumber: '252142544',
     firstName: 'علیرضا',
     lastName: 'علی',
     requestType: 'خدمت شماره یک',
@@ -49,7 +55,7 @@ const MOCK_ROWS = [
   },
   {
     id: 2,
-    financialCode: '5644545455',
+    requestNumber: '5644545455',
     firstName: 'حمدی',
     lastName: 'محمد',
     requestType: 'خدمت شماره سه',
@@ -58,7 +64,7 @@ const MOCK_ROWS = [
   },
   {
     id: 3,
-    financialCode: '5454212555',
+    requestNumber: '5454212555',
     firstName: 'اسماعیل',
     lastName: 'رضا',
     requestType: 'خدمت شماره دو',
@@ -67,7 +73,7 @@ const MOCK_ROWS = [
   },
   {
     id: 4,
-    financialCode: '6562102122',
+    requestNumber: '6562102122',
     firstName: 'ویزدانه',
     lastName: 'محمدرضا',
     requestType: 'خدمت شماره سه',
@@ -77,6 +83,7 @@ const MOCK_ROWS = [
 ];
 
 const defaultFilters = {
+  requestNumber: '',
   nationalId: '',
   firstName: '',
   lastName: '',
@@ -86,9 +93,34 @@ const defaultFilters = {
   county: '',
   cityOrVillage: '',
   branch: '',
-  fromDate: '',
-  toDate: '',
+  fromDate: null,
+  toDate: null,
 };
+
+const SearchSchema = zod
+  .object({
+    requestNumber: zod.string().optional(),
+    nationalId: zod.string().optional(),
+    firstName: zod.string().optional(),
+    lastName: zod.string().optional(),
+    requestType: zod.string().optional(),
+    requestStatus: zod.string().optional(),
+    province: zod.string().optional(),
+    county: zod.string().optional(),
+    cityOrVillage: zod.string().optional(),
+    branch: zod.string().optional(),
+    fromDate: zod.any().nullable().optional(),
+    toDate: zod.any().nullable().optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.fromDate && value.toDate && dayjs(value.fromDate).isAfter(dayjs(value.toDate), 'day')) {
+      ctx.addIssue({
+        code: zod.ZodIssueCode.custom,
+        path: ['toDate'],
+        message: 'تاریخ پایان باید بزرگتر یا مساوی تاریخ شروع باشد.',
+      });
+    }
+  });
 
 function getStatusColor(status) {
   if (status.includes('در انتظار')) return 'warning';
@@ -97,11 +129,27 @@ function getStatusColor(status) {
 
 export default function ServicesListPage() {
   const router = useRouter();
-  const [filters, setFilters] = useState(defaultFilters);
   const [submittedFilters, setSubmittedFilters] = useState(defaultFilters);
+  const [paginationModel, setPaginationModel] = useState({
+    page: 0,
+    pageSize: 5,
+  });
 
-  const rows = useMemo(() => {
+  const methods = useForm({
+    resolver: zodResolver(SearchSchema),
+    defaultValues: defaultFilters,
+  });
+
+  const { handleSubmit, getValues } = methods;
+
+  const filteredRows = useMemo(() => {
     return MOCK_ROWS.filter((row) => {
+      if (
+        submittedFilters.requestNumber &&
+        !row.requestNumber.toLowerCase().includes(submittedFilters.requestNumber.toLowerCase())
+      ) {
+        return false;
+      }
       if (
         submittedFilters.nationalId &&
         !row.nationalId.toLowerCase().includes(submittedFilters.nationalId.toLowerCase())
@@ -122,21 +170,75 @@ export default function ServicesListPage() {
       }
       if (submittedFilters.requestType && row.requestType !== submittedFilters.requestType) return false;
       if (submittedFilters.requestStatus && row.requestStatus !== submittedFilters.requestStatus) return false;
+      if (
+        submittedFilters.fromDate &&
+        dayjs(row.id === 1 ? '2026-01-10' : row.id === 2 ? '2026-01-12' : row.id === 3 ? '2026-01-14' : '2026-01-15')
+          .isBefore(dayjs(submittedFilters.fromDate), 'day')
+      ) {
+        return false;
+      }
+      if (
+        submittedFilters.toDate &&
+        dayjs(row.id === 1 ? '2026-01-10' : row.id === 2 ? '2026-01-12' : row.id === 3 ? '2026-01-14' : '2026-01-15')
+          .isAfter(dayjs(submittedFilters.toDate), 'day')
+      ) {
+        return false;
+      }
       return true;
     });
   }, [submittedFilters]);
 
-  const handleFilterChange = (key) => (event) => {
-    setFilters((prev) => ({ ...prev, [key]: event.target.value }));
-  };
+  const rows = useMemo(() => {
+    const start = paginationModel.page * paginationModel.pageSize;
+    const end = start + paginationModel.pageSize;
+    return filteredRows.slice(start, end);
+  }, [filteredRows, paginationModel]);
 
-  const handleSearch = () => {
-    setSubmittedFilters(filters);
-  };
+  const handleSearch = handleSubmit(() => {
+    setSubmittedFilters(getValues());
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  });
 
-  const handleViewDetails = () => {
+  const handleViewDetails = (row) => {
+    // فعلا جزئیات به فرم خدمت شماره یک هدایت می‌شود.
+    console.log('view details for request', row.requestNumber);
     router.push(paths.dashboard.services.one);
   };
+
+  const columns = [
+    { field: 'requestNumber', headerName: 'شماره درخواست', flex: 1 },
+    { field: 'firstName', headerName: 'نام', flex: 1 },
+    { field: 'lastName', headerName: 'نام خانوادگی', flex: 1 },
+    {
+      field: 'requestStatus',
+      headerName: 'وضعیت درخواست',
+      flex: 1.4,
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          size="small"
+          color={getStatusColor(params.value)}
+          variant="outlined"
+        />
+      ),
+    },
+    { field: 'requestType', headerName: 'نوع درخواست', flex: 1 },
+    {
+      field: 'actions',
+      headerName: 'اکشن',
+      align: 'center',
+      headerAlign: 'center',
+      flex: 0.6,
+      sortable: false,
+      renderCell: (params) => (
+        <Tooltip title="دیدن جزییات">
+          <IconButton color="primary" onClick={() => handleViewDetails(params.row)}>
+            <Icon icon="solar:eye-bold" width={18} />
+          </IconButton>
+        </Tooltip>
+      ),
+    },
+  ];
 
   return (
     <Stack spacing={3}>
@@ -146,149 +248,117 @@ export default function ServicesListPage() {
             فرم جستجو
           </Typography>
 
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="شماره ملی"
-                value={filters.nationalId}
-                onChange={handleFilterChange('nationalId')}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="نام"
-                value={filters.firstName}
-                onChange={handleFilterChange('firstName')}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="نام خانوادگی"
-                value={filters.lastName}
-                onChange={handleFilterChange('lastName')}
-              />
+          <Form methods={methods} onSubmit={handleSearch}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={4}>
+                <Field.Text name="requestNumber" label="شماره درخواست" />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Field.Text name="nationalId" label="شماره ملی" />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Field.Text name="firstName" label="نام" />
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Field.Text name="lastName" label="نام خانوادگی" />
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Field.Select name="requestType" label="نوع خدمت">
+                  {REQUEST_TYPES.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Field.Select name="requestStatus" label="وضعیت">
+                  {REQUEST_STATUS.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Field.Select name="branch" label="انتخاب شعبه">
+                  {BRANCHES.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <Field.Select name="province" label="استان">
+                  {PROVINCES.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Field.Select name="county" label="شهرستان">
+                  {CITIES.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Field.Select name="cityOrVillage" label="شهر/روستا">
+                  {TOWNS.map((item) => (
+                    <MenuItem key={item} value={item}>
+                      {item}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+              </Grid>
+
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Grid item xs={12} md={4}>
+                  <Controller
+                    name="fromDate"
+                    control={methods.control}
+                    render={({ field, fieldState: { error } }) => (
+                      <DatePicker
+                        label="از تاریخ"
+                        value={field.value}
+                        onChange={field.onChange}
+                        format="YYYY/MM/DD"
+                        slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }}
+                      />
+                    )}
+                  />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Controller
+                    name="toDate"
+                    control={methods.control}
+                    render={({ field, fieldState: { error } }) => (
+                      <DatePicker
+                        label="تا تاریخ"
+                        value={field.value}
+                        onChange={field.onChange}
+                        format="YYYY/MM/DD"
+                        slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }}
+                      />
+                    )}
+                  />
+                </Grid>
+              </LocalizationProvider>
             </Grid>
 
-            <Grid item xs={12} md={4}>
-              <TextField
-                select
-                fullWidth
-                label="نوع خدمت"
-                value={filters.requestType}
-                onChange={handleFilterChange('requestType')}
-              >
-                {REQUEST_TYPES.map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                select
-                fullWidth
-                label="وضعیت"
-                value={filters.requestStatus}
-                onChange={handleFilterChange('requestStatus')}
-              >
-                {REQUEST_STATUS.map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                select
-                fullWidth
-                label="انتخاب شعبه"
-                value={filters.branch}
-                onChange={handleFilterChange('branch')}
-              >
-                {BRANCHES.map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                select
-                fullWidth
-                label="استان"
-                value={filters.province}
-                onChange={handleFilterChange('province')}
-              >
-                {PROVINCES.map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                select
-                fullWidth
-                label="شهرستان"
-                value={filters.county}
-                onChange={handleFilterChange('county')}
-              >
-                {CITIES.map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                select
-                fullWidth
-                label="شهر/روستا"
-                value={filters.cityOrVillage}
-                onChange={handleFilterChange('cityOrVillage')}
-              >
-                {TOWNS.map((item) => (
-                  <MenuItem key={item} value={item}>
-                    {item}
-                  </MenuItem>
-                ))}
-              </TextField>
-            </Grid>
-
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="از تاریخ"
-                placeholder="1405/01/01"
-                value={filters.fromDate}
-                onChange={handleFilterChange('fromDate')}
-              />
-            </Grid>
-            <Grid item xs={12} md={4}>
-              <TextField
-                fullWidth
-                label="تا تاریخ"
-                placeholder="1405/01/30"
-                value={filters.toDate}
-                onChange={handleFilterChange('toDate')}
-              />
-            </Grid>
-          </Grid>
-
-          <Box sx={{ mt: 3 }}>
-            <Button variant="contained" color="success" onClick={handleSearch}>
-              جستجو
-            </Button>
-          </Box>
+            <Box sx={{ mt: 3 }}>
+              <Button type="submit" variant="contained" color="success">
+                جستجو
+              </Button>
+            </Box>
+          </Form>
         </CardContent>
       </Card>
 
@@ -298,52 +368,17 @@ export default function ServicesListPage() {
             نتیجه جستجو
           </Typography>
 
-          <TableContainer sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1 }}>
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>شماره مالی</TableCell>
-                  <TableCell>نام</TableCell>
-                  <TableCell>نام خانوادگی</TableCell>
-                  <TableCell>وضعیت درخواست</TableCell>
-                  <TableCell>نوع درخواست</TableCell>
-                  <TableCell align="center">اکشن</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((row) => (
-                  <TableRow key={row.id} hover>
-                    <TableCell>{row.financialCode}</TableCell>
-                    <TableCell>{row.firstName}</TableCell>
-                    <TableCell>{row.lastName}</TableCell>
-                    <TableCell>
-                      <Chip
-                        label={row.requestStatus}
-                        size="small"
-                        color={getStatusColor(row.requestStatus)}
-                        variant="outlined"
-                      />
-                    </TableCell>
-                    <TableCell>{row.requestType}</TableCell>
-                    <TableCell align="center">
-                      <Tooltip title="دیدن جزییات">
-                        <IconButton color="primary" onClick={handleViewDetails}>
-                          <Icon icon="solar:eye-bold" width={18} />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {rows.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} align="center">
-                      موردی یافت نشد.
-                    </TableCell>
-                  </TableRow>
-                ) : null}
-              </TableBody>
-            </Table>
-          </TableContainer>
+          <DataGrid
+            rows={rows}
+            columns={columns}
+            rowCount={filteredRows.length}
+            paginationMode="server"
+            paginationModel={paginationModel}
+            onPaginationModelChange={setPaginationModel}
+            pageSizeOptions={[5, 10, 20]}
+            autoHeight
+            disableRowSelectionOnClick
+          />
         </CardContent>
       </Card>
     </Stack>

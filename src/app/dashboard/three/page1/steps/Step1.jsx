@@ -34,17 +34,17 @@ export default function Page1() {
       </Grid>
 
       {/* تاریخ سند نمایندگی */}
-      <Grid item xs={12} md={4}>
+      <Grid item xs={12} md={6}>
         <Field.Text name="representation_doc_date" label="تاریخ سند نمایندگی" />
       </Grid>
 
       {/* شناسه سند رسمی */}
-      <Grid item xs={12} md={4}>
+      <Grid item xs={12} md={6}>
         <Field.Text name="representation_doc_id" label="شناسه سند رسمی نمایندگی" />
       </Grid>
 
       {/* رمز تصدیق */}
-      <Grid item xs={12} md={4}>
+      <Grid item xs={12} md={6}>
         <Field.Text name="verification_code" label="رمز تصدیق" />
       </Grid>
 

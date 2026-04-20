@@ -113,7 +113,15 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
         },
       },
       htmlInput: { id: labelId },
-      inputLabel: { htmlFor: labelId },
+      inputLabel: {
+        htmlFor: labelId,
+        sx: {
+          whiteSpace: 'normal',
+          overflow: 'visible',
+          textOverflow: 'clip',
+          lineHeight: 1.3,
+        },
+      },
     }),
     [placeholder, children, labelId, effectivePlaceholder]
   );

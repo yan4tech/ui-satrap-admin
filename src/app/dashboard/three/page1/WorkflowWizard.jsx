@@ -65,9 +65,16 @@ export default function WorkflowWizard() {
   };
 
   return (
-    <Container maxWidth="lg">
-      <Card sx={{ borderRadius: 3 }}>
-        <CardContent>
+    <Container maxWidth="lg" sx={{ py: 3 }}>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: (theme) => theme.shadows[2],
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <Typography variant="h5" textAlign="center" mb={3}>
             تکمیل فرم درخواست اولیه توسط متقاضی
           </Typography>
@@ -75,7 +82,7 @@ export default function WorkflowWizard() {
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <Box sx={{ minHeight: 250, display: 'grid', gap: 4 }}>
-                <Box>
+                <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
                   <Typography variant="subtitle1" fontWeight={700} mb={2}>
                     اطلاعات شخصی
                   </Typography>
@@ -84,7 +91,7 @@ export default function WorkflowWizard() {
 
                 <Divider />
 
-                <Box>
+                <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
                   <Typography variant="subtitle1" fontWeight={700} mb={2}>
                     اطلاعات نماینده
                   </Typography>
@@ -93,7 +100,7 @@ export default function WorkflowWizard() {
 
                 <Divider />
 
-                <Box>
+                <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
                   <Typography variant="subtitle1" fontWeight={700} mb={2}>
                     اطلاعات مکانی
                   </Typography>
@@ -102,7 +109,7 @@ export default function WorkflowWizard() {
 
                 <Divider />
 
-                <Box>
+                <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
                   <Typography variant="subtitle1" fontWeight={700} mb={2}>
                     اطلاعات ملک
                   </Typography>
@@ -111,7 +118,7 @@ export default function WorkflowWizard() {
 
                 <Divider />
 
-                <Box>
+                <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
                   <Typography variant="subtitle1" fontWeight={700} mb={2}>
                     دسترسی به دیگران
                   </Typography>
@@ -120,7 +127,7 @@ export default function WorkflowWizard() {
 
                 <Divider />
 
-                <Box>
+                <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
                   <Typography variant="subtitle1" fontWeight={700} mb={2}>
                     تخصیص کارشناس نقشه برداری
                   </Typography>
@@ -129,7 +136,7 @@ export default function WorkflowWizard() {
               </Box>
 
               <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
-                <Button type="submit" variant="contained" color="success">
+                <Button type="submit" variant="contained" color="success" sx={{ minWidth: 140 }}>
                   ثبت نهایی
                 </Button>
               </Box>

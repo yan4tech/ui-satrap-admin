@@ -29,7 +29,7 @@ export default function Page4() {
       </Grid>
 
       {/* لیست افراد (multi select) */}
-      <Grid item xs={6} sm={6} md={6}>
+      <Grid item xs={12} md={6}>
         <Typography variant="body2" sx={{ mb: 1 }}>
           لیست افراد
         </Typography>

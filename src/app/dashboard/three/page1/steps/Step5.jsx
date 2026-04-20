@@ -15,11 +15,7 @@ export default function Page5() {
     <Grid container spacing={2}>
       <Grid item xs={12} md={6}>
         <Box>
-          <Field.Select
-            name="survey_assignment"
-            label="تخصیص کارشناس نقشه‌برداری"
-            sx={{ width: 320 }}
-          >
+          <Field.Select name="survey_assignment" label="تخصیص کارشناس نقشه‌برداری">
             {SURVEYOR_OPTIONS.map((o) => (
               <MenuItem key={o.value} value={o.value}>
                 {o.label}

@@ -38,6 +38,16 @@ export function RHFTextField({ name, helperText, slotProps, type = 'text', ...ot
           helperText={error?.message ?? helperText}
           slotProps={{
             ...slotProps,
+            inputLabel: {
+              ...slotProps?.inputLabel,
+              sx: {
+                whiteSpace: 'normal',
+                overflow: 'visible',
+                textOverflow: 'clip',
+                lineHeight: 1.3,
+                ...slotProps?.inputLabel?.sx,
+              },
+            },
             htmlInput: {
               ...slotProps?.htmlInput,
               ...(isNumberType && {

@@ -32,6 +32,16 @@ export function RHFAutocomplete({ name, label, slotProps, helperText, placeholde
               helperText={error?.message ?? helperText}
               slotProps={{
                 ...textField?.slotProps,
+                inputLabel: {
+                  ...textField?.slotProps?.inputLabel,
+                  sx: {
+                    whiteSpace: 'normal',
+                    overflow: 'visible',
+                    textOverflow: 'clip',
+                    lineHeight: 1.3,
+                    ...textField?.slotProps?.inputLabel?.sx,
+                  },
+                },
                 htmlInput: {
                   ...params.inputProps,
                   ...textField?.slotProps?.htmlInput,

@@ -288,14 +288,46 @@ export default function ServicesListPage() {
 
   return (
     <Stack spacing={3}>
-      <Card>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            فرم جستجو
-          </Typography>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: (theme) => theme.shadows[3],
+          overflow: 'hidden',
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Box
+            sx={{
+              mb: 2.5,
+              px: 2,
+              py: 1.5,
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+              border: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
+          >
+            <Icon icon="solar:magnifer-linear" width={20} />
+            <Typography variant="h6">فرم جستجو</Typography>
+          </Box>
 
           <Form methods={methods} onSubmit={handleSearch}>
-            <Grid container spacing={2}>
+            <Grid
+              container
+              spacing={2}
+              sx={{
+                p: { xs: 1, md: 2 },
+                borderRadius: 2,
+                bgcolor: 'background.neutral',
+                border: '1px dashed',
+                borderColor: 'divider',
+              }}
+            >
               <Grid item xs={12} md={4}>
                 <Field.Text name="requestNumber" label="شماره درخواست" />
               </Grid>
@@ -368,7 +400,17 @@ export default function ServicesListPage() {
             </Grid>
 
             <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Grid container spacing={2} sx={{ mt: 0.5 }}>
+              <Grid
+                container
+                spacing={2}
+                sx={{
+                  mt: 2,
+                  p: { xs: 1, md: 2 },
+                  borderRadius: 2,
+                  border: '1px dashed',
+                  borderColor: 'divider',
+                }}
+              >
                 <Grid item xs={12} md={3}>
                   <Controller
                     name="fromDate"
@@ -414,7 +456,17 @@ export default function ServicesListPage() {
               </Grid>
             </LocalizationProvider>
 
-            <Box sx={{ mt: 3, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+            <Box
+              sx={{
+                mt: 2,
+                pt: 2,
+                borderTop: '1px dashed',
+                borderColor: 'divider',
+                display: 'flex',
+                gap: 1,
+                justifyContent: 'flex-end',
+              }}
+            >
               <Button type="button" variant="outlined" onClick={handleResetFilters}>
                 پاک کردن
               </Button>

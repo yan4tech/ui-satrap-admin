@@ -303,7 +303,7 @@ export default function ServicesListPage() {
                 <Field.Text name="lastName" label="نام خانوادگی" />
               </Grid>
 
-              <Grid item xs={12} md={4}>
+              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
                 <Field.Select name="requestType" label="نوع خدمت">
                   {REQUEST_TYPES.map((item) => (
                     <MenuItem key={item} value={item}>
@@ -311,8 +311,8 @@ export default function ServicesListPage() {
                     </MenuItem>
                   ))}
                 </Field.Select>
-              </Grid>
-              <Grid item xs={12} md={4}>
+              </Box>
+              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
                 <Field.Select name="requestStatus" label="وضعیت">
                   {REQUEST_STATUS.map((item) => (
                     <MenuItem key={item} value={item}>
@@ -320,8 +320,8 @@ export default function ServicesListPage() {
                     </MenuItem>
                   ))}
                 </Field.Select>
-              </Grid>
-              <Grid item xs={12} md={4}>
+              </Box>
+              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
                 <Field.Select name="branch" label="انتخاب شعبه">
                   {BRANCHES.map((item) => (
                     <MenuItem key={item} value={item}>
@@ -329,9 +329,9 @@ export default function ServicesListPage() {
                     </MenuItem>
                   ))}
                 </Field.Select>
-              </Grid>
+              </Box>
 
-              <Grid item xs={12} md={4}>
+              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
                 <Field.Select name="province" label="استان">
                   {PROVINCES.map((item) => (
                     <MenuItem key={item} value={item}>
@@ -339,8 +339,8 @@ export default function ServicesListPage() {
                     </MenuItem>
                   ))}
                 </Field.Select>
-              </Grid>
-              <Grid item xs={12} md={4}>
+              </Box>
+              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
                 <Field.Select name="county" label="شهرستان">
                   {CITIES.map((item) => (
                     <MenuItem key={item} value={item}>
@@ -348,8 +348,8 @@ export default function ServicesListPage() {
                     </MenuItem>
                   ))}
                 </Field.Select>
-              </Grid>
-              <Grid item xs={12} md={4}>
+              </Box>
+              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
                 <Field.Select name="cityOrVillage" label="شهر/روستا">
                   {TOWNS.map((item) => (
                     <MenuItem key={item} value={item}>
@@ -357,7 +357,7 @@ export default function ServicesListPage() {
                     </MenuItem>
                   ))}
                 </Field.Select>
-              </Grid>
+              </Box>
 
               <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <Grid item xs={12} md={4}>

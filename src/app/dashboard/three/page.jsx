@@ -17,7 +17,8 @@ import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Page1 from './page1/WorkflowWizard';
 import Page2 from './page2/WorkflowWizard';
-import { Field } from 'src/components/hook-form';
+import PaymentPage from './payment/WorkflowWizard';
+import SurveyPaymentPage from './payment-survey/WorkflowWizard';
 
 // ---------------- STEPS ----------------
 
@@ -88,7 +89,7 @@ export default function WorkflowWizard() {
   const renderStep = () => {
     switch (activeStep) {
       case 0:
-        return <Field.Text name="payment.amount" label="پرداخت" type="number" />;
+        return <PaymentPage />;
 
       case 1:
         // return <Field.Text name="info.description" label="اطلاعات اولیه" />;
@@ -102,7 +103,7 @@ export default function WorkflowWizard() {
         );
 
       case 3:
-        return <Typography>شروع نقشه برداری ...</Typography>;
+        return <SurveyPaymentPage />;
 
       case 4:
         return <Page2 />;

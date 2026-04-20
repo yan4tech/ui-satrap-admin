@@ -80,6 +80,26 @@ const MOCK_ROWS = [
     requestStatus: 'تایید شده مرحله نقشه برداری',
     nationalId: '4234567890',
   },
+  ...Array.from({ length: 20 }).map((_, index) => {
+    const id = index + 5;
+    const statuses = [
+      'در انتظار تایید مرحله اطلاعات اولیه',
+      'در انتظار تایید مرحله نقشه برداری',
+      'تایید شده مرحله اطلاعات اولیه',
+      'تایید شده مرحله نقشه برداری',
+    ];
+    const requestTypes = ['خدمت شماره یک', 'خدمت شماره دو', 'خدمت شماره سه'];
+
+    return {
+      id,
+      requestNumber: `70000${id}${id + 11}`,
+      firstName: `نام ${id}`,
+      lastName: `خانوادگی ${id}`,
+      requestType: requestTypes[index % requestTypes.length],
+      requestStatus: statuses[index % statuses.length],
+      nationalId: `99${String(id).padStart(8, '0')}`,
+    };
+  }),
 ];
 
 const defaultFilters = {
@@ -113,7 +133,11 @@ const SearchSchema = zod
     toDate: zod.any().nullable().optional(),
   })
   .superRefine((value, ctx) => {
-    if (value.fromDate && value.toDate && dayjs(value.fromDate).isAfter(dayjs(value.toDate), 'day')) {
+    if (
+      value.fromDate &&
+      value.toDate &&
+      dayjs(value.fromDate).isAfter(dayjs(value.toDate), 'day')
+    ) {
       ctx.addIssue({
         code: zod.ZodIssueCode.custom,
         path: ['toDate'],
@@ -132,7 +156,7 @@ export default function ServicesListPage() {
   const [submittedFilters, setSubmittedFilters] = useState(defaultFilters);
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
-    pageSize: 5,
+    pageSize: 10,
   });
 
   const methods = useForm({
@@ -168,19 +192,35 @@ export default function ServicesListPage() {
       ) {
         return false;
       }
-      if (submittedFilters.requestType && row.requestType !== submittedFilters.requestType) return false;
-      if (submittedFilters.requestStatus && row.requestStatus !== submittedFilters.requestStatus) return false;
+      if (submittedFilters.requestType && row.requestType !== submittedFilters.requestType)
+        return false;
+      if (submittedFilters.requestStatus && row.requestStatus !== submittedFilters.requestStatus)
+        return false;
       if (
         submittedFilters.fromDate &&
-        dayjs(row.id === 1 ? '2026-01-10' : row.id === 2 ? '2026-01-12' : row.id === 3 ? '2026-01-14' : '2026-01-15')
-          .isBefore(dayjs(submittedFilters.fromDate), 'day')
+        dayjs(
+          row.id === 1
+            ? '2026-01-10'
+            : row.id === 2
+              ? '2026-01-12'
+              : row.id === 3
+                ? '2026-01-14'
+                : '2026-01-15'
+        ).isBefore(dayjs(submittedFilters.fromDate), 'day')
       ) {
         return false;
       }
       if (
         submittedFilters.toDate &&
-        dayjs(row.id === 1 ? '2026-01-10' : row.id === 2 ? '2026-01-12' : row.id === 3 ? '2026-01-14' : '2026-01-15')
-          .isAfter(dayjs(submittedFilters.toDate), 'day')
+        dayjs(
+          row.id === 1
+            ? '2026-01-10'
+            : row.id === 2
+              ? '2026-01-12'
+              : row.id === 3
+                ? '2026-01-14'
+                : '2026-01-15'
+        ).isAfter(dayjs(submittedFilters.toDate), 'day')
       ) {
         return false;
       }
@@ -330,7 +370,13 @@ export default function ServicesListPage() {
                         value={field.value}
                         onChange={field.onChange}
                         format="YYYY/MM/DD"
-                        slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!error,
+                            helperText: error?.message,
+                          },
+                        }}
                       />
                     )}
                   />
@@ -345,7 +391,13 @@ export default function ServicesListPage() {
                         value={field.value}
                         onChange={field.onChange}
                         format="YYYY/MM/DD"
-                        slotProps={{ textField: { fullWidth: true, error: !!error, helperText: error?.message } }}
+                        slotProps={{
+                          textField: {
+                            fullWidth: true,
+                            error: !!error,
+                            helperText: error?.message,
+                          },
+                        }}
                       />
                     )}
                   />
@@ -375,7 +427,7 @@ export default function ServicesListPage() {
             paginationMode="server"
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
-            pageSizeOptions={[5, 10, 20]}
+            pageSizeOptions={[10, 20]}
             autoHeight
             disableRowSelectionOnClick
           />

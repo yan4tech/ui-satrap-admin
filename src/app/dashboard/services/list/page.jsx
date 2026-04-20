@@ -10,6 +10,7 @@ import {
   Card,
   CardContent,
   Chip,
+  Collapse,
   Grid,
   IconButton,
   MenuItem,
@@ -154,6 +155,7 @@ function getStatusColor(status) {
 export default function ServicesListPage() {
   const router = useRouter();
   const [submittedFilters, setSubmittedFilters] = useState(defaultFilters);
+  const [isSearchOpen, setIsSearchOpen] = useState(true);
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
@@ -310,24 +312,31 @@ export default function ServicesListPage() {
               display: 'flex',
               alignItems: 'center',
               gap: 1,
+              cursor: 'pointer',
             }}
+            onClick={() => setIsSearchOpen((prev) => !prev)}
           >
+            <Icon
+              icon={isSearchOpen ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-left-linear'}
+              width={18}
+            />
             <Icon icon="solar:magnifer-linear" width={20} />
             <Typography variant="h6">فرم جستجو</Typography>
           </Box>
 
-          <Form methods={methods} onSubmit={handleSearch}>
-            <Grid
-              container
-              spacing={2}
-              sx={{
-                p: { xs: 1, md: 2 },
-                borderRadius: 2,
-                bgcolor: 'background.neutral',
-                border: '1px dashed',
-                borderColor: 'divider',
-              }}
-            >
+          <Collapse in={isSearchOpen}>
+            <Form methods={methods} onSubmit={handleSearch}>
+              <Grid
+                container
+                spacing={2}
+                sx={{
+                  p: { xs: 1, md: 2 },
+                  borderRadius: 2,
+                  bgcolor: 'background.neutral',
+                  border: '1px dashed',
+                  borderColor: 'divider',
+                }}
+              >
               <Grid item xs={12} md={4}>
                 <Field.Text name="requestNumber" label="شماره درخواست" />
               </Grid>
@@ -397,20 +406,20 @@ export default function ServicesListPage() {
                 </Field.Select>
               </Box>
 
-            </Grid>
+              </Grid>
 
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Grid
-                container
-                spacing={2}
-                sx={{
-                  mt: 2,
-                  p: { xs: 1, md: 2 },
-                  borderRadius: 2,
-                  border: '1px dashed',
-                  borderColor: 'divider',
-                }}
-              >
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <Grid
+                  container
+                  spacing={2}
+                  sx={{
+                    mt: 2,
+                    p: { xs: 1, md: 2 },
+                    borderRadius: 2,
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                  }}
+                >
                 <Grid item xs={12} md={3}>
                   <Controller
                     name="fromDate"
@@ -453,28 +462,29 @@ export default function ServicesListPage() {
                     )}
                   />
                 </Grid>
-              </Grid>
-            </LocalizationProvider>
+                </Grid>
+              </LocalizationProvider>
 
-            <Box
-              sx={{
-                mt: 2,
-                pt: 2,
-                borderTop: '1px dashed',
-                borderColor: 'divider',
-                display: 'flex',
-                gap: 1,
-                justifyContent: 'flex-end',
-              }}
-            >
-              <Button type="button" variant="outlined" onClick={handleResetFilters}>
-                پاک کردن
-              </Button>
-              <Button type="submit" variant="contained" color="success">
-                جستجو
-              </Button>
-            </Box>
-          </Form>
+              <Box
+                sx={{
+                  mt: 2,
+                  pt: 2,
+                  borderTop: '1px dashed',
+                  borderColor: 'divider',
+                  display: 'flex',
+                  gap: 1,
+                  justifyContent: 'flex-end',
+                }}
+              >
+                <Button type="button" variant="outlined" onClick={handleResetFilters}>
+                  پاک کردن
+                </Button>
+                <Button type="submit" variant="contained" color="success">
+                  جستجو
+                </Button>
+              </Box>
+            </Form>
+          </Collapse>
         </CardContent>
       </Card>
 

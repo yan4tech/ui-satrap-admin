@@ -15,7 +15,7 @@ import {
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-
+import Page1 from './page1/WorkflowWizard';
 import { Field } from 'src/components/hook-form';
 
 // ---------------- STEPS ----------------
@@ -82,7 +82,8 @@ export default function WorkflowWizard() {
         return <Field.Text name="payment.amount" label="پرداخت" type="number" />;
 
       case 2:
-        return <Field.Text name="info.description" label="اطلاعات اولیه" />;
+        // return <Field.Text name="info.description" label="اطلاعات اولیه" />;
+        return <Page1 />;
 
       case 3:
         return <Typography>در انتظار تایید شرکت...</Typography>;

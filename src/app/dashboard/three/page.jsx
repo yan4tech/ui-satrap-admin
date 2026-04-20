@@ -22,7 +22,6 @@ import { Field } from 'src/components/hook-form';
 // ---------------- STEPS ----------------
 
 const steps = [
-  'درخواست خدمت شماره 1',
   'پرداخت',
   'اطلاعات اولیه',
   'تایید توسط سازمان ثبت',
@@ -41,7 +40,7 @@ const stepSchemas = steps.map(() => z.object({}));
 export default function WorkflowWizard() {
   const [activeStep, setActiveStep] = useState(0);
   const [approvalState, setApprovalState] = useState({});
-  const approvalSteps = [3, 6];
+  const approvalSteps = [2, 5];
 
   const methods = useForm({
     resolver: zodResolver(stepSchemas[activeStep] || z.object({})),
@@ -89,32 +88,29 @@ export default function WorkflowWizard() {
   const renderStep = () => {
     switch (activeStep) {
       case 0:
-        return <Typography>ایجاد درخواست خدمت</Typography>;
-
-      case 1:
         return <Field.Text name="payment.amount" label="پرداخت" type="number" />;
 
-      case 2:
+      case 1:
         // return <Field.Text name="info.description" label="اطلاعات اولیه" />;
         return <Page1 />;
 
-      case 3:
+      case 2:
         return (
-          <Typography color={approvalState[3] ? 'success.main' : 'text.primary'}>
-            {approvalState[3] ? 'تایید توسط سازمان ثبت انجام شد.' : 'در انتظار تایید سازمان ثبت...'}
+          <Typography color={approvalState[2] ? 'success.main' : 'text.primary'}>
+            {approvalState[2] ? 'تایید توسط سازمان ثبت انجام شد.' : 'در انتظار تایید سازمان ثبت...'}
           </Typography>
         );
 
-      case 4:
+      case 3:
         return <Typography>شروع نقشه برداری ...</Typography>;
 
-      case 5:
+      case 4:
         return <Page2 />;
 
-      case 6:
+      case 5:
         return (
-          <Typography color={approvalState[6] ? 'success.main' : 'text.primary'}>
-            {approvalState[6]
+          <Typography color={approvalState[5] ? 'success.main' : 'text.primary'}>
+            {approvalState[5]
               ? 'تایید نقشه برداری توسط سازمان ثبت انجام شد.'
               : 'تایید نقشه برداری توسط سازمان ثبت'}
           </Typography>

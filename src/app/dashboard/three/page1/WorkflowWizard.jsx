@@ -5,15 +5,7 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 
-import {
-  Card,
-  CardContent,
-  Button,
-  Box,
-  Typography,
-  Container,
-  Divider,
-} from '@mui/material';
+import { Card, CardContent, Button, Box, Typography, Container, Divider } from '@mui/material';
 
 import Step0 from './steps/Step0';
 import Step1 from './steps/Step1';
@@ -70,7 +62,7 @@ export default function WorkflowWizard() {
         sx={{
           borderRadius: 3,
           border: '1px solid',
-          borderColor: 'divider',
+          borderColor: 'text.primary',
           boxShadow: (theme) => theme.shadows[2],
         }}
       >

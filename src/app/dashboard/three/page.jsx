@@ -123,7 +123,9 @@ export default function WorkflowWizard() {
       case 7:
         return (
           <Typography color={approvalState[7] ? 'success.main' : 'text.primary'}>
-            {approvalState[7] ? 'تایید نقشه برداری توسط شرکت انجام شد.' : 'تایید نقشه برداری توسط شرکت'}
+            {approvalState[7]
+              ? 'تایید نقشه برداری توسط شرکت انجام شد.'
+              : 'تایید نقشه برداری توسط شرکت'}
           </Typography>
         );
 
@@ -145,7 +147,7 @@ export default function WorkflowWizard() {
     <Card>
       <CardContent>
         <Typography variant="h5" sx={{ mb: 3 }}>
-          Workflow خدمات
+          خدمت شماره یک
         </Typography>
 
         {/* STEP HEADER */}

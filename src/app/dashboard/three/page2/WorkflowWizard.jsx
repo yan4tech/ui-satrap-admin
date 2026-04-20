@@ -1,8 +1,22 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { Box, Grid, TextField, Typography } from '@mui/material';
+import { Alert, Box, Button, Chip, Grid, Stack, TextField, Typography } from '@mui/material';
+
+const REVIEW_STATUS = {
+  PENDING: 'pending',
+  APPROVED: 'approved',
+  REJECTED: 'rejected',
+  NEEDS_CORRECTION: 'needs_correction',
+};
+
+const REVIEW_STATUS_META = {
+  [REVIEW_STATUS.PENDING]: { label: 'در انتظار بررسی', color: 'warning', severity: 'warning' },
+  [REVIEW_STATUS.APPROVED]: { label: 'تایید شد', color: 'success', severity: 'success' },
+  [REVIEW_STATUS.REJECTED]: { label: 'رد شد', color: 'error', severity: 'error' },
+  [REVIEW_STATUS.NEEDS_CORRECTION]: { label: 'نیاز به اصلاح', color: 'info', severity: 'info' },
+};
 
 function UploadBox({ name, label, helperText, accept }) {
   const { control } = useFormContext();
@@ -93,6 +107,13 @@ function UploadBox({ name, label, helperText, accept }) {
 }
 
 export default function WorkflowWizardPage2() {
+  const [activeRole, setActiveRole] = useState('applicant');
+  const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
+  const isReviewer = activeRole === 'company_reviewer';
+  const isCommentRequired =
+    review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION;
+  const currentMeta = REVIEW_STATUS_META[review.status];
+
   return (
     <Box
       sx={{
@@ -107,82 +128,178 @@ export default function WorkflowWizardPage2() {
         نقشه برداری
       </Typography>
 
-      <Box
-        sx={{
-          border: '1px solid',
-          borderColor: 'text.primary',
-          borderRadius: 999,
-          py: 0.5,
-          px: 1.5,
-          width: 'fit-content',
-          maxWidth: '100%',
-        }}
-      >
-        <Typography variant="body2">
-          متقاضی/کارشناس می‌تواند با بارگذاری تصاویر ملک مورد تقاضا مطابقت بنا با ملک را تایید کند.
-        </Typography>
-      </Box>
+      <Stack direction="row" spacing={1}>
+        <Button
+          variant={activeRole === 'applicant' ? 'contained' : 'outlined'}
+          onClick={() => setActiveRole('applicant')}
+        >
+          حالت متقاضی
+        </Button>
+        <Button
+          variant={activeRole === 'company_reviewer' ? 'contained' : 'outlined'}
+          onClick={() => setActiveRole('company_reviewer')}
+        >
+          حالت شرکت
+        </Button>
+      </Stack>
 
-      <Typography variant="body2" textAlign="center">
-        چهار عکس از زوایای مختلف به همراه اطلاعات متقاضی ملک
-      </Typography>
+      <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+        <Box
+          sx={{
+            border: '1px solid',
+            borderColor: 'text.primary',
+            borderRadius: 999,
+            py: 0.5,
+            px: 1.5,
+            width: 'fit-content',
+            maxWidth: '100%',
+          }}
+        >
+          <Typography variant="body2">
+            متقاضی/کارشناس می‌تواند با بارگذاری تصاویر ملک مورد تقاضا مطابقت بنا با ملک را تایید کند.
+          </Typography>
+        </Box>
 
-      <Grid container spacing={2}>
-        <Grid item xs={12} md={6}>
-          <UploadBox name="survey.image_1" label="عکس 1 :" helperText="انتخاب فایل تصویر" accept="image/*" />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <UploadBox name="survey.image_2" label="عکس 2 :" helperText="انتخاب فایل تصویر" accept="image/*" />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <UploadBox name="survey.image_3" label="عکس 3 :" helperText="انتخاب فایل تصویر" accept="image/*" />
-        </Grid>
-        <Grid item xs={12} md={6}>
-          <UploadBox name="survey.image_4" label="عکس 4 :" helperText="انتخاب فایل تصویر" accept="image/*" />
-        </Grid>
-      </Grid>
-
-      <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary', mt: 1, pt: 1 }}>
         <Typography variant="body2" textAlign="center">
-          نقشه به همراه اطلاعات توصیفی آن
+          چهار عکس از زوایای مختلف به همراه اطلاعات متقاضی ملک
         </Typography>
-      </Box>
 
-      <Box
-        sx={{
-          border: '1px solid',
-          borderColor: 'text.primary',
-          borderRadius: 999,
-          py: 0.5,
-          px: 1.5,
-          width: 'fit-content',
-          maxWidth: '100%',
-        }}
-      >
-        <Typography variant="body2">
-          نقشه و اطلاعات توصیفی آن باید با اسناد استنادی فایل سامانه مطابقت داشته باشد.
-        </Typography>
-      </Box>
+        <Grid container spacing={2}>
+          <Grid item xs={12} md={6}>
+            <UploadBox name="survey.image_1" label="عکس 1 :" helperText="انتخاب فایل تصویر" accept="image/*" />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <UploadBox name="survey.image_2" label="عکس 2 :" helperText="انتخاب فایل تصویر" accept="image/*" />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <UploadBox name="survey.image_3" label="عکس 3 :" helperText="انتخاب فایل تصویر" accept="image/*" />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <UploadBox name="survey.image_4" label="عکس 4 :" helperText="انتخاب فایل تصویر" accept="image/*" />
+          </Grid>
+        </Grid>
 
-      <Box sx={{ maxWidth: 520 }}>
-        <UploadBox name="survey.map_file" label="نقشه :" helperText="انتخاب فایل نقشه" accept=".pdf,.jpg,.jpeg,.png" />
-      </Box>
+        <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary', mt: 1, pt: 1 }}>
+          <Typography variant="body2" textAlign="center">
+            نقشه به همراه اطلاعات توصیفی آن
+          </Typography>
+        </Box>
 
-      <Controller
-        name="survey.description"
-        render={({ field, fieldState: { error } }) => (
+        <Box
+          sx={{
+            border: '1px solid',
+            borderColor: 'text.primary',
+            borderRadius: 999,
+            py: 0.5,
+            px: 1.5,
+            width: 'fit-content',
+            maxWidth: '100%',
+          }}
+        >
+          <Typography variant="body2">
+            نقشه و اطلاعات توصیفی آن باید با اسناد استنادی فایل سامانه مطابقت داشته باشد.
+          </Typography>
+        </Box>
+
+        <Box sx={{ maxWidth: 520 }}>
+          <UploadBox
+            name="survey.map_file"
+            label="نقشه :"
+            helperText="انتخاب فایل نقشه"
+            accept=".pdf,.jpg,.jpeg,.png"
+          />
+        </Box>
+
+        <Controller
+          name="survey.description"
+          render={({ field, fieldState: { error } }) => (
+            <TextField
+              {...field}
+              fullWidth
+              multiline
+              rows={6}
+              label="توصیفات :"
+              placeholder="توضیحات کامل وضعیت ملک، مشکلات احتمالی، مغایرت‌ها و سایر موارد مرتبط را ثبت کنید."
+              error={!!error}
+              helperText={error?.message}
+            />
+          )}
+        />
+      </fieldset>
+
+      {isReviewer ? (
+        <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            spacing={1}
+            alignItems={{ md: 'center' }}
+            sx={{ mb: 1 }}
+          >
+            <Typography variant="body2" fontWeight={700}>
+              نتیجه بررسی نقشه‌برداری
+            </Typography>
+            <Chip label={currentMeta.label} color={currentMeta.color} size="small" variant="outlined" />
+          </Stack>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ mb: 1.5 }}>
+            <Button
+              variant={review.status === REVIEW_STATUS.APPROVED ? 'contained' : 'outlined'}
+              color="success"
+              onClick={() => setReview((prev) => ({ ...prev, status: REVIEW_STATUS.APPROVED }))}
+            >
+              تایید
+            </Button>
+            <Button
+              variant={review.status === REVIEW_STATUS.NEEDS_CORRECTION ? 'contained' : 'outlined'}
+              color="info"
+              onClick={() => setReview((prev) => ({ ...prev, status: REVIEW_STATUS.NEEDS_CORRECTION }))}
+            >
+              نیاز به اصلاح
+            </Button>
+            <Button
+              variant={review.status === REVIEW_STATUS.REJECTED ? 'contained' : 'outlined'}
+              color="error"
+              onClick={() => setReview((prev) => ({ ...prev, status: REVIEW_STATUS.REJECTED }))}
+            >
+              رد
+            </Button>
+          </Stack>
           <TextField
-            {...field}
             fullWidth
             multiline
-            rows={6}
-            label="توصیفات :"
-            placeholder="توضیحات کامل وضعیت ملک، مشکلات احتمالی، مغایرت‌ها و سایر موارد مرتبط را ثبت کنید."
-            error={!!error}
-            helperText={error?.message}
+            rows={2}
+            label="توضیح کارشناس"
+            value={review.comment}
+            onChange={(event) => setReview((prev) => ({ ...prev, comment: event.target.value }))}
+            error={isCommentRequired && !review.comment.trim()}
+            helperText={
+              isCommentRequired && !review.comment.trim()
+                ? 'برای رد یا نیاز به اصلاح، ثبت توضیح الزامی است.'
+                : 'در صورت نیاز توضیحات بررسی را ثبت کنید.'
+            }
           />
-        )}
-      />
+        </Box>
+      ) : (
+        <Box sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+          <Alert severity={currentMeta.severity} sx={{ mb: 1.25 }}>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              <Typography variant="body2" fontWeight={700}>
+                نتیجه بررسی نقشه‌برداری
+              </Typography>
+              <Chip label={currentMeta.label} color={currentMeta.color} size="small" variant="outlined" />
+            </Stack>
+          </Alert>
+          <TextField
+            fullWidth
+            multiline
+            rows={2}
+            label="توضیح کارشناس"
+            value={review.comment}
+            InputProps={{ readOnly: true }}
+            placeholder="هنوز توضیحی توسط کارشناس ثبت نشده است."
+            helperText="در صورت ثبت توضیح توسط کارشناس، در این بخش نمایش داده می‌شود."
+          />
+        </Box>
+      )}
     </Box>
   );
 }

@@ -167,7 +167,7 @@ const CreateBranch = () => {
 
   return (
     <Container maxWidth="lg">
-      <Card sx={{ borderRadius: 3 }}>
+      <Card sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
             اطلاعات شعبه

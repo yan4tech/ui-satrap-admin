@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   CardContent,
+  Collapse,
   Grid,
   MenuItem,
   Typography,
@@ -22,9 +23,7 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Paper,
   Stack,
-  Divider,
   Chip,
 } from '@mui/material';
 
@@ -69,6 +68,7 @@ const BranchSearch = () => {
     page: 0,
     pageSize: 10,
   });
+  const [isSearchOpen, setIsSearchOpen] = useState(true);
 
   const [deleteDialog, setDeleteDialog] = useState({
     open: false,
@@ -262,97 +262,145 @@ const BranchSearch = () => {
 
   return (
     <>
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Form methods={methods} onSubmit={onSubmit}>
-          <Stack spacing={2}>
+      <Card
+        sx={{
+          mb: 3,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: (theme) => theme.shadows[3],
+          overflow: 'hidden',
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Box
+            sx={{
+              mb: 2.5,
+              px: 2,
+              py: 1.5,
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+              border: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              cursor: 'pointer',
+            }}
+            onClick={() => setIsSearchOpen((prev) => !prev)}
+          >
+            <Icon
+              icon={isSearchOpen ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-left-linear'}
+              width={18}
+            />
+            <Icon icon="solar:filter-linear" width={20} />
             <Typography variant="h6">فیلتر جستجوی شعب</Typography>
-            <Divider />
+          </Box>
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={3}>
-                <Field.Text name="title" label="عنوان شعبه" />
-              </Grid>
-
-              <Grid item xs={12} md={3}>
-                <Field.Select name="province" label="استان" placeholder="انتخاب استان">
-                  {provinces.map((p) => (
-                    <MenuItem key={p.id} value={p.id}>
-                      {p.name}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Grid>
-
-              <Grid item xs={12} md={3}>
-                <Field.Select
-                  name="city"
-                  label="شهر"
-                  disabled={!selectedProvince}
-                  placeholder="انتخاب شهر"
+          <Collapse in={isSearchOpen}>
+            <Form methods={methods} onSubmit={onSubmit}>
+              <Stack spacing={2}>
+                <Grid
+                  container
+                  spacing={2}
+                  sx={{
+                    p: { xs: 1, md: 2 },
+                    borderRadius: 2,
+                    bgcolor: 'background.neutral',
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                  }}
                 >
-                  {cities.map((c) => (
-                    <MenuItem key={c.id} value={c.id}>
-                      {c.name}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Field.Text name="title" label="عنوان شعبه" />
+                  </Grid>
 
-              <Grid item xs={12} md={3}>
-                <Field.Select
-                  name="village"
-                  label="روستا"
-                  disabled={!selectedCity}
-                  placeholder="انتخاب روستا/ده"
-                >
-                  {villages.map((v) => (
-                    <MenuItem key={v.id} value={v.id}>
-                      {v.name}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Grid>
-            </Grid>
+                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                    <Field.Select name="province" label="استان" placeholder="انتخاب استان">
+                      {provinces.map((p) => (
+                        <MenuItem key={p.id} value={p.id}>
+                          {p.name}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Box>
 
-            <LocalizationProvider dateAdapter={AdapterDayjs}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={3}>
-                  <DatePicker
-                    label="از تاریخ"
-                    value={watch('from_date')}
-                    onChange={(v) => setValue('from_date', v)}
-                    format="YYYY/MM/DD"
-                    slotProps={{ textField: { fullWidth: true } }}
-                  />
+                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                    <Field.Select
+                      name="city"
+                      label="شهر"
+                      disabled={!selectedProvince}
+                      placeholder="انتخاب شهر"
+                    >
+                      {cities.map((c) => (
+                        <MenuItem key={c.id} value={c.id}>
+                          {c.name}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Box>
+
+                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                    <Field.Select
+                      name="village"
+                      label="روستا"
+                      disabled={!selectedCity}
+                      placeholder="انتخاب روستا/ده"
+                    >
+                      {villages.map((v) => (
+                        <MenuItem key={v.id} value={v.id}>
+                          {v.name}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Box>
                 </Grid>
 
-                <Grid item xs={12} md={3}>
-                  <DatePicker
-                    label="تا تاریخ"
-                    value={watch('to_date')}
-                    onChange={(v) => setValue('to_date', v)}
-                    format="YYYY/MM/DD"
-                    slotProps={{ textField: { fullWidth: true } }}
-                  />
-                </Grid>
-              </Grid>
-            </LocalizationProvider>
+                <LocalizationProvider dateAdapter={AdapterDayjs}>
+                  <Grid
+                    container
+                    spacing={2}
+                    sx={{
+                      p: { xs: 1, md: 2 },
+                      borderRadius: 2,
+                      border: '1px dashed',
+                      borderColor: 'divider',
+                    }}
+                  >
+                    <Grid item xs={12} md={3}>
+                      <DatePicker
+                        label="از تاریخ"
+                        value={watch('from_date')}
+                        onChange={(v) => setValue('from_date', v)}
+                        format="YYYY/MM/DD"
+                        slotProps={{ textField: { fullWidth: true } }}
+                      />
+                    </Grid>
 
-            {/* وضعیت */}
-            <Grid container>
-              <Grid item xs={12}>
+                    <Grid item xs={12} md={3}>
+                      <DatePicker
+                        label="تا تاریخ"
+                        value={watch('to_date')}
+                        onChange={(v) => setValue('to_date', v)}
+                        format="YYYY/MM/DD"
+                        slotProps={{ textField: { fullWidth: true } }}
+                      />
+                    </Grid>
+                  </Grid>
+                </LocalizationProvider>
+
                 <Box
                   sx={{
-                    p: 1.5,
-                    border: '1px solid',
+                    // p: 2,
+                    borderRadius: 2,
+                    border: '1px dashed',
                     borderColor: 'divider',
                     display: 'flex',
-                    justifyContent: 'flex-end',
+                    justifyContent: 'flex-start',
                   }}
                 >
                   <Box>
                     <Typography sx={{ mb: 1 }}>وضعیت:</Typography>
-
                     <ButtonGroup>
                       <Button
                         variant={isActiveValue === '' ? 'contained' : 'outlined'}
@@ -379,27 +427,37 @@ const BranchSearch = () => {
                     </ButtonGroup>
                   </Box>
                 </Box>
-              </Grid>
-            </Grid>
 
-            <Stack direction="row" justifyContent="flex-end" spacing={2}>
-              <Button
-                onClick={() => {
-                  reset();
-                  setCities([]);
-                  setVillages([]);
-                }}
-              >
-                پاک کردن
-              </Button>
+                <Box
+                  sx={{
+                    pt: 2,
+                    borderTop: '1px dashed',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: 1,
+                  }}
+                >
+                  <Button
+                    variant="outlined"
+                    onClick={() => {
+                      reset();
+                      setCities([]);
+                      setVillages([]);
+                    }}
+                  >
+                    پاک کردن
+                  </Button>
 
-              <LoadingButton type="submit" variant="contained">
-                جستجو
-              </LoadingButton>
-            </Stack>
-          </Stack>
-        </Form>
-      </Paper>
+                  <LoadingButton type="submit" variant="contained" color="success">
+                    جستجو
+                  </LoadingButton>
+                </Box>
+              </Stack>
+            </Form>
+          </Collapse>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent>

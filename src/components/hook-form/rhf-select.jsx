@@ -1,4 +1,4 @@
-import { Children, isValidElement, useMemo, useRef, useState } from 'react';
+import { Children, isValidElement, useEffect, useMemo, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
 
 import { merge } from 'es-toolkit';
@@ -32,10 +32,27 @@ function getMenuItemLabel(selectChildren, selected) {
 
 export function RHFSelect({ name, children, helperText, placeholder, slotProps = {}, sx, ...other }) {
   const { control } = useFormContext();
+  const effectivePlaceholder = placeholder || 'انتخاب کنید';
 
   const labelId = `${name}-select`;
   const rootRef = useRef(null);
   const [menuPaperMinPx, setMenuPaperMinPx] = useState(undefined);
+
+  useEffect(() => {
+    if (!rootRef.current) return undefined;
+
+    const updateWidth = () => {
+      const w = rootRef.current?.offsetWidth ?? 0;
+      setMenuPaperMinPx(w > 0 ? w : undefined);
+    };
+
+    updateWidth();
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(rootRef.current);
+
+    return () => observer.disconnect();
+  }, []);
 
   const baseSlotProps = useMemo(
     () => ({
@@ -61,7 +78,25 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
                 return selected;
               },
             }
-          : {}),
+          : {
+              displayEmpty: true,
+              renderValue: (selected) => {
+                if (selected === '' || selected == null) {
+                  return (
+                    <Box component="span" sx={{ color: 'text.disabled' }}>
+                      {effectivePlaceholder}
+                    </Box>
+                  );
+                }
+
+                const label = getMenuItemLabel(children, selected);
+                if (label != null) {
+                  return label;
+                }
+
+                return selected;
+              },
+            }),
         MenuProps: {
           slotProps: {
             paper: {
@@ -80,7 +115,7 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
       htmlInput: { id: labelId },
       inputLabel: { htmlFor: labelId },
     }),
-    [placeholder, children, labelId]
+    [placeholder, children, labelId, effectivePlaceholder]
   );
 
   const mergedSlotProps = useMemo(() => {
@@ -101,6 +136,10 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
               ...paperObject.style,
               ...(menuPaperMinPx != null ? { minWidth: menuPaperMinPx } : {}),
             },
+            sx: [
+              ...(Array.isArray(paperObject.sx) ? paperObject.sx : paperObject.sx ? [paperObject.sx] : []),
+              ...(menuPaperMinPx != null ? [{ minWidth: `${menuPaperMinPx}px` }] : []),
+            ],
           };
 
     return {
@@ -109,7 +148,7 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
         ...selectProps,
         onOpen: (event) => {
           const w = rootRef.current?.offsetWidth ?? 0;
-          flushSync(() => setMenuPaperMinPx(w > 0 ? w * 2 : undefined));
+          flushSync(() => setMenuPaperMinPx(w > 0 ? w : undefined));
           userOnOpen?.(event);
         },
         onClose: (event) => {
@@ -143,6 +182,7 @@ export function RHFSelect({ name, children, helperText, placeholder, slotProps =
           <TextField
             ref={handleRef}
             {...fieldRest}
+            value={other.multiple ? (Array.isArray(fieldRest.value) ? fieldRest.value : []) : (fieldRest.value ?? '')}
             select
             fullWidth
             error={!!error}

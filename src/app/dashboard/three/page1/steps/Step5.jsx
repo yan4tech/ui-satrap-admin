@@ -13,10 +13,13 @@ const SURVEYOR_OPTIONS = [
 export default function Page5() {
   return (
     <Grid container spacing={2}>
-      {/* تخصیص کارشناس نقشه‌برداری */}
-      <Grid item xs={12}>
-        <Box sx={{ width: { xs: '100%', md: '50%' } }}>
-          <Field.Select name="survey_assignment" label="تخصیص کارشناس نقشه‌برداری">
+      <Grid item xs={12} md={6}>
+        <Box>
+          <Field.Select
+            name="survey_assignment"
+            label="تخصیص کارشناس نقشه‌برداری"
+            sx={{ width: 320 }}
+          >
             {SURVEYOR_OPTIONS.map((o) => (
               <MenuItem key={o.value} value={o.value}>
                 {o.label}

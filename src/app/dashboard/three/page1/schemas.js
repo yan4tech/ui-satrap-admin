@@ -35,12 +35,40 @@ export const step3Schema = z.object({
 
 // ---------------- STEP 4 ----------------
 export const step4Schema = z.object({
-  // دسترسی به دیگران (اگر بعداً فیلد اضافه شد اینجا)
+  has_map_access_request: z.enum(['yes', 'no']),
+  access_people: z.array(z.string()).optional().default([]),
 });
 
 // ---------------- STEP 5 ----------------
 export const step5Schema = z.object({
-  // تخصیص کارشناس (فعلاً خالی برای جلوگیری از error)
+  survey_assignment: z.string().min(1, 'انتخاب کارشناس الزامی است'),
+});
+
+// ---------------- REVIEW ----------------
+export const reviewStatusSchema = z.enum(['pending', 'approved', 'rejected', 'needs_correction']);
+
+export const reviewStepSchema = z
+  .object({
+    status: reviewStatusSchema,
+    comment: z.string().optional().default(''),
+  })
+  .superRefine((value, ctx) => {
+    const mustHaveComment = value.status === 'rejected' || value.status === 'needs_correction';
+    if (mustHaveComment && !value.comment?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['comment'],
+        message: 'برای رد یا نیاز به اصلاح، توضیح الزامی است',
+      });
+    }
+  });
+
+export const reviewSchema = z.object({
+  step0: reviewStepSchema,
+  step1: reviewStepSchema,
+  step2: reviewStepSchema,
+  step3: reviewStepSchema,
+  step4: reviewStepSchema,
 });
 
 // ---------------- EXPORT ARRAY ----------------

@@ -50,11 +50,9 @@ export default function Page1() {
         <Typography variant="body2" sx={{ mb: 1 }}>
           تصویر سند نمایندگی
         </Typography>
-
-        <Field.Upload
+        <Field.Text
           name="representation_doc_image"
-          accept="image/*"
-          maxSize={5242880} // 5MB
+          label="آدرس/شناسه فایل سند نمایندگی"
         />
       </Grid>
     </Grid>

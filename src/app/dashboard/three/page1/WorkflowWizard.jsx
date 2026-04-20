@@ -111,6 +111,41 @@ function ReviewDecisionCard({ step, review, isReviewer, onStatusChange, onCommen
   );
 }
 
+function ApplicantReviewFeedback({ step, review, isReviewer }) {
+  if (isReviewer) return null;
+
+  const currentMeta = REVIEW_STATUS_META[review.status];
+  const hasComment = Boolean(review.comment.trim());
+
+  return (
+    <Box sx={{ mt: 2, p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 2 }}>
+      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ md: 'center' }}>
+        <Typography variant="body2" fontWeight={700}>
+          نتیجه بررسی شرکت برای {step.title}
+        </Typography>
+        <Chip
+          label={currentMeta.label}
+          color={currentMeta.color}
+          size="small"
+          variant={review.status === REVIEW_STATUS.APPROVED ? 'filled' : 'outlined'}
+        />
+      </Stack>
+
+      {hasComment ? (
+        <Typography variant="body2" sx={{ mt: 1.25 }}>
+          <strong>توضیح کارشناس:</strong> {review.comment}
+        </Typography>
+      ) : (
+        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+          {review.status === REVIEW_STATUS.PENDING
+            ? 'این مرحله هنوز توسط شرکت بررسی نشده است.'
+            : 'توضیحی برای این مرحله ثبت نشده است.'}
+        </Typography>
+      )}
+    </Box>
+  );
+}
+
 export default function WorkflowWizard() {
   const [activeRole, setActiveRole] = useState('applicant');
   const [workflowStatus, setWorkflowStatus] = useState('draft');
@@ -281,6 +316,12 @@ export default function WorkflowWizard() {
                           isReviewer={isReviewer}
                           onStatusChange={handleReviewStatusChange}
                           onCommentChange={handleReviewCommentChange}
+                        />
+
+                        <ApplicantReviewFeedback
+                          step={step}
+                          review={reviews[step.key]}
+                          isReviewer={isReviewer}
                         />
                       </Box>
                       {index < REVIEWABLE_STEPS.length - 1 ? <Divider /> : null}

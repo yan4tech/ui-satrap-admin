@@ -16,6 +16,7 @@ import {
   Stack,
   Chip,
   TextField,
+  Alert,
 } from '@mui/material';
 
 import Step0 from './steps/Step0';
@@ -115,33 +116,38 @@ function ApplicantReviewFeedback({ step, review, isReviewer }) {
   if (isReviewer) return null;
 
   const currentMeta = REVIEW_STATUS_META[review.status];
-  const hasComment = Boolean(review.comment.trim());
+  const statusToSeverity = {
+    [REVIEW_STATUS.PENDING]: 'warning',
+    [REVIEW_STATUS.APPROVED]: 'success',
+    [REVIEW_STATUS.REJECTED]: 'error',
+    [REVIEW_STATUS.NEEDS_CORRECTION]: 'info',
+  };
 
   return (
     <Box sx={{ mt: 2, p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 2 }}>
-      <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ md: 'center' }}>
-        <Typography variant="body2" fontWeight={700}>
-          نتیجه بررسی شرکت برای {step.title}
-        </Typography>
-        <Chip
-          label={currentMeta.label}
-          color={currentMeta.color}
-          size="small"
-          variant={review.status === REVIEW_STATUS.APPROVED ? 'filled' : 'outlined'}
-        />
-      </Stack>
+      <Alert severity={statusToSeverity[review.status]} sx={{ mb: 1.5 }}>
+        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+          <Typography variant="body2" fontWeight={700}>
+            نتیجه بررسی {step.title}
+          </Typography>
+          <Chip label={currentMeta.label} color={currentMeta.color} size="small" variant="outlined" />
+        </Stack>
+      </Alert>
 
-      {hasComment ? (
-        <Typography variant="body2" sx={{ mt: 1.25 }}>
-          <strong>توضیح کارشناس:</strong> {review.comment}
-        </Typography>
-      ) : (
-        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-          {review.status === REVIEW_STATUS.PENDING
+      <TextField
+        fullWidth
+        multiline
+        rows={2}
+        label="توضیح کارشناس"
+        value={review.comment}
+        InputProps={{ readOnly: true }}
+        placeholder="هنوز توضیحی توسط کارشناس ثبت نشده است."
+        helperText={
+          review.status === REVIEW_STATUS.PENDING
             ? 'این مرحله هنوز توسط شرکت بررسی نشده است.'
-            : 'توضیحی برای این مرحله ثبت نشده است.'}
-        </Typography>
-      )}
+            : 'در صورت ثبت توضیح توسط کارشناس، در این بخش نمایش داده می‌شود.'
+        }
+      />
     </Box>
   );
 }
@@ -297,50 +303,51 @@ export default function WorkflowWizard() {
 
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(onSubmit)}>
-              <fieldset
-                disabled={isReviewer}
-                style={{ border: 0, margin: 0, padding: 0, minWidth: 0, pointerEvents: 'auto' }}
-              >
-                <Box sx={{ minHeight: 250, display: 'grid', gap: 4 }}>
-                  {REVIEWABLE_STEPS.map((step, index) => (
-                    <React.Fragment key={step.key}>
-                      <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
-                        <Typography variant="subtitle1" fontWeight={700} mb={2}>
-                          {step.title}
-                        </Typography>
+              <Box sx={{ minHeight: 250, display: 'grid', gap: 4 }}>
+                {REVIEWABLE_STEPS.map((step, index) => (
+                  <React.Fragment key={step.key}>
+                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
+                      <Typography variant="subtitle1" fontWeight={700} mb={2}>
+                        {step.title}
+                      </Typography>
+
+                      <fieldset
+                        disabled={isReviewer}
+                        style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}
+                      >
                         <step.Component />
+                      </fieldset>
 
-                        <ReviewDecisionCard
-                          step={step}
-                          review={reviews[step.key]}
-                          isReviewer={isReviewer}
-                          onStatusChange={handleReviewStatusChange}
-                          onCommentChange={handleReviewCommentChange}
-                        />
+                      <ReviewDecisionCard
+                        step={step}
+                        review={reviews[step.key]}
+                        isReviewer={isReviewer}
+                        onStatusChange={handleReviewStatusChange}
+                        onCommentChange={handleReviewCommentChange}
+                      />
 
-                        <ApplicantReviewFeedback
-                          step={step}
-                          review={reviews[step.key]}
-                          isReviewer={isReviewer}
-                        />
-                      </Box>
-                      {index < REVIEWABLE_STEPS.length - 1 ? <Divider /> : null}
-                    </React.Fragment>
-                  ))}
+                      <ApplicantReviewFeedback
+                        step={step}
+                        review={reviews[step.key]}
+                        isReviewer={isReviewer}
+                      />
+                    </Box>
+                    {index < REVIEWABLE_STEPS.length - 1 ? <Divider /> : null}
+                  </React.Fragment>
+                ))}
 
-                  {isReviewer ? (
-                    <>
-                      <Divider />
-                      <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
-                        <Typography variant="subtitle1" fontWeight={700} mb={2}>
-                          تخصیص کارشناس نقشه برداری
-                        </Typography>
-                        <Step5 />
-                      </Box>
-                    </>
-                  ) : null}
-                </Box>
-              </fieldset>
+                {isReviewer ? (
+                  <>
+                    <Divider />
+                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
+                      <Typography variant="subtitle1" fontWeight={700} mb={2}>
+                        تخصیص کارشناس نقشه برداری
+                      </Typography>
+                      <Step5 />
+                    </Box>
+                  </>
+                ) : null}
+              </Box>
 
               {isReviewer ? (
                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>

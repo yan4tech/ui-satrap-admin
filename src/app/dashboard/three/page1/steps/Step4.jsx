@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, MenuItem, Typography } from '@mui/material';
+import { Grid, MenuItem, Typography, Box } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 // ---------------- OPTIONS ----------------
@@ -29,7 +29,7 @@ export default function Page4() {
       </Grid>
 
       {/* لیست افراد (multi select) */}
-      <Grid item xs={12} md={6}>
+      {/* <Grid item xs={12} md={6}>
         <Typography variant="body2" sx={{ mb: 1 }}>
           لیست افراد
         </Typography>
@@ -42,7 +42,21 @@ export default function Page4() {
           disableCloseOnSelect
           filterSelectedOptions
         />
-      </Grid>
+      </Grid> */}
+      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+        <Typography variant="body2" sx={{ mb: 1 }}>
+          لیست افراد
+        </Typography>
+        <Field.Autocomplete
+          name="access_people"
+          label="انتخاب افراد"
+          placeholder="یک یا چند نفر را انتخاب کنید"
+          options={PEOPLE_OPTIONS}
+          multiple
+          disableCloseOnSelect
+          filterSelectedOptions
+        />
+      </Box>
     </Grid>
   );
 }

@@ -164,7 +164,7 @@ export default function ServicesListPage() {
     defaultValues: defaultFilters,
   });
 
-  const { handleSubmit, getValues } = methods;
+  const { handleSubmit, getValues, reset } = methods;
 
   const filteredRows = useMemo(() => {
     return MOCK_ROWS.filter((row) => {
@@ -238,6 +238,12 @@ export default function ServicesListPage() {
     setSubmittedFilters(getValues());
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
   });
+
+  const handleResetFilters = () => {
+    reset(defaultFilters);
+    setSubmittedFilters(defaultFilters);
+    setPaginationModel((prev) => ({ ...prev, page: 0 }));
+  };
 
   const handleViewDetails = (row) => {
     // فعلا جزئیات به فرم خدمت شماره یک هدایت می‌شود.
@@ -359,8 +365,11 @@ export default function ServicesListPage() {
                 </Field.Select>
               </Box>
 
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Grid item xs={12} md={4}>
+            </Grid>
+
+            <LocalizationProvider dateAdapter={AdapterDayjs}>
+              <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                <Grid item xs={12} md={3}>
                   <Controller
                     name="fromDate"
                     control={methods.control}
@@ -381,7 +390,7 @@ export default function ServicesListPage() {
                     )}
                   />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid item xs={12} md={3}>
                   <Controller
                     name="toDate"
                     control={methods.control}
@@ -402,10 +411,13 @@ export default function ServicesListPage() {
                     )}
                   />
                 </Grid>
-              </LocalizationProvider>
-            </Grid>
+              </Grid>
+            </LocalizationProvider>
 
-            <Box sx={{ mt: 3 }}>
+            <Box sx={{ mt: 3, display: 'flex', gap: 1, justifyContent: 'flex-end' }}>
+              <Button type="button" variant="outlined" onClick={handleResetFilters}>
+                پاک کردن
+              </Button>
               <Button type="submit" variant="contained" color="success">
                 جستجو
               </Button>

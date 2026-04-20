@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, MenuItem } from '@mui/material';
+import { Grid, MenuItem, Box } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 // ---------------- OPTIONS ----------------
@@ -23,7 +23,7 @@ export default function Page3() {
   return (
     <Grid container spacing={2}>
       {/* نوع ملک */}
-      <Grid item xs={12} md={6}>
+      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
         <Field.Select name="property_type" label="نوع ملک">
           {PROPERTY_TYPE_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -31,10 +31,10 @@ export default function Page3() {
             </MenuItem>
           ))}
         </Field.Select>
-      </Grid>
+      </Box>
 
       {/* آیا ملک اعتباری دارد */}
-      <Grid item xs={12} md={6}>
+      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
         <Field.Select name="has_credit" label="آیا ملک اعتباری دارد">
           {CREDIT_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -42,10 +42,10 @@ export default function Page3() {
             </MenuItem>
           ))}
         </Field.Select>
-      </Grid>
+      </Box>
 
       {/* کاربری ملک */}
-      <Grid item xs={12} md={6}>
+      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
         <Field.Select name="property_usage" label="کاربری ملک">
           {USAGE_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -53,12 +53,12 @@ export default function Page3() {
             </MenuItem>
           ))}
         </Field.Select>
-      </Grid>
+      </Box>
 
       {/* مساحت تقریبی ملک */}
-      <Grid item xs={12} md={6}>
+      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
         <Field.Text name="approx_area" label="مساحت تقریبی ملک (متر مربع)" type="number" />
-      </Grid>
+      </Box>
 
       {/* تعداد منضمات (پارکینگ / انباری) */}
       <Grid item xs={12} md={6}>

@@ -24,7 +24,7 @@ export default function Page2() {
     <>
       <Grid container spacing={2}>
         {/* ---------------- استان ---------------- */}
-        <Grid item xs={12} md={6}>
+        <Box sx={{ width: { xs: '100%', md: '50%' } }}>
           <Field.Select name="province" label="استان">
             {PROVINCES.map((o) => (
               <MenuItem key={o.value} value={o.value}>
@@ -32,10 +32,10 @@ export default function Page2() {
               </MenuItem>
             ))}
           </Field.Select>
-        </Grid>
+        </Box>
 
         {/* ---------------- شهرستان ---------------- */}
-        <Grid item xs={12} md={6}>
+        <Box sx={{ width: { xs: '100%', md: '50%' } }}>
           <Field.Select name="county" label="شهرستان">
             {COUNTIES.map((o) => (
               <MenuItem key={o.value} value={o.value}>
@@ -43,10 +43,10 @@ export default function Page2() {
               </MenuItem>
             ))}
           </Field.Select>
-        </Grid>
+        </Box>
 
         {/* ---------------- شهر / روستا ---------------- */}
-        <Grid item xs={12} md={6}>
+        <Box sx={{ width: { xs: '100%', md: '50%' } }}>
           <Field.Select name="city" label="شهر / روستا">
             {CITIES.map((o) => (
               <MenuItem key={o.value} value={o.value}>
@@ -54,10 +54,10 @@ export default function Page2() {
               </MenuItem>
             ))}
           </Field.Select>
-        </Grid>
+        </Box>
 
         {/* ---------------- کد پستی ---------------- */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12} md={12}>
           <Field.Text name="postal_code" label="کد پستی" />
         </Grid>
 

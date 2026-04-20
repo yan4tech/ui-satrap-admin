@@ -317,68 +317,73 @@ export default function ServicesListPage() {
                   borderColor: 'divider',
                 }}
               >
-              <Grid item xs={12} md={6}>
-                <Field.Text name="requestNumber" label="شماره درخواست" />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <Field.Text name="nationalId" label="شماره ملی" />
-              </Grid>
-              <Grid item xs={12} md={4}>
-                <Field.Select name="requester" label="درخواست‌دهنده">
-                  {BRANCHES.map((item) => (
-                    <MenuItem key={item} value={item}>
-                      {item}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Grid>
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
+                  <Field.Text name="requestNumber" label="شماره درخواست" />
+                </Box>
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
+                  <Field.Text name="nationalId" label="شماره ملی" />
+                </Box>
 
-              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
-                <Field.Select name="requestType" label="نوع خدمت">
-                  {REQUEST_TYPES.map((item) => (
-                    <MenuItem key={item} value={item}>
-                      {item}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
-              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
-                <Field.Select name="requestStatus" label="وضعیت">
-                  {REQUEST_STATUS.map((item) => (
-                    <MenuItem key={item} value={item}>
-                      {item}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
-              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
-                <Field.Select name="province" label="استان">
-                  {PROVINCES.map((item) => (
-                    <MenuItem key={item} value={item}>
-                      {item}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
-              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
-                <Field.Select name="county" label="شهرستان">
-                  {CITIES.map((item) => (
-                    <MenuItem key={item} value={item}>
-                      {item}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
-              <Box sx={{ width: { xs: '100%', md: '25%' } }}>
-                <Field.Select name="cityOrVillage" label="شهر/روستا">
-                  {TOWNS.map((item) => (
-                    <MenuItem key={item} value={item}>
-                      {item}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
+                  <Field.Select name="requester" label="درخواست‌دهنده">
+                    {BRANCHES.map((item) => (
+                      <MenuItem key={item} value={item}>
+                        {item}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Box>
 
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
+                  <Field.Select name="requestType" label="نوع خدمت">
+                    {REQUEST_TYPES.map((item) => (
+                      <MenuItem key={item} value={item}>
+                        {item}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Box>
+
+                <Box sx={{ width: { xs: '50%', md: '20%' } }}></Box>
+
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
+                  <Field.Select name="province" label="استان">
+                    {PROVINCES.map((item) => (
+                      <MenuItem key={item} value={item}>
+                        {item}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Box>
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
+                  <Field.Select name="county" label="شهرستان">
+                    {CITIES.map((item) => (
+                      <MenuItem key={item} value={item}>
+                        {item}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Box>
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
+                  <Field.Select name="cityOrVillage" label="شهر/روستا">
+                    {TOWNS.map((item) => (
+                      <MenuItem key={item} value={item}>
+                        {item}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Box>
+                <Box sx={{ width: { xs: '100%', md: '35%' } }}></Box>
+
+                <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+                  <Field.Select name="requestStatus" label="وضعیت">
+                    {REQUEST_STATUS.map((item) => (
+                      <MenuItem key={item} value={item}>
+                        {item}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Box>
               </Grid>
 
               <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -393,48 +398,48 @@ export default function ServicesListPage() {
                     borderColor: 'divider',
                   }}
                 >
-                <Grid item xs={12} md={3}>
-                  <Controller
-                    name="fromDate"
-                    control={methods.control}
-                    render={({ field, fieldState: { error } }) => (
-                      <DatePicker
-                        label="از تاریخ"
-                        value={field.value}
-                        onChange={field.onChange}
-                        format="YYYY/MM/DD"
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!error,
-                            helperText: error?.message,
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                </Grid>
-                <Grid item xs={12} md={3}>
-                  <Controller
-                    name="toDate"
-                    control={methods.control}
-                    render={({ field, fieldState: { error } }) => (
-                      <DatePicker
-                        label="تا تاریخ"
-                        value={field.value}
-                        onChange={field.onChange}
-                        format="YYYY/MM/DD"
-                        slotProps={{
-                          textField: {
-                            fullWidth: true,
-                            error: !!error,
-                            helperText: error?.message,
-                          },
-                        }}
-                      />
-                    )}
-                  />
-                </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Controller
+                      name="fromDate"
+                      control={methods.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <DatePicker
+                          label="از تاریخ"
+                          value={field.value}
+                          onChange={field.onChange}
+                          format="YYYY/MM/DD"
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              error: !!error,
+                              helperText: error?.message,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
+                  <Grid item xs={12} md={3}>
+                    <Controller
+                      name="toDate"
+                      control={methods.control}
+                      render={({ field, fieldState: { error } }) => (
+                        <DatePicker
+                          label="تا تاریخ"
+                          value={field.value}
+                          onChange={field.onChange}
+                          format="YYYY/MM/DD"
+                          slotProps={{
+                            textField: {
+                              fullWidth: true,
+                              error: !!error,
+                              helperText: error?.message,
+                            },
+                          }}
+                        />
+                      )}
+                    />
+                  </Grid>
                 </Grid>
               </LocalizationProvider>
 

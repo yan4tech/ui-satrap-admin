@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, MenuItem } from '@mui/material';
+import { Grid, MenuItem, Typography } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 // ---------------- OPTIONS ----------------
@@ -19,10 +19,13 @@ export default function Page4() {
   return (
     <Grid container spacing={2}>
       {/* آیا درخواست دسترسی دارد */}
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={12}>
+        <Typography variant="body2" sx={{ mb: 1 }}>
+          آیا متقاضی درخواست اعطای دسترسی اشخاص دیگر به نقشه را دارد؟
+        </Typography>
         <Field.Select
           name="has_map_access_request"
-          label="آیا متقاضی درخواست اعطای دسترسی اشخاص دیگر به نقشه را دارد؟"
+          label="وضعیت درخواست دسترسی"
         >
           {ACCESS_REQUEST_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -33,7 +36,7 @@ export default function Page4() {
       </Grid>
 
       {/* لیست افراد (multi select) */}
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={12}>
         <Field.Select
           name="access_people"
           label="لیست افراد"

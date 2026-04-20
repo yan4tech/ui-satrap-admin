@@ -59,7 +59,6 @@ export const navData = [
         info: <Label>v{CONFIG.appVersion}</Label>,
       },
       { title: 'Two', path: paths.dashboard.two, icon: ICONS.ecommerce },
-      { title: 'Three', path: paths.dashboard.three, icon: ICONS.analytics },
     ],
   },
   /**
@@ -112,9 +111,16 @@ export const navData = [
         ],
       },
       {
-        title: 'لیست خدمات',
-        path: paths.dashboard.processDefinition.search,
+        title: 'خدمات',
+        path: paths.dashboard.services.one,
         icon: ICONS.menuItem,
+        children: [
+          {
+            title: 'خدمت شماره یک',
+            path: paths.dashboard.services.one,
+            children: [{ title: 'جدید', path: paths.dashboard.services.one }],
+          },
+        ],
       },
     ],
   },

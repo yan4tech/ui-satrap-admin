@@ -20,8 +20,6 @@ import Page2 from './page2/WorkflowWizard';
 import PaymentPage from './payment/WorkflowWizard';
 import SurveyPaymentPage from './payment-survey/WorkflowWizard';
 
-// ---------------- STEPS ----------------
-
 const steps = [
   'پرداخت',
   'اطلاعات اولیه',
@@ -31,12 +29,7 @@ const steps = [
   'تایید نقشه برداری توسط سازمان ثبت',
 ];
 
-// ---------------- SAMPLE VALIDATION ----------------
-// (بعداً می‌تونی برای هر step schema واقعی بزنی)
-
 const stepSchemas = steps.map(() => z.object({}));
-
-// ---------------- COMPONENT ----------------
 
 export default function WorkflowWizard() {
   const [activeStep, setActiveStep] = useState(0);
@@ -62,7 +55,6 @@ export default function WorkflowWizard() {
 
   const { handleSubmit, trigger } = methods;
 
-  // -------- NEXT --------
   const handleNext = async () => {
     const valid = await trigger();
     if (!valid) return;
@@ -74,25 +66,21 @@ export default function WorkflowWizard() {
     setActiveStep((prev) => prev + 1);
   };
 
-  // -------- BACK --------
   const handleBack = () => {
     setActiveStep((prev) => prev - 1);
   };
 
-  // -------- SUBMIT --------
   const onSubmit = (data) => {
     console.log('FINAL WORKFLOW DATA:', data);
     alert('فرآیند کامل شد 🎉');
   };
 
-  // -------- STEP CONTENT (فعلاً placeholder) --------
   const renderStep = () => {
     switch (activeStep) {
       case 0:
         return <PaymentPage />;
 
       case 1:
-        // return <Field.Text name="info.description" label="اطلاعات اولیه" />;
         return <Page1 />;
 
       case 2:
@@ -129,7 +117,6 @@ export default function WorkflowWizard() {
           خدمت شماره یک
         </Typography>
 
-        {/* STEP HEADER */}
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
           {steps.map((label) => (
             <Step key={label}>
@@ -138,12 +125,10 @@ export default function WorkflowWizard() {
           ))}
         </Stepper>
 
-        {/* FORM */}
         <FormProvider {...methods}>
           <form onSubmit={handleSubmit(onSubmit)}>
             <Box sx={{ minHeight: 120 }}>{renderStep()}</Box>
 
-            {/* ACTIONS */}
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
               <Button variant="outlined" disabled={activeStep === 0} onClick={handleBack}>
                 قبلی

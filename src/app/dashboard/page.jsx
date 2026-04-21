@@ -99,6 +99,9 @@ const serviceBreakdown = [
   },
 ];
 
+const toFaDigits = (value) =>
+  String(value).replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
+
 export default function Page() {
   return (
     <Box
@@ -139,12 +142,12 @@ export default function Page() {
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       {item.title}
                     </Typography>
-                    <Typography variant="h4">{item.value}</Typography>
+                    <Typography variant="h4">{toFaDigits(item.value)}</Typography>
                     <Typography
                       variant="caption"
                       sx={{ color: item.trend === 'up' ? 'success.main' : 'error.main' }}
                     >
-                      {item.change}
+                      {toFaDigits(item.change)}
                     </Typography>
                   </Box>
                 </Stack>
@@ -163,25 +166,29 @@ export default function Page() {
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       در انتظار بررسی
                     </Typography>
-                    <Chip label={service.waitingReview} color="warning" size="small" />
+                    <Chip label={toFaDigits(service.waitingReview)} color="warning" size="small" />
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       در انتظار پاسخ سازمان ثبت
                     </Typography>
-                    <Chip label={service.waitingRegistryReply} color="info" size="small" />
+                    <Chip
+                      label={toFaDigits(service.waitingRegistryReply)}
+                      color="info"
+                      size="small"
+                    />
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       پایان یافته
                     </Typography>
-                    <Chip label={service.completed} color="success" size="small" />
+                    <Chip label={toFaDigits(service.completed)} color="success" size="small" />
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       ریجکت شده
                     </Typography>
-                    <Chip label={service.rejected} color="error" size="small" />
+                    <Chip label={toFaDigits(service.rejected)} color="error" size="small" />
                   </Stack>
                 </Stack>
               </Card>
@@ -204,7 +211,7 @@ export default function Page() {
                     >
                       <Typography variant="body2">{task.label}</Typography>
                       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                        {task.progress}%
+                        {toFaDigits(task.progress)}%
                       </Typography>
                     </Stack>
                     <LinearProgress

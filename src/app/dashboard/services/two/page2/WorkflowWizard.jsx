@@ -7,6 +7,10 @@ import {
   Box,
   Button,
   Chip,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogTitle,
   IconButton,
   MenuItem,
   NoSsr,
@@ -168,6 +172,7 @@ function InfoHint({ text }) {
 
 export default function WorkflowWizardPage2() {
   const [activeRole, setActiveRole] = useState('applicant');
+  const [isRegistryInfoModalOpen, setIsRegistryInfoModalOpen] = useState(false);
   const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
   const isReviewer = activeRole === 'company_reviewer';
   const isCommentRequired =
@@ -204,6 +209,16 @@ export default function WorkflowWizardPage2() {
       </Stack>
 
       <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+        <Box sx={{ mb: 3 }}>
+          <Button
+            variant="outlined"
+            color="secondary"
+            onClick={() => setIsRegistryInfoModalOpen(true)}
+          >
+            مشاهده اطلاعات ارسال شده از طرف سازمان ثبت
+          </Button>
+        </Box>
+
         {/* <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
           <Typography variant="body2">
             اقلام این بخش بر اساس فرم مصوب استخراج شده‌اند. لطفا اطلاعات را مطابق توضیحات هر فیلد
@@ -295,7 +310,6 @@ export default function WorkflowWizardPage2() {
                   </TextField>
                 )}
               />
-              <InfoHint text="اجباری - یکی از گزینه‌های: طرح دعوا در مراجع قضایی / ثبت اولیه / طرح تقاضا در هیئت سامان دهی / طرح تقاضا در هیئت تعیین تکلیف" />
             </Box>
           </Box>
 
@@ -314,6 +328,46 @@ export default function WorkflowWizardPage2() {
           </Box>
         </Box>
       </fieldset>
+
+      <Dialog
+        open={isRegistryInfoModalOpen}
+        onClose={() => setIsRegistryInfoModalOpen(false)}
+        fullWidth
+        maxWidth="sm"
+      >
+        <DialogTitle>اطلاعات ارسال شده از طرف سازمان ثبت</DialogTitle>
+        <DialogContent dividers>
+          <Stack spacing={2} sx={{ pt: 0.5 }}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700}>
+                تاریخ درج ادعا
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                -
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700}>
+                کد رهگیری ادعا
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                -
+              </Typography>
+            </Box>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700}>
+                مشخصات اصلی ادعا
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                -
+              </Typography>
+            </Box>
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setIsRegistryInfoModalOpen(false)}>بستن</Button>
+        </DialogActions>
+      </Dialog>
 
       {isReviewer ? (
         <Box

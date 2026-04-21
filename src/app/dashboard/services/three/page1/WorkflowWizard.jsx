@@ -215,6 +215,7 @@ export default function WorkflowWizard() {
   }, [total, discount, setValue]);
 
   const isReviewer = activeRole === 'company_reviewer';
+  const isCompanyLocked = isReviewer;
 
   const canFinalizeReview = useMemo(() => {
     if (!isReviewer) return false;
@@ -310,58 +311,77 @@ export default function WorkflowWizard() {
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <Box sx={{ minHeight: 250, display: 'grid', gap: 4 }}>
-                {FORM_SECTIONS.map((step, index) => (
-                  <React.Fragment key={step.key}>
-                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
-                      <Typography variant="subtitle1" fontWeight={700} mb={2}>
-                        {step.title}
-                      </Typography>
+                <Box sx={{ position: 'relative', display: 'grid', gap: 4 }}>
+                  {FORM_SECTIONS.map((step, index) => (
+                    <React.Fragment key={step.key}>
+                      <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
+                        <Typography variant="subtitle1" fontWeight={700} mb={2}>
+                          {step.title}
+                        </Typography>
 
-                      <fieldset
-                        disabled={isReviewer}
-                        style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}
-                      >
-                        <step.Component />
-                      </fieldset>
-                    </Box>
-                    {index < FORM_SECTIONS.length - 1 ? <Divider /> : null}
-                  </React.Fragment>
-                ))}
+                        <fieldset
+                          disabled={isReviewer}
+                          style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}
+                        >
+                          <step.Component />
+                        </fieldset>
+                      </Box>
+                      {index < FORM_SECTIONS.length - 1 ? <Divider /> : null}
+                    </React.Fragment>
+                  ))}
 
-                {isReviewer ? (
-                  <>
-                    <Divider />
-                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
-                      <Typography variant="subtitle1" fontWeight={700} mb={2}>
-                        تخصیص کارشناس نقشه برداری
-                      </Typography>
-                      <Step5 />
-                    </Box>
-                  </>
-                ) : null}
+                  {isReviewer ? (
+                    <>
+                      <Divider />
+                      <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
+                        <Typography variant="subtitle1" fontWeight={700} mb={2}>
+                          تخصیص کارشناس نقشه برداری
+                        </Typography>
+                        <fieldset
+                          disabled={isCompanyLocked}
+                          style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}
+                        >
+                          <Step5 />
+                        </fieldset>
+                      </Box>
+                    </>
+                  ) : null}
 
-                <Box
-                  sx={{
-                    border: '1px solid',
-                    borderColor: 'primary.main',
-                    borderRadius: 2,
-                    p: 2,
-                    bgcolor: 'background.paper',
-                  }}
-                >
-                  <Typography variant="subtitle1" fontWeight={700}>
-                    نتیجه بررسی کل فرم
-                  </Typography>
-
-                  <ReviewDecisionCard
-                    review={review}
-                    isReviewer={isReviewer}
-                    onStatusChange={handleReviewStatusChange}
-                    onCommentChange={handleReviewCommentChange}
-                  />
-
-                  <ApplicantReviewFeedback review={review} isReviewer={isReviewer} />
+                  {isReviewer ? (
+                    <Box
+                      sx={{
+                        position: 'absolute',
+                        inset: 0,
+                        zIndex: 2,
+                        bgcolor: 'transparent',
+                        cursor: 'not-allowed',
+                      }}
+                    />
+                  ) : null}
                 </Box>
+
+                  <Box
+                    sx={{
+                      border: '1px solid',
+                      borderColor: 'primary.main',
+                      borderRadius: 2,
+                      p: 2,
+                      bgcolor: 'background.paper',
+                    }}
+                  >
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      نتیجه بررسی کل فرم
+                    </Typography>
+
+                    <ReviewDecisionCard
+                      review={review}
+                      isReviewer={isReviewer}
+                      onStatusChange={handleReviewStatusChange}
+                      onCommentChange={handleReviewCommentChange}
+                    />
+
+                    <ApplicantReviewFeedback review={review} isReviewer={isReviewer} />
+                  </Box>
               </Box>
 
               {isReviewer ? (

@@ -19,6 +19,16 @@ const NOTE5_AWARENESS_OPTIONS = [
   { value: 'not_aware', label: 'مطلع نیستم' },
 ];
 
+const REPRESENTATION_VERIFICATION_OPTIONS = [
+  { value: 'document_upload', label: 'بارگذاری سند نمایندگی' },
+  { value: 'legal_persons_registry_check', label: 'استعلام پایگاه اطلاعات اشخاص حقوقی' },
+];
+
+const EXPERT_REPRESENTATION_OPINION_OPTIONS = [
+  { value: 'verified', label: 'احراز شده' },
+  { value: 'not_verified', label: 'احراز نشده' },
+];
+
 function InfoHint({ text }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
 
@@ -63,7 +73,13 @@ function InfoHint({ text }) {
 }
 
 export default function Page0() {
-  useFormContext();
+  const { watch } = useFormContext();
+  const applicantRole = watch('applicant_role');
+  const representationVerificationMethod = watch('representation_verification_method');
+  const shouldShowArticle11Fields =
+    applicantRole === 'legal_representative_individual' ||
+    (applicantRole === 'legal_representative_company' &&
+      representationVerificationMethod === 'document_upload');
 
   return (
     <Box
@@ -112,6 +128,128 @@ export default function Page0() {
         </Field.Select>
         <InfoHint text="اطلاعات پایه (اصیل / نماینده قانونی شخص حقیقی / نماینده شخص حقوقی)." />
       </Box>
+
+      {applicantRole === 'legal_representative_company' && (
+        <>
+          {/* شناسه ملی شخص حقوقی */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text name="company_national_id" label="شناسه ملی شخص حقوقی" />
+            <InfoHint text="شناسه ملی شخص حقوقی الزامی است." />
+          </Box>
+
+          {/* نحوه احراز نمایندگی */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Select name="representation_verification_method" label="نحوه احراز نمایندگی">
+              {REPRESENTATION_VERIFICATION_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Field.Select>
+            <InfoHint text="در صورتی که گزینه «استعلام پایگاه اطلاعات اشخاص حقوقی» انتخاب شود، پایگاه باید متقاضی را به عنوان نماینده شخص حقوقی ثبت کرده باشد." />
+          </Box>
+
+          {representationVerificationMethod === 'document_upload' && (
+            <>
+              {/* تصویر سند نمایندگی */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Field.Text name="representation_document_image" label="تصویر سند نمایندگی" />
+                <InfoHint text="ارسال تصویر سند نمایندگی الزامی است." />
+              </Box>
+
+              {/* تاریخ تنظیم سند نمایندگی */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Field.Text
+                  name="representation_document_date"
+                  label="تاریخ تنظیم سند نمایندگی"
+                  type="date"
+                  slotProps={{ inputLabel: { shrink: true } }}
+                />
+                <InfoHint text="تاریخ تنظیم سند نمایندگی الزامی است." />
+              </Box>
+
+              {/* شناسه سند رسمی نمایندگی */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Field.Text name="official_representation_document_id" label="شناسه سند رسمی نمایندگی" />
+                <InfoHint text="این فیلد اختیاری است." />
+              </Box>
+
+              {/* رمز تصدیق */}
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Field.Text name="verification_code" label="رمز تصدیق" />
+                <InfoHint text="این فیلد اختیاری است." />
+              </Box>
+            </>
+          )}
+        </>
+      )}
+
+      {applicantRole === 'legal_representative_individual' && (
+        <>
+          {/* کد ملی اصیل */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text name="principal_national_id" label="کد ملی اصیل" />
+            <InfoHint text="کد ملی اصیل الزامی است و اصیل باید در قید حیات باشد." />
+          </Box>
+
+          {/* تصویر سند رسمی نمایندگی */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text name="official_representation_document_image" label="تصویر سند رسمی نمایندگی" />
+            <InfoHint text="ارسال تصویر سند رسمی نمایندگی الزامی است." />
+          </Box>
+
+          {/* تاریخ تنظیم سند نمایندگی */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text
+              name="official_representation_document_date"
+              label="تاریخ تنظیم سند نمایندگی"
+              type="date"
+              slotProps={{ inputLabel: { shrink: true } }}
+            />
+            <InfoHint text="تاریخ تنظیم سند نمایندگی الزامی است." />
+          </Box>
+
+          {/* شناسه سند رسمی نمایندگی */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text name="individual_official_document_id" label="شناسه سند رسمی نمایندگی" />
+            <InfoHint text="این فیلد اختیاری است." />
+          </Box>
+
+          {/* رمز تصدیق */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text name="individual_verification_code" label="رمز تصدیق" />
+            <InfoHint text="این فیلد اختیاری است." />
+          </Box>
+        </>
+      )}
+
+      {shouldShowArticle11Fields && (
+        <>
+          {/* کد ملی کارشناس امور ثبتی و حقوقی */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text name="expert_national_id" label="کد ملی کارشناس امور ثبتی و حقوقی" />
+            <InfoHint text="کارشناس باید از افراد مجاز برای کارشناسی موضوع ماده ۴ دستورالعمل باشد." />
+          </Box>
+
+          {/* نظر کارشناسی مبنی بر احراز نمایندگی */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Select name="expert_representation_opinion" label="نظر کارشناسی مبنی بر احراز نمایندگی">
+              {EXPERT_REPRESENTATION_OPINION_OPTIONS.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </Field.Select>
+            <InfoHint text="در صورت عدم احراز نمایندگی توسط کارشناس، ادامه فرایند انجام نخواهد شد." />
+          </Box>
+
+          {/* توضیحات کارشناس */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text name="expert_description" label="توضیحات کارشناس" />
+            <InfoHint text="این فیلد اختیاری است." />
+          </Box>
+        </>
+      )}
 
       {/* اعلام اطلاع متقاضی از مفاد تبصره ۵ ماده ۱۰ قانون */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>

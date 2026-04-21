@@ -2,7 +2,20 @@
 
 import React, { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
+import {
+  Alert,
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  MenuItem,
+  NoSsr,
+  Popover,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import { Field } from 'src/components/hook-form';
 
 const REVIEW_STATUS = {
   PENDING: 'pending',
@@ -17,6 +30,13 @@ const REVIEW_STATUS_META = {
   [REVIEW_STATUS.REJECTED]: { label: 'رد شد', color: 'error', severity: 'error' },
   [REVIEW_STATUS.NEEDS_CORRECTION]: { label: 'نیاز به اصلاح', color: 'info', severity: 'info' },
 };
+
+const ACTION_TYPE_OPTIONS = [
+  'طرح دعوا در مراجع قضایی',
+  'ثبت اولیه',
+  'طرح تقاضا در هیئت سامان دهی',
+  'طرح تقاضا در هیئت تعیین تکلیف',
+];
 
 function UploadBox({ name, label, helperText, accept }) {
   const { control } = useFormContext();
@@ -106,6 +126,46 @@ function UploadBox({ name, label, helperText, accept }) {
   );
 }
 
+function InfoHint({ text }) {
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  return (
+    <>
+      <IconButton size="small" color="info" onClick={(event) => setAnchorEl(event.currentTarget)}>
+        <Box
+          sx={{
+            width: 18,
+            height: 18,
+            borderRadius: '50%',
+            border: '1px solid',
+            borderColor: 'info.main',
+            color: 'info.main',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 12,
+            fontWeight: 700,
+            lineHeight: 1,
+          }}
+        >
+          i
+        </Box>
+      </IconButton>
+      <Popover
+        open={Boolean(anchorEl)}
+        anchorEl={anchorEl}
+        onClose={() => setAnchorEl(null)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Typography variant="body2" sx={{ p: 1.5, maxWidth: 320, lineHeight: 1.7 }}>
+          {text}
+        </Typography>
+      </Popover>
+    </>
+  );
+}
+
 export default function WorkflowWizardPage2() {
   const [activeRole, setActiveRole] = useState('applicant');
   const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
@@ -125,7 +185,7 @@ export default function WorkflowWizardPage2() {
       }}
     >
       <Typography variant="subtitle1" fontWeight={700}>
-        نقشه برداری
+        درج گواهی اقدام
       </Typography>
 
       <Stack direction="row" spacing={1}>
@@ -144,101 +204,129 @@ export default function WorkflowWizardPage2() {
       </Stack>
 
       <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
-        <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
+        {/* <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
           <Typography variant="body2">
-            متقاضی/کارشناس می‌تواند با بارگذاری تصاویر ملک مورد تقاضا مطابقت بنا با ملک را تایید
-            کند.
+            اقلام این بخش بر اساس فرم مصوب استخراج شده‌اند. لطفا اطلاعات را مطابق توضیحات هر فیلد
+            تکمیل کنید.
           </Typography>
-        </Alert>
+        </Alert> */}
 
-        <Typography variant="body2" textAlign="center" sx={{ mt: 5 }}>
-          چهار عکس از زوایای مختلف به همراه اطلاعات متقاضی ملک
-        </Typography>
+        <Box sx={{ mt: 3, display: 'grid', gap: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.confirm_claim_info"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  label="آیا اطلاعات ادعای درج‌شده مورد تایید متقاضی است؟"
+                  error={!!error}
+                  helperText={error?.message}
+                >
+                  <MenuItem value="yes">بلی</MenuItem>
+                  <MenuItem value="no">خیر</MenuItem>
+                </TextField>
+              )}
+            />
+            <InfoHint text="اجباری - فرمت مقدار: بلی/خیر. در صورت عدم تایید، اعلام اطلاعات پایه از سازمان ارسال می‌شود." />
+          </Box>
+        </Box>
+
+        {/* <Alert severity="info" variant="outlined" sx={{ mt: 3, mb: 2 }}>
+          <Typography variant="body2">
+            ردیف‌های بعدی مطابق جدول اقدام، برای ثبت جزئیات گواهی و مستندات تکمیل شوند.
+          </Typography>
+        </Alert> */}
 
         <Box
           sx={{
-            mt: 1,
             display: 'grid',
-            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-            columnGap: 4,
-            rowGap: 3,
+            gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+            columnGap: 3,
+            rowGap: 2,
           }}
         >
-          <Box>
-            <UploadBox
-              name="survey.image_1"
-              label="عکس 1 :"
-              helperText="انتخاب فایل تصویر"
-              accept="image/*"
-            />
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <NoSsr>
+              <Field.DatePicker
+                name="action.certificate_issue_date"
+                label="تاریخ صدور گواهی اقدام"
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+            </NoSsr>
+            <InfoHint text="اجباری" />
           </Box>
-          <Box>
-            <UploadBox
-              name="survey.image_2"
-              label="عکس 2 :"
-              helperText="انتخاب فایل تصویر"
-              accept="image/*"
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.unique_certificate_id"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="شناسه یکتا گواهی اقدام"
+                  error={!!error}
+                  helperText={error?.message}
+                />
+              )}
             />
+            <InfoHint text="اختیاری" />
           </Box>
-          <Box>
-            <UploadBox
-              name="survey.image_3"
-              label="عکس 3 :"
-              helperText="انتخاب فایل تصویر"
-              accept="image/*"
-            />
+
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+              <Controller
+                name="action.action_type"
+                render={({ field, fieldState: { error } }) => (
+                  <TextField
+                    {...field}
+                    select
+                    fullWidth
+                    label="نوع اقدام"
+                    error={!!error}
+                    helperText={error?.message}
+                  >
+                    {ACTION_TYPE_OPTIONS.map((option) => (
+                      <MenuItem key={option} value={option}>
+                        {option}
+                      </MenuItem>
+                    ))}
+                  </TextField>
+                )}
+              />
+              <InfoHint text="اجباری - یکی از گزینه‌های: طرح دعوا در مراجع قضایی / ثبت اولیه / طرح تقاضا در هیئت سامان دهی / طرح تقاضا در هیئت تعیین تکلیف" />
+            </Box>
           </Box>
-          <Box>
-            <UploadBox
-              name="survey.image_4"
-              label="عکس 4 :"
-              helperText="انتخاب فایل تصویر"
-              accept="image/*"
-            />
+
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+              <Box sx={{ width: '100%' }}>
+                <UploadBox
+                  name="action.certificate_image"
+                  label="تصویر گواهی اقدام"
+                  helperText="تصویر یا فایل گواهی اقدام را بارگذاری کنید"
+                  accept="image/*,.pdf"
+                />
+              </Box>
+              <InfoHint text="اجباری" />
+            </Box>
           </Box>
         </Box>
-
-        {/* <Box sx={{ borderTop: '1px solid', borderColor: 'text.primary', mt: 1, pt: 1 }}>
-          <Typography variant="body2" textAlign="center">
-            نقشه به همراه اطلاعات توصیفی آن
-          </Typography>
-        </Box> */}
-
-        <Alert severity="info" variant="outlined" sx={{ mt: 3 }}>
-          <Typography variant="body2">
-            نقشه و اطلاعات توصیفی آن باید با اسناد استنادی فایل سامانه مطابقت داشته باشد.
-          </Typography>
-        </Alert>
-
-        <Box sx={{ maxWidth: 520, mt: 2 }}>
-          <UploadBox
-            name="survey.map_file"
-            label="نقشه :"
-            helperText="انتخاب فایل نقشه"
-            accept=".pdf,.jpg,.jpeg,.png"
-          />
-        </Box>
-
-        <Controller
-          name="survey.description"
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              fullWidth
-              multiline
-              rows={6}
-              sx={{ mt: 2 }}
-              label="توصیفات :"
-              placeholder="توضیحات کامل وضعیت ملک، مشکلات احتمالی، مغایرت‌ها و سایر موارد مرتبط را ثبت کنید."
-              error={!!error}
-              helperText={error?.message}
-            />
-          )}
-        />
       </fieldset>
 
       {isReviewer ? (
-        <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+        <Box
+          sx={{
+            mt: 20,
+            border: '2px solid',
+            borderColor: 'primary.main',
+            borderRadius: 2.5,
+            p: 2.5,
+            bgcolor: 'background.paper',
+            boxShadow: (theme) => theme.shadows[2],
+          }}
+        >
           <Stack
             direction={{ xs: 'column', md: 'row' }}
             spacing={1}
@@ -246,7 +334,7 @@ export default function WorkflowWizardPage2() {
             sx={{ mb: 1 }}
           >
             <Typography variant="body2" fontWeight={700}>
-              نتیجه بررسی نقشه‌برداری
+              نتیجه بررسی فرم
             </Typography>
             <Chip
               label={currentMeta.label}
@@ -296,11 +384,21 @@ export default function WorkflowWizardPage2() {
           />
         </Box>
       ) : (
-        <Box sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 2, p: 2 }}>
+        <Box
+          sx={{
+            mt: 20,
+            border: '2px solid',
+            borderColor: 'primary.main',
+            borderRadius: 2.5,
+            p: 2.5,
+            bgcolor: 'grey.50',
+            boxShadow: (theme) => theme.shadows[1],
+          }}
+        >
           <Alert severity={currentMeta.severity} sx={{ mb: 1.25 }}>
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
               <Typography variant="body2" fontWeight={700}>
-                نتیجه بررسی نقشه‌برداری
+                نتیجه بررسی فرم
               </Typography>
               <Chip
                 label={currentMeta.label}

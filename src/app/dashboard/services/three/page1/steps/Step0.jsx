@@ -1,6 +1,6 @@
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { MenuItem, Box, IconButton, Popover, Typography } from '@mui/material';
+import { MenuItem, Box, IconButton, Popover, Typography, NoSsr } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 const APPLICANT_ROLE_OPTIONS = [
@@ -187,12 +187,13 @@ export default function Page0() {
 
               {/* تاریخ تنظیم سند نمایندگی */}
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                <Field.Text
-                  name="representation_document_date"
-                  label="تاریخ تنظیم سند نمایندگی"
-                  type="date"
-                  slotProps={{ inputLabel: { shrink: true } }}
-                />
+                <NoSsr>
+                  <Field.DatePicker
+                    name="representation_document_date"
+                    label="تاریخ تنظیم سند نمایندگی"
+                    slotProps={{ textField: { fullWidth: true } }}
+                  />
+                </NoSsr>
                 <InfoHint text="تاریخ تنظیم سند نمایندگی الزامی است." />
               </Box>
 
@@ -228,12 +229,13 @@ export default function Page0() {
 
           {/* تاریخ تنظیم سند نمایندگی */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-            <Field.Text
-              name="official_representation_document_date"
-              label="تاریخ تنظیم سند نمایندگی"
-              type="date"
-              slotProps={{ inputLabel: { shrink: true } }}
-            />
+            <NoSsr>
+              <Field.DatePicker
+                name="official_representation_document_date"
+                label="تاریخ تنظیم سند نمایندگی"
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+            </NoSsr>
             <InfoHint text="تاریخ تنظیم سند نمایندگی الزامی است." />
           </Box>
 

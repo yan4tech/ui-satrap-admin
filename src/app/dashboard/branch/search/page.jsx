@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   Collapse,
-  Grid,
   MenuItem,
   Typography,
   ButtonGroup,
@@ -319,27 +318,28 @@ const BranchSearch = () => {
           <Collapse in={isSearchOpen}>
             <Form methods={methods} onSubmit={onSubmit}>
               <Stack spacing={2}>
-                <Grid
-                  container
-                  spacing={2}
+                <Box
                   sx={{
                     p: { xs: 1, md: 2 },
                     borderRadius: 2,
                     bgcolor: 'background.neutral',
                     border: '1px dashed',
                     borderColor: 'divider',
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
                   }}
                 >
-                  <Grid item xs={12} md={3}>
+                  <Box>
                     <Field.Text name="branch_number" label="شماره شعبه" />
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={3}>
+                  <Box>
                     <Field.Text name="title" label="عنوان شعبه" />
-                  </Grid>
-                  <Box sx={{ width: { xs: '100%', md: '33%' } }}></Box>
+                  </Box>
 
-                  <Box sx={{ width: { xs: '100%', md: '30%' } }}>
+                  <Box>
                     <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                       {provinces.map((p) => (
                         <MenuItem key={p.id} value={p.id}>
@@ -349,7 +349,7 @@ const BranchSearch = () => {
                     </Field.Select>
                   </Box>
 
-                  <Box sx={{ width: { xs: '100%', md: '30%' } }}>
+                  <Box>
                     <Field.Select
                       name="city"
                       label="شهر"
@@ -364,7 +364,7 @@ const BranchSearch = () => {
                     </Field.Select>
                   </Box>
 
-                  <Box sx={{ width: { xs: '100%', md: '30%' } }}>
+                  <Box>
                     <Field.Select
                       name="village"
                       label="روستا"
@@ -412,7 +412,7 @@ const BranchSearch = () => {
                   </Grid>
                 </LocalizationProvider> */}
 
-                  <Box>
+                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                     <Typography sx={{ mb: 1 }}>وضعیت:</Typography>
                     <ButtonGroup>
                       <Button
@@ -439,7 +439,7 @@ const BranchSearch = () => {
                       </Button>
                     </ButtonGroup>
                   </Box>
-                </Grid>
+                </Box>
 
                 <Box
                   sx={{

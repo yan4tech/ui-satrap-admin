@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   MenuItem,
   Alert,
   Container,
@@ -192,31 +191,45 @@ export default function EditBranch({ branchData }) {
                   اطلاعات شخصی
                 </Typography>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={4}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
                     <Field.Text name="title" label="نام" />
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={4}>
+                  <Box>
                     <Field.Text name="ip" label="نام خانوادگی" />
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={4}>
+                  <Box>
                     <Field.Text name="max_users" label="کد ملی" />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
 
               <Divider />
 
               {/* LOCATION */}
               <Box>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={4}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
                     <Field.Text name="phone" label="شماره تلفن" />
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={4}>
+                  <Box>
                     <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                       {provinces.map((p) => (
                         <MenuItem key={p.id} value={String(p.id)}>
@@ -224,9 +237,9 @@ export default function EditBranch({ branchData }) {
                         </MenuItem>
                       ))}
                     </Field.Select>
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={4}>
+                  <Box>
                     <Field.Select
                       name="city"
                       label="شهر"
@@ -239,9 +252,9 @@ export default function EditBranch({ branchData }) {
                         </MenuItem>
                       ))}
                     </Field.Select>
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={4}>
+                  <Box>
                     <Field.Select
                       name="village"
                       label="روستا"
@@ -254,8 +267,8 @@ export default function EditBranch({ branchData }) {
                         </MenuItem>
                       ))}
                     </Field.Select>
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
 
               <Divider />
@@ -291,15 +304,22 @@ export default function EditBranch({ branchData }) {
                 <Typography fontWeight={600} sx={{ mb: 2 }}>
                   حساب بانکی
                 </Typography>
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
                     <Field.Text name="address" label="شماره کارت" />
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={6}>
+                  <Box>
                     <Field.Text name="description" label="شماره شبا" />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
 
               <Divider />

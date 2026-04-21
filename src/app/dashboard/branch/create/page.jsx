@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   MenuItem,
   Alert,
   Container,
@@ -191,31 +190,44 @@ const CreateBranch = () => {
                   اطلاعات شخصی
                 </Typography>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={4}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
                     <Field.Text name="title" label="نام" />
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={4}>
+                  <Box>
                     <Field.Text name="ip" label="نام خانوادگی" />
-                  </Grid>
-                  <Box sx={{ width: { xs: '100%', md: '33%' } }}></Box>
+                  </Box>
 
-                  <Grid item xs={12} md={4}>
+                  <Box>
                     <Field.Text name="max_users" label="کد ملی" />
-                  </Grid>
-                  <Grid item xs={12} md={4}>
+                  </Box>
+                  <Box>
                     <Field.Text name="phone" label="شماره تلفن" />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
 
               <Divider />
 
               {/* ================= LOCATION ================= */}
               <Box>
-                <Grid container spacing={2}>
-                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
                     <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                       {provinces.map((p) => (
                         <MenuItem key={p.id} value={String(p.id)}>
@@ -225,7 +237,7 @@ const CreateBranch = () => {
                     </Field.Select>
                   </Box>
 
-                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                  <Box>
                     <Field.Select
                       name="city"
                       label="شهر"
@@ -239,7 +251,7 @@ const CreateBranch = () => {
                       ))}
                     </Field.Select>
                   </Box>
-                  <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+                  <Box>
                     <Field.Select
                       name="village"
                       label="روستا"
@@ -253,7 +265,7 @@ const CreateBranch = () => {
                       ))}
                     </Field.Select>
                   </Box>
-                </Grid>
+                </Box>
               </Box>
 
               <Divider />
@@ -303,15 +315,22 @@ const CreateBranch = () => {
                   حساب بانکی
                 </Typography>
 
-                <Grid container spacing={2}>
-                  <Grid item xs={12} md={6}>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
                     <Field.Text name="address" label="شماره کارت" />
-                  </Grid>
+                  </Box>
 
-                  <Grid item xs={12} md={6}>
+                  <Box>
                     <Field.Text name="description" label="شماره شبا" />
-                  </Grid>
-                </Grid>
+                  </Box>
+                </Box>
               </Box>
 
               <Divider />

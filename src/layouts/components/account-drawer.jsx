@@ -157,7 +157,8 @@ export function AccountDrawer({ data = [], sx, ...other }) {
             </Typography>
           </Box>
 
-          <Box
+          {/* mostafa */}
+          {/* <Box
             sx={{
               p: 3,
               gap: 1,
@@ -197,7 +198,7 @@ export function AccountDrawer({ data = [], sx, ...other }) {
 
           <Box sx={{ px: 2.5, py: 3 }}>
             <UpgradeBlock />
-          </Box>
+          </Box> */}
         </Scrollbar>
 
         <Box sx={{ p: 2.5 }}>

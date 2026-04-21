@@ -36,7 +36,7 @@ export function SignOutButton({ onClose, sx, ...other }) {
       sx={sx}
       {...other}
     >
-      Logout
+      خروج
     </Button>
   );
 }

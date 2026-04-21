@@ -113,11 +113,12 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
             <VerticalDivider sx={{ [theme.breakpoints.up(layoutQuery)]: { display: 'flex' } }} />
           )}
 
+          {/* mostafa */}
           {/** @slot Workspace popover */}
-          <WorkspacesPopover
+          {/* <WorkspacesPopover
             data={_workspaces}
             sx={{ ...(isNavHorizontal && { color: 'var(--layout-nav-text-primary-color)' }) }}
-          />
+          /> */}
         </>
       ),
       rightArea: (

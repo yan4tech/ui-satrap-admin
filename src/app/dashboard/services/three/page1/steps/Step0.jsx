@@ -1,5 +1,5 @@
 import React from 'react';
-import { useFormContext } from 'react-hook-form';
+import { Controller, useFormContext } from 'react-hook-form';
 import { MenuItem, Box, IconButton, Popover, Typography, NoSsr } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
@@ -101,7 +101,7 @@ function ConditionalSection({ title, children }) {
 }
 
 export default function Page0() {
-  const { watch } = useFormContext();
+  const { watch, control } = useFormContext();
   const applicantRole = watch('applicant_role');
   const representationVerificationMethod = watch('representation_verification_method');
   const shouldShowArticle11Fields =
@@ -199,7 +199,10 @@ export default function Page0() {
 
               {/* شناسه سند رسمی نمایندگی */}
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                <Field.Text name="official_representation_document_id" label="شناسه سند رسمی نمایندگی" />
+                <Field.Text
+                  name="official_representation_document_id"
+                  label="شناسه سند رسمی نمایندگی"
+                />
                 <InfoHint text="این فیلد اختیاری است." />
               </Box>
 
@@ -223,7 +226,80 @@ export default function Page0() {
 
           {/* تصویر سند رسمی نمایندگی */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-            <Field.Text name="official_representation_document_image" label="تصویر سند رسمی نمایندگی" />
+            <Controller
+              name="official_representation_document_image"
+              control={control}
+              render={({ field, fieldState: { error } }) => (
+                <Box sx={{ width: '100%' }}>
+                  <Typography variant="body2">تصویر سند رسمی نمایندگی:</Typography>
+
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
+                    <Box
+                      component="label"
+                      sx={{
+                        position: 'relative',
+                        width: 320,
+                        height: 90,
+                        border: '1px solid',
+                        borderColor: error ? 'error.main' : 'text.primary',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <input
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        onChange={(event) => {
+                          const file = event.target.files?.[0] ?? null;
+                          field.onChange(file);
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          width: '90%',
+                          borderTop: '1px solid',
+                          borderColor: 'text.secondary',
+                          transform: 'translate(-50%, -50%) rotate(18deg)',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                      <Box
+                        sx={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          width: '90%',
+                          borderTop: '1px solid',
+                          borderColor: 'text.secondary',
+                          transform: 'translate(-50%, -50%) rotate(-18deg)',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                    </Box>
+                  </Box>
+
+                  {field.value?.name ? (
+                    <Typography
+                      variant="caption"
+                      color="text.secondary"
+                      sx={{ mt: 1, display: 'block' }}
+                    >
+                      فایل انتخاب‌شده: {field.value.name}
+                    </Typography>
+                  ) : null}
+
+                  {error?.message ? (
+                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
+                      {error.message}
+                    </Typography>
+                  ) : null}
+                </Box>
+              )}
+            />
             <InfoHint text="ارسال تصویر سند رسمی نمایندگی الزامی است." />
           </Box>
 
@@ -263,7 +339,10 @@ export default function Page0() {
 
           {/* نظر کارشناسی مبنی بر احراز نمایندگی */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-            <Field.Select name="expert_representation_opinion" label="نظر کارشناسی مبنی بر احراز نمایندگی">
+            <Field.Select
+              name="expert_representation_opinion"
+              label="نظر کارشناسی مبنی بر احراز نمایندگی"
+            >
               {EXPERT_REPRESENTATION_OPINION_OPTIONS.map((option) => (
                 <MenuItem key={option.value} value={option.value}>
                   {option.label}
@@ -283,7 +362,10 @@ export default function Page0() {
 
       {/* اعلام اطلاع متقاضی از مفاد تبصره ۵ ماده ۱۰ قانون */}
       <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-        <Field.Select name="note5_acknowledgment" label="اعلام اطلاع متقاضی از مفاد تبصره ۵ ماده ۱۰ قانون">
+        <Field.Select
+          name="note5_acknowledgment"
+          label="اعلام اطلاع متقاضی از مفاد تبصره ۵ ماده ۱۰ قانون"
+        >
           {NOTE5_AWARENESS_OPTIONS.map((option) => (
             <MenuItem key={option.value} value={option.value}>
               {option.label}

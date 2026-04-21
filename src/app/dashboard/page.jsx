@@ -18,6 +18,7 @@ import {
 import {
   Iconify
 } from 'src/components/iconify';
+import { ProcessKpiTabs } from './_components/process-kpi-tabs';
 
 // ----------------------------------------------------------------------
 
@@ -109,6 +110,33 @@ const statusDistribution = [
   { label: 'در انتظار پاسخ ثبت', value: 46, color: 'info.main' },
   { label: 'پایان یافته', value: 352, color: 'success.main' },
   { label: 'ریجکت شده', value: 30, color: 'error.main' },
+];
+
+const processKpiByProvince = [
+  {
+    province: 'تهران',
+    services: [
+      { name: 'خدمت شماره یک', success: 54, failed: 9, inReview: 12 },
+      { name: 'خدمت شماره دو', success: 47, failed: 11, inReview: 14 },
+      { name: 'خدمت شماره سه', success: 39, failed: 8, inReview: 10 },
+    ],
+  },
+  {
+    province: 'اصفهان',
+    services: [
+      { name: 'خدمت شماره یک', success: 41, failed: 7, inReview: 9 },
+      { name: 'خدمت شماره دو', success: 36, failed: 10, inReview: 11 },
+      { name: 'خدمت شماره سه', success: 31, failed: 6, inReview: 8 },
+    ],
+  },
+  {
+    province: 'فارس',
+    services: [
+      { name: 'خدمت شماره یک', success: 33, failed: 6, inReview: 7 },
+      { name: 'خدمت شماره دو', success: 29, failed: 8, inReview: 9 },
+      { name: 'خدمت شماره سه', success: 24, failed: 5, inReview: 6 },
+    ],
+  },
 ];
 
 export default function Page() {
@@ -372,6 +400,8 @@ export default function Page() {
             </Card>
           </Grid>
         </Grid>
+
+        <ProcessKpiTabs data={processKpiByProvince} />
 
         <Card sx={{ border: '1px solid', borderColor: 'divider' }}>
           <CardHeader title="فعالیت‌های اخیر" />

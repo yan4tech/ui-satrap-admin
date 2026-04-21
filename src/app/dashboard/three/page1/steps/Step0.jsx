@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, MenuItem } from '@mui/material';
+import { Grid, MenuItem, Box } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 const APPLICANT_ROLE_OPTIONS = [
@@ -22,7 +22,7 @@ export default function Page0() {
       </Grid>
 
       {/* سمت متقاضی (کمبو باکس) */}
-      <Grid item xs={12} md={6}>
+      <Box sx={{ width: { xs: '100%', md: '33%' } }}>
         <Field.Select name="applicant_role" label="سمت متقاضی">
           {APPLICANT_ROLE_OPTIONS.map((option) => (
             <MenuItem key={option.value} value={option.value}>
@@ -30,7 +30,7 @@ export default function Page0() {
             </MenuItem>
           ))}
         </Field.Select>
-      </Grid>
+      </Box>
     </Grid>
   );
 }

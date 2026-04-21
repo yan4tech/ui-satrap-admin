@@ -19,6 +19,8 @@ import Page1 from './page1/WorkflowWizard';
 import Page2 from './page2/WorkflowWizard';
 import PaymentPage from './payment/WorkflowWizard';
 import SurveyPaymentPage from './payment-survey/WorkflowWizard';
+import RegistrationTrackingPage from './registration-tracking/WorkflowWizard';
+import SurveyRegistrationTrackingPage from './survey-registration-tracking/WorkflowWizard';
 
 const steps = [
   'پرداخت',
@@ -29,7 +31,22 @@ const steps = [
   'تایید نقشه برداری توسط سازمان ثبت',
 ];
 
-const stepSchemas = steps.map(() => z.object({}));
+const stepSchemas = [
+  z.object({}),
+  z.object({}),
+  z.object({
+    registrationTracking: z.object({
+      sentTrackingCode: z.string().min(1, 'کد رهگیری ارسالی را وارد کنید'),
+    }),
+  }),
+  z.object({}),
+  z.object({}),
+  z.object({
+    surveyRegistrationTracking: z.object({
+      sentTrackingCode: z.string().min(1, 'کد رهگیری ارسالی را وارد کنید'),
+    }),
+  }),
+];
 
 export default function WorkflowWizard() {
   const [activeStep, setActiveStep] = useState(0);
@@ -50,6 +67,8 @@ export default function WorkflowWizard() {
         map_file: null,
         description: '',
       },
+      registrationTracking: { sentTrackingCode: '' },
+      surveyRegistrationTracking: { sentTrackingCode: '' },
     },
   });
 
@@ -84,11 +103,7 @@ export default function WorkflowWizard() {
         return <Page1 />;
 
       case 2:
-        return (
-          <Typography color={approvalState[2] ? 'success.main' : 'text.primary'}>
-            {approvalState[2] ? 'تایید توسط سازمان ثبت انجام شد.' : 'در انتظار تایید سازمان ثبت...'}
-          </Typography>
-        );
+        return <RegistrationTrackingPage />;
 
       case 3:
         return <SurveyPaymentPage />;
@@ -97,13 +112,7 @@ export default function WorkflowWizard() {
         return <Page2 />;
 
       case 5:
-        return (
-          <Typography color={approvalState[5] ? 'success.main' : 'text.primary'}>
-            {approvalState[5]
-              ? 'تایید نقشه برداری توسط سازمان ثبت انجام شد.'
-              : 'تایید نقشه برداری توسط سازمان ثبت'}
-          </Typography>
-        );
+        return <SurveyRegistrationTrackingPage />;
 
       default:
         return null;

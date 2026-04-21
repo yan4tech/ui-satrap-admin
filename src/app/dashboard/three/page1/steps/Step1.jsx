@@ -23,7 +23,7 @@ export default function Page1() {
       </Grid>
 
       {/* نحوه احراز نمایندگی */}
-      <Grid item xs={12} md={6}>
+      <Box sx={{ width: { xs: '100%', md: '33%' } }}>
         <Field.Select name="representation_method" label="نحوه احراز نمایندگی">
           {REPRESENTATION_METHOD_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -31,7 +31,7 @@ export default function Page1() {
             </MenuItem>
           ))}
         </Field.Select>
-      </Grid>
+      </Box>
 
       {/* تاریخ سند نمایندگی */}
       <Grid item xs={12} md={6}>

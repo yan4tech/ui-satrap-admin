@@ -526,29 +526,16 @@ export default function WorkflowWizardPage2() {
         <DialogTitle>اطلاعات ارسال شده از طرف سازمان ثبت</DialogTitle>
         <DialogContent dividers>
           <Stack spacing={2} sx={{ pt: 0.5 }}>
-            <Box>
-              <Typography variant="subtitle2" fontWeight={700}>
-                تاریخ درج ادعا
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                -
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" fontWeight={700}>
-                کد رهگیری ادعا
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                -
-              </Typography>
-            </Box>
-            <Box>
-              <Typography variant="subtitle2" fontWeight={700}>
-                مشخصات اصلی ادعا
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                -
-              </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+              <Box sx={{ width: '100%' }}>
+                <UploadBox
+                  name="action.document_image"
+                  label="تصویر سند"
+                  // helperText="تصویر یا فایل مستند ادعا را بارگذاری کنید"
+                  accept="image/*,.pdf"
+                />
+              </Box>
+              <InfoHint text="اجباری" />
             </Box>
           </Stack>
         </DialogContent>

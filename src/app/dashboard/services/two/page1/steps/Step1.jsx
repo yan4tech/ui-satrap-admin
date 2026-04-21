@@ -71,8 +71,15 @@ export default function Page1() {
   const isUploadDocument = representationMethod === 'upload_document';
 
   return (
-    <Grid container spacing={2}>
-      <Box sx={{ width: { xs: '100%', md: '45%' } }}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+        columnGap: 3,
+        rowGap: 2,
+      }}
+    >
+      <Box>
         <Field.Select name="is_claimant_deceased" label="آیا مدعی فوت شده است؟">
           {YES_NO_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -81,43 +88,41 @@ export default function Page1() {
           ))}
         </Field.Select>
       </Box>
-      <Box sx={{ width: { xs: '100%', md: '50%' } }}></Box>
 
-      <Grid item xs={12} md={6}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-          <Field.Text name="claim_registration_tracking_code" label="کد رهگیری درج ادعا" />
-          <InfoHint text="نباید از تاریخ درج ادعا در سامانه بیش از دو سال گذشته باشد. در محیط آزمایشی، این بازه از زمان راه‌اندازی رسمی محاسبه می‌شود." />
-        </Box>
-      </Grid>
-
-      <Box sx={{ width: { xs: '100%', md: '50%' } }}></Box>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+        <Field.Text name="claim_registration_tracking_code" label="کد رهگیری درج ادعا" />
+        <InfoHint text="نباید از تاریخ درج ادعا در سامانه بیش از دو سال گذشته باشد. در محیط آزمایشی، این بازه از زمان راه‌اندازی رسمی محاسبه می‌شود." />
+      </Box>
 
       {isDeceased ? (
-        <Grid item xs={12}>
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <Field.Text name="deceased_national_id" label="کد ملی متوفی" />
-                  <InfoHint text="بر اساس گواهی انحصار وراثت (استعلام از ثبت احوال)، یکی از وراث متوفی باید نماینده وراث باشد." />
-                </Box>
-              </Grid>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2, width: '100%' }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                columnGap: 3,
+                rowGap: 2,
+              }}
+            >
+              <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Field.Text name="deceased_national_id" label="کد ملی متوفی" />
+                <InfoHint text="بر اساس گواهی انحصار وراثت (استعلام از ثبت احوال)، یکی از وراث متوفی باید نماینده وراث باشد." />
+              </Box>
 
-              <Grid item xs={12} md={6}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <NoSsr>
-                    <Field.DatePicker
-                      name="deceased_date"
-                      label="تاریخ فوت مدعی"
-                      slotProps={{ textField: { fullWidth: true } }}
-                    />
-                  </NoSsr>
-                  <InfoHint text="مهلت درج گواهی اقدام حداکثر پنج ماه از زمان فوت یا تا سقف مهلت اقدام متوفی (هر کدام بیشتر باشد) است." />
-                </Box>
-              </Grid>
-            </Grid>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <NoSsr>
+                  <Field.DatePicker
+                    name="deceased_date"
+                    label="تاریخ فوت مدعی"
+                    slotProps={{ textField: { fullWidth: true } }}
+                  />
+                </NoSsr>
+                <InfoHint text="مهلت درج گواهی اقدام حداکثر پنج ماه از زمان فوت یا تا سقف مهلت اقدام متوفی (هر کدام بیشتر باشد) است." />
+              </Box>
+            </Box>
           </Box>
-        </Grid>
+        </Box>
       ) : null}
 
       {isLegalRepresentativeCompany || isLegalRepresentativeIndividual ? (
@@ -127,7 +132,6 @@ export default function Page1() {
             borderColor: 'divider',
             borderRadius: 1.5,
             p: 2,
-            width: { xs: '100%', md: '50%' },
           }}
         >
           {/* <Grid container spacing={2}>
@@ -148,7 +152,7 @@ export default function Page1() {
       ) : null}
 
       {isLegalRepresentativeCompany ? (
-        <Grid item xs={12}>
+        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
           <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2 }}>
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
@@ -159,12 +163,12 @@ export default function Page1() {
               </Grid>
             </Grid>
           </Box>
-        </Grid>
+        </Box>
       ) : null}
       {/* <Box sx={{ width: { xs: '100%', md: '50%' } }}></Box> */}
 
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
-        <Grid item xs={12}>
+        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
           <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2 }}>
             <Grid container spacing={2}>
               {isLegalRepresentativeIndividual ? (
@@ -194,10 +198,10 @@ export default function Page1() {
               </Grid>
             </Grid>
           </Box>
-        </Grid>
+        </Box>
       ) : null}
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
-        <Grid item xs={12}>
+        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
           <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2 }}>
             <Controller
               name="representation_doc_image"
@@ -274,12 +278,10 @@ export default function Page1() {
               )}
             />
           </Box>
-        </Grid>
+        </Box>
       ) : null}
-
-      <Box sx={{ width: { xs: '100%', md: '100%' } }}></Box>
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
-        <Grid item xs={12}>
+        <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
           <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2 }}>
             <Grid item xs={12} md={6}>
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
@@ -291,7 +293,7 @@ export default function Page1() {
               </Box>
             </Grid>
           </Box>
-        </Grid>
+        </Box>
       ) : null}
 
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
@@ -301,7 +303,7 @@ export default function Page1() {
             borderColor: 'divider',
             borderRadius: 1.5,
             p: 2,
-            width: { xs: '100%', md: '100%' },
+            gridColumn: { xs: 'span 1', md: 'span 2' },
           }}
         >
           <Box sx={{ width: { xs: '100%', md: '100%' } }}>
@@ -323,6 +325,6 @@ export default function Page1() {
           </Box>
         </Box>
       ) : null}
-    </Grid>
+    </Box>
   );
 }

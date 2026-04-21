@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, MenuItem, Box } from '@mui/material';
+import { MenuItem, Box } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 // ---------------- OPTIONS ----------------
@@ -21,9 +21,16 @@ const USAGE_OPTIONS = [
 // ---------------- COMPONENT ----------------
 export default function Page3() {
   return (
-    <Grid container spacing={2}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+        columnGap: 3,
+        rowGap: 2,
+      }}
+    >
       {/* نوع ملک */}
-      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+      <Box>
         <Field.Select name="property_type" label="نوع ملک">
           {PROPERTY_TYPE_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -34,7 +41,7 @@ export default function Page3() {
       </Box>
 
       {/* آیا ملک اعتباری دارد */}
-      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+      <Box>
         <Field.Select name="has_credit" label="آیا ملک اعتباری دارد">
           {CREDIT_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -45,7 +52,7 @@ export default function Page3() {
       </Box>
 
       {/* کاربری ملک */}
-      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+      <Box>
         <Field.Select name="property_usage" label="کاربری ملک">
           {USAGE_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -56,18 +63,18 @@ export default function Page3() {
       </Box>
 
       {/* مساحت تقریبی ملک */}
-      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+      <Box>
         <Field.Text name="approx_area" label="مساحت تقریبی ملک (متر مربع)" type="number" />
       </Box>
 
       {/* تعداد منضمات (پارکینگ / انباری) */}
-      <Grid item xs={12} md={6}>
+      <Box>
         <Field.Text
           name="attachments_count"
           label="تعداد منضمات (پارکینگ + انباری)"
           type="number"
         />
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
 }

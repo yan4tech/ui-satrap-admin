@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, MenuItem, Typography, Box } from '@mui/material';
+import { MenuItem, Typography, Box } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 // ---------------- OPTIONS ----------------
@@ -13,9 +13,16 @@ const PEOPLE_OPTIONS = ['شخص 1', 'شخص 2', 'شخص 3'];
 // ---------------- COMPONENT ----------------
 export default function Page4() {
   return (
-    <Grid container spacing={2}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+        columnGap: 3,
+        rowGap: 2,
+      }}
+    >
       {/* آیا درخواست دسترسی دارد */}
-      <Grid item xs={12} md={12}>
+      <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
         <Typography variant="body2" sx={{ mb: 1 }}>
           آیا متقاضی درخواست اعطای دسترسی اشخاص دیگر به نقشه را دارد؟
         </Typography>
@@ -26,7 +33,7 @@ export default function Page4() {
             </MenuItem>
           ))}
         </Field.Select>
-      </Grid>
+      </Box>
 
       {/* لیست افراد (multi select) */}
       {/* <Grid item xs={12} md={6}>
@@ -43,7 +50,7 @@ export default function Page4() {
           filterSelectedOptions
         />
       </Grid> */}
-      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+      <Box>
         <Typography variant="body2" sx={{ mb: 1 }}>
           لیست افراد
         </Typography>
@@ -57,6 +64,6 @@ export default function Page4() {
           filterSelectedOptions
         />
       </Box>
-    </Grid>
+    </Box>
   );
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Grid, MenuItem, Box, IconButton, Popover, Typography } from '@mui/material';
+import { MenuItem, Box, IconButton, Popover, Typography } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 const APPLICANT_ROLE_OPTIONS = [
@@ -58,27 +58,28 @@ function InfoHint({ text }) {
 
 export default function Page0() {
   return (
-    <Grid container spacing={2}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+        columnGap: 3,
+        rowGap: 2,
+      }}
+    >
       {/* کد ملی متقاضی */}
-      <Grid item xs={12} md={6}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-          <Field.Text name="national_id" label="کد ملی متقاضی" />
-          <InfoHint text="متقاضی باید دارای شرط سن قانونی (بالای 18 سال) و رشد ثابت شده باشد." />
-        </Box>
-      </Grid>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+        <Field.Text name="national_id" label="کد ملی متقاضی" />
+        <InfoHint text="متقاضی باید دارای شرط سن قانونی (بالای 18 سال) و رشد ثابت شده باشد." />
+      </Box>
 
       {/* شماره تلفن */}
-      <Grid item xs={12} md={6}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-          <Field.Text name="mobile" label="شماره تلفن" />
-          <InfoHint text="شماره تلفن باید در سامانه شاهکار به نام متقاضی ثبت شده باشد." />
-        </Box>
-      </Grid>
-
-      <Box sx={{ width: { xs: '100%', md: '100%' } }}></Box>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+        <Field.Text name="mobile" label="شماره تلفن" />
+        <InfoHint text="شماره تلفن باید در سامانه شاهکار به نام متقاضی ثبت شده باشد." />
+      </Box>
 
       {/* وضعیت ثبت نام در سامانه ثنا */}
-      <Box sx={{ width: { xs: '100%', md: '45%' } }}>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
         <Field.Select
           name="sana_registration_status"
           label="وضعیت ثبت نام متقاضی در سامانه ثنا قوه قضاییه"
@@ -91,21 +92,18 @@ export default function Page0() {
         </Field.Select>
         <InfoHint text="متقاضی باید در سامانه ثنا ثبت نام کرده باشد." />
       </Box>
-      <Box sx={{ width: { xs: '100%', md: '100%' } }}></Box>
 
       {/* سمت متقاضی (کمبو باکس) */}
-      <Box sx={{ width: { xs: '100%', md: '45%' } }}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-          <Field.Select name="applicant_role" label="سمت متقاضی">
-            {APPLICANT_ROLE_OPTIONS.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Field.Select>
-          <InfoHint text="اطلاعات پایه (اصیل / نماینده قانونی شخص حقیقی / نماینده شخص حقوقی)." />
-        </Box>
+      <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+        <Field.Select name="applicant_role" label="سمت متقاضی">
+          {APPLICANT_ROLE_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Field.Select>
+        <InfoHint text="اطلاعات پایه (اصیل / نماینده قانونی شخص حقیقی / نماینده شخص حقوقی)." />
       </Box>
-    </Grid>
+    </Box>
   );
 }

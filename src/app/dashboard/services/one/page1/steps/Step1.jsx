@@ -1,6 +1,6 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { Box, Grid, MenuItem, Typography, NoSsr } from '@mui/material';
+import { Box, MenuItem, Typography, NoSsr } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 const REPRESENTATION_METHOD_OPTIONS = [
@@ -12,18 +12,25 @@ export default function Page1() {
   const { control } = useFormContext();
 
   return (
-    <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+        columnGap: 3,
+        rowGap: 2,
+      }}
+    >
+      <Box>
         <Field.Text name="national_id_asil" label="کد ملی اصیل" />
-      </Grid>
+      </Box>
 
       {/* شناسه ملی */}
-      <Grid item xs={12} md={6}>
+      <Box>
         <Field.Text name="national_id" label="شناسه ملی" />
-      </Grid>
+      </Box>
 
       {/* نحوه احراز نمایندگی */}
-      <Box sx={{ width: { xs: '100%', md: '33%' } }}>
+      <Box>
         <Field.Select name="representation_method" label="نحوه احراز نمایندگی">
           {REPRESENTATION_METHOD_OPTIONS.map((o) => (
             <MenuItem key={o.value} value={o.value}>
@@ -34,7 +41,7 @@ export default function Page1() {
       </Box>
 
       {/* تاریخ سند نمایندگی */}
-      <Grid item xs={12} md={4}>
+      <Box>
         <NoSsr>
           <Field.DatePicker
             name="representation_doc_date"
@@ -42,20 +49,20 @@ export default function Page1() {
             slotProps={{ textField: { fullWidth: true } }}
           />
         </NoSsr>
-      </Grid>
+      </Box>
 
       {/* شناسه سند رسمی */}
-      <Grid item xs={12} md={4}>
+      <Box>
         <Field.Text name="representation_doc_id" label="شناسه سند رسمی نمایندگی" />
-      </Grid>
+      </Box>
 
       {/* رمز تصدیق */}
-      <Grid item xs={12} md={4}>
+      <Box>
         <Field.Text name="verification_code" label="رمز تصدیق" />
-      </Grid>
+      </Box>
 
       {/* آپلود تصویر سند */}
-      <Grid item xs={12}>
+      <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
         <Controller
           name="representation_doc_image"
           control={control}
@@ -130,7 +137,7 @@ export default function Page1() {
             </Box>
           )}
         />
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
 }

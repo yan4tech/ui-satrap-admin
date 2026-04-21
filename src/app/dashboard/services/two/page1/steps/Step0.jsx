@@ -18,17 +18,29 @@ export default function Page0() {
     <Grid container spacing={2}>
       {/* کد ملی متقاضی */}
       <Grid item xs={12} md={6}>
-        <Field.Text name="national_id" label="کد ملی متقاضی" />
+        <Field.Text
+          name="national_id"
+          label="کد ملی متقاضی"
+          helperText="متقاضی باید دارای شرط سن قانونی (بالای 18 سال) و رشد ثابت شده باشد."
+        />
       </Grid>
 
       {/* شماره تلفن */}
       <Grid item xs={12} md={6}>
-        <Field.Text name="mobile" label="شماره تلفن" />
+        <Field.Text
+          name="mobile"
+          label="شماره تلفن"
+          helperText="شماره تلفن باید در سامانه شاهکار به نام متقاضی ثبت شده باشد."
+        />
       </Grid>
 
       {/* وضعیت ثبت نام در سامانه ثنا */}
       <Grid item xs={12} md={6}>
-        <Field.Select name="sana_registration_status" label="وضعیت ثبت نام متقاضی در سامانه ثنا قوه قضاییه">
+        <Field.Select
+          name="sana_registration_status"
+          label="وضعیت ثبت نام متقاضی در سامانه ثنا قوه قضاییه"
+          helperText="متقاضی باید در سامانه ثنا ثبت نام کرده باشد."
+        >
           {SANA_STATUS_OPTIONS.map((option) => (
             <MenuItem key={option.value} value={option.value}>
               {option.label}
@@ -39,7 +51,11 @@ export default function Page0() {
 
       {/* سمت متقاضی (کمبو باکس) */}
       <Box sx={{ width: { xs: '100%', md: '50%' } }}>
-        <Field.Select name="applicant_role" label="سمت متقاضی">
+        <Field.Select
+          name="applicant_role"
+          label="سمت متقاضی"
+          helperText="اطلاعات پایه (اصیل / نماینده قانونی شخص حقیقی / نماینده شخص حقوقی)."
+        >
           {APPLICANT_ROLE_OPTIONS.map((option) => (
             <MenuItem key={option.value} value={option.value}>
               {option.label}

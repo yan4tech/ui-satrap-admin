@@ -262,9 +262,9 @@ export default function Page1() {
             <InfoHint text="در صورت عدم احراز نمایندگی توسط کارشناس، ادامه فرآیند امکان‌پذیر نخواهد بود." />
           </Box>
 
-          <Grid item xs={12}>
+          <Box sx={{ width: '100%', '& .MuiFormControl-root': { width: '100%' } }}>
             <Field.Text name="expert_description" label="توضیحات کارشناس" multiline rows={3} />
-          </Grid>
+          </Box>
         </>
       ) : null}
     </Grid>

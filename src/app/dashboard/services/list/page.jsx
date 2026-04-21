@@ -229,6 +229,10 @@ export default function ServicesListPage() {
 
   const handleViewDetails = (row) => {
     console.log('view details for request', row.requestNumber);
+    if (row.requestType === 'خدمت شماره سه') {
+      router.push(paths.dashboard.services.three);
+      return;
+    }
     if (row.requestType === 'خدمت شماره دو') {
       router.push(paths.dashboard.services.two);
       return;

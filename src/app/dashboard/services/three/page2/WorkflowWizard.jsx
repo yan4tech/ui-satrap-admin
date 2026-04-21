@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import {
   Alert,
   Box,
@@ -35,11 +35,21 @@ const REVIEW_STATUS_META = {
   [REVIEW_STATUS.NEEDS_CORRECTION]: { label: 'نیاز به اصلاح', color: 'info', severity: 'info' },
 };
 
-const ACTION_TYPE_OPTIONS = [
-  'طرح دعوا در مراجع قضایی',
-  'ثبت اولیه',
-  'طرح تقاضا در هیئت سامان دهی',
-  'طرح تقاضا در هیئت تعیین تکلیف',
+const PROPERTY_TYPE_OPTIONS = ['زمین', 'آپارتمان', 'ویلایی', 'سایر'];
+const PROPERTY_USAGE_OPTIONS = ['مسکونی', 'تجاری', 'اداری', 'کشاورزی', 'سایر'];
+const CLAIM_TYPE_OPTIONS = ['مالکیت عین', 'حق ارتفاق', 'حق انتفاع', 'مالکیت منافع'];
+const CLAIM_OWNERSHIP_OPTIONS = ['عرصه', 'اعیان', 'عرصه و اعیان', 'سهم و اعیان'];
+const DOCUMENT_TYPE_OPTIONS = [
+  'پاسخ مبایعه نامه',
+  'صلح نامه',
+  'قولنامه',
+  'تقسیم‌نامه',
+  'هبه نامه',
+  'آراء محاکم',
+  'سندهای زراعی',
+  'استشهادیه',
+  'گواهی حصر وراثت',
+  'سایر',
 ];
 
 function UploadBox({ name, label, helperText, accept }) {
@@ -171,10 +181,13 @@ function InfoHint({ text }) {
 }
 
 export default function WorkflowWizardPage2() {
+  const { control } = useFormContext();
   const [activeRole, setActiveRole] = useState('applicant');
   const [isRegistryInfoModalOpen, setIsRegistryInfoModalOpen] = useState(false);
   const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
   const isReviewer = activeRole === 'company_reviewer';
+  const claimOwnershipType = useWatch({ control, name: 'action.claim_ownership_type' });
+  const isJointOwnership = claimOwnershipType?.includes('سهم');
   const isCommentRequired =
     review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION;
   const currentMeta = REVIEW_STATUS_META[review.status];
@@ -262,25 +275,66 @@ export default function WorkflowWizardPage2() {
             rowGap: 2,
           }}
         >
-          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-            <NoSsr>
-              <Field.DatePicker
-                name="action.certificate_issue_date"
-                label="تاریخ صدور گواهی اقدام"
-                slotProps={{ textField: { fullWidth: true } }}
-              />
-            </NoSsr>
-            <InfoHint text="اجباری" />
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+            <Typography variant="subtitle2" fontWeight={700}>
+              اطلاعات ملک
+            </Typography>
           </Box>
 
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
             <Controller
-              name="action.unique_certificate_id"
+              name="action.property_type"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  label="نوع ملک"
+                  error={!!error}
+                  helperText={error?.message}
+                >
+                  {PROPERTY_TYPE_OPTIONS.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <InfoHint text="اجباری - اطلاعات پایه (زمین/آپارتمان/ویلایی/...)" />
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.property_usage"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  label="کاربری ملک"
+                  error={!!error}
+                  helperText={error?.message}
+                >
+                  {PROPERTY_USAGE_OPTIONS.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <InfoHint text="اجباری - اطلاعات پایه (مسکونی/تجاری/اداری/کشاورزی/...)" />
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.main_plaque_number"
               render={({ field, fieldState: { error } }) => (
                 <TextField
                   {...field}
                   fullWidth
-                  label="شناسه یکتا گواهی اقدام"
+                  label="پلاک ثبتی اصلی"
                   error={!!error}
                   helperText={error?.message}
                 />
@@ -289,42 +343,176 @@ export default function WorkflowWizardPage2() {
             <InfoHint text="اختیاری" />
           </Box>
 
-          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-              <Controller
-                name="action.action_type"
-                render={({ field, fieldState: { error } }) => (
-                  <TextField
-                    {...field}
-                    select
-                    fullWidth
-                    label="نوع اقدام"
-                    error={!!error}
-                    helperText={error?.message}
-                  >
-                    {ACTION_TYPE_OPTIONS.map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                    ))}
-                  </TextField>
-                )}
-              />
-            </Box>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.sub_plaque_number"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="پلاک ثبتی فرعی"
+                  error={!!error}
+                  helperText={error?.message}
+                />
+              )}
+            />
+            <InfoHint text="اختیاری" />
           </Box>
 
-          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 1' } }}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-              <Box sx={{ width: '100%' }}>
-                <UploadBox
-                  name="action.certificate_image"
-                  label="تصویر گواهی اقدام"
-                  helperText="تصویر یا فایل گواهی اقدام را بارگذاری کنید"
-                  accept="image/*,.pdf"
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, mt: 1 }}>
+            <Typography variant="subtitle2" fontWeight={700}>
+              اطلاعات حقوقی ادعا شده بر روی ملک
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.claim_type"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  label="نوع ادعا"
+                  error={!!error}
+                  helperText={error?.message}
+                >
+                  {CLAIM_TYPE_OPTIONS.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <InfoHint text="اجباری - اطلاعات پایه (مالکیت عین/حق ارتفاق/حق انتفاع/مالکیت منافع)" />
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.claim_ownership_type"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  label="نوع مالکیت مورد ادعا"
+                  error={!!error}
+                  helperText={error?.message}
+                >
+                  {CLAIM_OWNERSHIP_OPTIONS.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <InfoHint text="اجباری - اطلاعات پایه (عرصه/اعیان/عرصه و اعیان/سهم و اعیان)" />
+          </Box>
+
+          {isJointOwnership ? (
+            <>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Controller
+                  name="action.total_share_count"
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="تعداد سهم کل"
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
                 />
+                <InfoHint text="اجباری" />
               </Box>
-              <InfoHint text="اجباری" />
+
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Controller
+                  name="action.partial_share_count"
+                  render={({ field, fieldState: { error } }) => (
+                    <TextField
+                      {...field}
+                      fullWidth
+                      label="تعداد سهم جزء"
+                      error={!!error}
+                      helperText={error?.message}
+                    />
+                  )}
+                />
+                <InfoHint text="اجباری" />
+              </Box>
+            </>
+          ) : null}
+
+          <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' }, mt: 1 }}>
+            <Typography variant="subtitle2" fontWeight={700}>
+              اطلاعات مستندات ادعا
+            </Typography>
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.document_type"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  select
+                  fullWidth
+                  label="نوع مستند"
+                  error={!!error}
+                  helperText={error?.message}
+                >
+                  {DOCUMENT_TYPE_OPTIONS.map((option) => (
+                    <MenuItem key={option} value={option}>
+                      {option}
+                    </MenuItem>
+                  ))}
+                </TextField>
+              )}
+            />
+            <InfoHint text="اجباری" />
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Controller
+              name="action.document_number"
+              render={({ field, fieldState: { error } }) => (
+                <TextField
+                  {...field}
+                  fullWidth
+                  label="شماره سند"
+                  error={!!error}
+                  helperText={error?.message}
+                />
+              )}
+            />
+            <InfoHint text="اختیاری" />
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <NoSsr>
+              <Field.DatePicker
+                name="action.document_issue_date"
+                label="تاریخ تنظیم سند"
+                slotProps={{ textField: { fullWidth: true } }}
+              />
+            </NoSsr>
+            <InfoHint text="اختیاری" />
+          </Box>
+
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Box sx={{ width: '100%' }}>
+              <UploadBox
+                name="action.document_image"
+                label="تصویر سند"
+                helperText="تصویر یا فایل مستند ادعا را بارگذاری کنید"
+                accept="image/*,.pdf"
+              />
             </Box>
+            <InfoHint text="اجباری" />
           </Box>
         </Box>
       </fieldset>

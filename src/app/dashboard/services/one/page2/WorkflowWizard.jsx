@@ -143,13 +143,14 @@ export default function WorkflowWizardPage2() {
         </Button>
       </Stack>
 
-      <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
-        <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
-          <Typography variant="body2">
-            متقاضی/کارشناس می‌تواند با بارگذاری تصاویر ملک مورد تقاضا مطابقت بنا با ملک را تایید
-            کند.
-          </Typography>
-        </Alert>
+      <Box sx={{ position: 'relative' }}>
+        <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+          <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              متقاضی/کارشناس می‌تواند با بارگذاری تصاویر ملک مورد تقاضا مطابقت بنا با ملک را تایید
+              کند.
+            </Typography>
+          </Alert>
 
         <Typography variant="body2" textAlign="center" sx={{ mt: 5 }}>
           چهار عکس از زوایای مختلف به همراه اطلاعات متقاضی ملک
@@ -219,23 +220,36 @@ export default function WorkflowWizardPage2() {
           />
         </Box>
 
-        <Controller
-          name="survey.description"
-          render={({ field, fieldState: { error } }) => (
-            <TextField
-              {...field}
-              fullWidth
-              multiline
-              rows={6}
-              sx={{ mt: 2 }}
-              label="توصیفات :"
-              placeholder="توضیحات کامل وضعیت ملک، مشکلات احتمالی، مغایرت‌ها و سایر موارد مرتبط را ثبت کنید."
-              error={!!error}
-              helperText={error?.message}
-            />
-          )}
-        />
-      </fieldset>
+          <Controller
+            name="survey.description"
+            render={({ field, fieldState: { error } }) => (
+              <TextField
+                {...field}
+                fullWidth
+                multiline
+                rows={6}
+                sx={{ mt: 2 }}
+                label="توصیفات :"
+                placeholder="توضیحات کامل وضعیت ملک، مشکلات احتمالی، مغایرت‌ها و سایر موارد مرتبط را ثبت کنید."
+                error={!!error}
+                helperText={error?.message}
+              />
+            )}
+          />
+        </fieldset>
+
+        {isReviewer ? (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 2,
+              bgcolor: 'transparent',
+              cursor: 'not-allowed',
+            }}
+          />
+        ) : null}
+      </Box>
 
       {isReviewer ? (
         <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 2, p: 2 }}>

@@ -221,16 +221,17 @@ export default function WorkflowWizardPage2() {
         </Button>
       </Stack>
 
-      <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
-        <Box sx={{ mb: 3 }}>
-          <Button
-            variant="outlined"
-            color="secondary"
-            onClick={() => setIsRegistryInfoModalOpen(true)}
-          >
-            مشاهده اطلاعات ارسال شده از طرف سازمان ثبت
-          </Button>
-        </Box>
+      <Box sx={{ position: 'relative' }}>
+        <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
+          <Box sx={{ mb: 3 }}>
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => setIsRegistryInfoModalOpen(true)}
+            >
+              مشاهده اطلاعات ارسال شده از طرف سازمان ثبت
+            </Button>
+          </Box>
 
         {/* <Alert severity="info" variant="outlined" sx={{ mt: 2 }}>
           <Typography variant="body2">
@@ -514,8 +515,21 @@ export default function WorkflowWizardPage2() {
             </Box>
             <InfoHint text="اجباری" />
           </Box>
-        </Box>
-      </fieldset>
+          </Box>
+        </fieldset>
+
+        {isReviewer ? (
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 2,
+              bgcolor: 'transparent',
+              cursor: 'not-allowed',
+            }}
+          />
+        ) : null}
+      </Box>
 
       <Dialog
         open={isRegistryInfoModalOpen}

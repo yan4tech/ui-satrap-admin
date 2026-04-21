@@ -42,7 +42,7 @@ const REVIEW_STATUS_META = {
 
 const REVIEWABLE_STEPS = [
   { key: 'step0', title: 'اطلاعات شخصی', Component: Step0 },
-  { key: 'step1', title: 'اطلاعات نماینده', Component: Step1 },
+  { key: 'step1', title: 'اطلاعات ادعا', Component: Step1 },
   { key: 'step2', title: 'اطلاعات مکانی', Component: Step2 },
   { key: 'step3', title: 'اطلاعات ملک', Component: Step3 },
   { key: 'step4', title: 'دسترسی به دیگران', Component: Step4 },
@@ -130,7 +130,12 @@ function ApplicantReviewFeedback({ step, review, isReviewer }) {
           <Typography variant="body2" fontWeight={700}>
             نتیجه بررسی {step.title}
           </Typography>
-          <Chip label={currentMeta.label} color={currentMeta.color} size="small" variant="outlined" />
+          <Chip
+            label={currentMeta.label}
+            color={currentMeta.color}
+            size="small"
+            variant="outlined"
+          />
         </Stack>
       </Alert>
 
@@ -177,6 +182,20 @@ export default function WorkflowWizard() {
       national_id: '',
       mobile: '',
       sana_registration_status: '',
+      is_claimant_deceased: 'no',
+      claim_registration_tracking_code: '',
+      deceased_national_id: '',
+      deceased_date: '',
+      legal_entity_national_id: '',
+      representation_method: '',
+      national_id_asil: '',
+      representation_doc_date: '',
+      representation_doc_id: '',
+      verification_code: '',
+      representation_doc_image: null,
+      legal_expert_national_id: '',
+      expert_representation_result: '',
+      expert_description: '',
       email: '',
       address: '',
 
@@ -271,7 +290,9 @@ export default function WorkflowWizard() {
       >
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <Typography variant="h5" textAlign="center" mb={3}>
-            {isReviewer ? 'بررسی و تایید اطلاعات متقاضی توسط شرکت' : 'تکمیل فرم درخواست اولیه توسط متقاضی'}
+            {isReviewer
+              ? 'بررسی و تایید اطلاعات متقاضی توسط شرکت'
+              : 'تکمیل فرم درخواست اولیه توسط متقاضی'}
           </Typography>
 
           <Stack direction="row" spacing={1} sx={{ mb: 2 }}>

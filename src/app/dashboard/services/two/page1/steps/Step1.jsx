@@ -121,24 +121,30 @@ export default function Page1() {
       ) : null}
 
       {isLegalRepresentativeCompany || isLegalRepresentativeIndividual ? (
-        <Grid item xs={12}>
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2 }}>
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
-                <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                  <Field.Select name="representation_method" label="نحوه احراز نمایندگی">
-                    {REPRESENTATION_METHOD_OPTIONS.map((o) => (
-                      <MenuItem key={o.value} value={o.value}>
-                        {o.label}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                  <InfoHint text="اطلاعات پایه (بارگذاری سند نمایندگی / استعلام پایگاه اطلاعات اشخاص حقوقی)." />
-                </Box>
-              </Grid>
+        <Box
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1.5,
+            p: 2,
+            width: { xs: '100%', md: '50%' },
+          }}
+        >
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={6}>
+              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+                <Field.Select name="representation_method" label="نحوه احراز نمایندگی">
+                  {REPRESENTATION_METHOD_OPTIONS.map((o) => (
+                    <MenuItem key={o.value} value={o.value}>
+                      {o.label}
+                    </MenuItem>
+                  ))}
+                </Field.Select>
+                <InfoHint text="اطلاعات پایه (بارگذاری سند نمایندگی / استعلام پایگاه اطلاعات اشخاص حقوقی)." />
+              </Box>
             </Grid>
-          </Box>
-        </Grid>
+          </Grid>
+        </Box>
       ) : null}
 
       {isLegalRepresentativeCompany ? (
@@ -289,27 +295,33 @@ export default function Page1() {
       ) : null}
 
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
-        <Grid item xs={12}>
-          <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2 }}>
-            <Box sx={{ width: { xs: '100%', md: '100%' } }}>
-              <Field.Select
-                name="expert_representation_result"
-                label="نظر کارشناس مبتنی بر احراز نمایندگی"
-              >
-                {REPRESENTATION_STATUS_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </Field.Select>
-              <InfoHint text="در صورت عدم احراز نمایندگی توسط کارشناس، ادامه فرآیند امکان‌پذیر نخواهد بود." />
-            </Box>
-
-            <Box sx={{ width: '100%', '& .MuiFormControl-root': { width: '100%' } }}>
-              <Field.Text name="expert_description" label="توضیحات کارشناس" multiline rows={3} />
-            </Box>
+        <Box
+          sx={{
+            border: '1px solid',
+            borderColor: 'divider',
+            borderRadius: 1.5,
+            p: 2,
+            width: { xs: '100%', md: '100%' },
+          }}
+        >
+          <Box sx={{ width: { xs: '100%', md: '100%' } }}>
+            <Field.Select
+              name="expert_representation_result"
+              label="نظر کارشناس مبتنی بر احراز نمایندگی"
+            >
+              {REPRESENTATION_STATUS_OPTIONS.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </Field.Select>
+            <InfoHint text="در صورت عدم احراز نمایندگی توسط کارشناس، ادامه فرآیند امکان‌پذیر نخواهد بود." />
           </Box>
-        </Grid>
+
+          <Box sx={{ width: '100%', '& .MuiFormControl-root': { width: '100%' } }}>
+            <Field.Text name="expert_description" label="توضیحات کارشناس" multiline rows={3} />
+          </Box>
+        </Box>
       ) : null}
     </Grid>
   );

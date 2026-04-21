@@ -72,6 +72,34 @@ function InfoHint({ text }) {
   );
 }
 
+function ConditionalSection({ title, children }) {
+  return (
+    <Box
+      sx={{
+        gridColumn: '1 / -1',
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 1.5,
+        p: 2,
+      }}
+    >
+      <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+        {title}
+      </Typography>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+          columnGap: 3,
+          rowGap: 2,
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+}
+
 export default function Page0() {
   const { watch } = useFormContext();
   const applicantRole = watch('applicant_role');
@@ -130,7 +158,7 @@ export default function Page0() {
       </Box>
 
       {applicantRole === 'legal_representative_company' && (
-        <>
+        <ConditionalSection title="اقلام اطلاعاتی نماینده قانونی شخص حقوقی">
           {/* شناسه ملی شخص حقوقی */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
             <Field.Text name="company_national_id" label="شناسه ملی شخص حقوقی" />
@@ -181,11 +209,11 @@ export default function Page0() {
               </Box>
             </>
           )}
-        </>
+        </ConditionalSection>
       )}
 
       {applicantRole === 'legal_representative_individual' && (
-        <>
+        <ConditionalSection title="اقلام اطلاعاتی نماینده قانونی شخص حقیقی">
           {/* کد ملی اصیل */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
             <Field.Text name="principal_national_id" label="کد ملی اصیل" />
@@ -220,11 +248,11 @@ export default function Page0() {
             <Field.Text name="individual_verification_code" label="رمز تصدیق" />
             <InfoHint text="این فیلد اختیاری است." />
           </Box>
-        </>
+        </ConditionalSection>
       )}
 
       {shouldShowArticle11Fields && (
-        <>
+        <ConditionalSection title="اقلام اطلاعاتی کارشناس احراز نمایندگی (ماده ۱۱)">
           {/* کد ملی کارشناس امور ثبتی و حقوقی */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
             <Field.Text name="expert_national_id" label="کد ملی کارشناس امور ثبتی و حقوقی" />
@@ -248,7 +276,7 @@ export default function Page0() {
             <Field.Text name="expert_description" label="توضیحات کارشناس" />
             <InfoHint text="این فیلد اختیاری است." />
           </Box>
-        </>
+        </ConditionalSection>
       )}
 
       {/* اعلام اطلاع متقاضی از مفاد تبصره ۵ ماده ۱۰ قانون */}

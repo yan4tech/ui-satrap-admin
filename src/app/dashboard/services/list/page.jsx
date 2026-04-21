@@ -228,8 +228,11 @@ export default function ServicesListPage() {
   };
 
   const handleViewDetails = (row) => {
-    // فعلا جزئیات به فرم خدمت شماره یک هدایت می‌شود.
     console.log('view details for request', row.requestNumber);
+    if (row.requestType === 'خدمت شماره دو') {
+      router.push(paths.dashboard.services.two);
+      return;
+    }
     router.push(paths.dashboard.services.one);
   };
 

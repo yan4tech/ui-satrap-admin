@@ -121,6 +121,11 @@ export const navData = [
             path: paths.dashboard.services.one,
             children: [{ title: 'جدید', path: paths.dashboard.services.one }],
           },
+          {
+            title: 'خدمت شماره دو',
+            path: paths.dashboard.services.two,
+            children: [{ title: 'جدید', path: paths.dashboard.services.two }],
+          },
         ],
       },
     ],

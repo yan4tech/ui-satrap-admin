@@ -47,6 +47,7 @@ export const paths = {
     services: {
       list: `${ROOTS.DASHBOARD}/services/list`,
       one: `${ROOTS.DASHBOARD}/services/one`,
+      two: `${ROOTS.DASHBOARD}/services/two`,
     },
     group: {
       root: `${ROOTS.DASHBOARD}/group`,

@@ -11,7 +11,6 @@ import {
   Button,
   Card,
   CardContent,
-  Grid,
   Typography,
   IconButton,
   Tooltip,
@@ -153,11 +152,18 @@ export default function RoleSearchPage() {
           <Stack spacing={2}>
             <Typography variant="h6">فیلتر نقش‌ها</Typography>
             <Divider />
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                columnGap: 3,
+                rowGap: 2,
+              }}
+            >
+              <Box>
                 <Field.Text name="title" label="عنوان / اسلاگ / توضیح" />
-              </Grid>
-              <Grid item xs={12} md={6}>
+              </Box>
+              <Box>
                 <Box sx={{ pt: 1 }}>
                   <Typography sx={{ mb: 1 }} variant="body2">
                     وضعیت
@@ -187,8 +193,8 @@ export default function RoleSearchPage() {
                     </Button>
                   </Stack>
                 </Box>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
             <Stack direction="row" justifyContent="flex-end" spacing={2}>
               <Button onClick={() => reset()}>پاک کردن</Button>
               <LoadingButton type="submit" variant="contained">

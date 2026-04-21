@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   Alert,
   Container,
   Divider,
@@ -128,14 +127,21 @@ export default function EditRoleView({ role, readOnly }) {
 
           <Form methods={methods} onSubmit={onSubmit}>
             <Stack spacing={3}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  columnGap: 3,
+                  rowGap: 2,
+                }}
+              >
+                <Box>
                   <Field.Text name="title" label="عنوان" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Text name="slug" label="اسلاگ" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12}>
+                </Box>
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Field.Text
                     name="description"
                     label="توضیحات"
@@ -143,8 +149,8 @@ export default function EditRoleView({ role, readOnly }) {
                     rows={2}
                     disabled={readOnly}
                   />
-                </Grid>
-                <Grid item xs={12}>
+                </Box>
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Field.Text
                     name="content"
                     label="Content"
@@ -152,11 +158,11 @@ export default function EditRoleView({ role, readOnly }) {
                     rows={3}
                     disabled={readOnly}
                   />
-                </Grid>
-                <Grid item xs={12} md={6} sx={{ display: 'flex', alignItems: 'center' }}>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Field.Switch name="active" label="فعال" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12}>
+                </Box>
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Typography fontWeight={600} sx={{ mb: 1 }}>
                     دسترسی‌های نقش
                   </Typography>
@@ -178,8 +184,8 @@ export default function EditRoleView({ role, readOnly }) {
                       />
                     )}
                   />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
 
               <Box>
                 <Typography fontWeight={600} sx={{ mb: 1 }}>

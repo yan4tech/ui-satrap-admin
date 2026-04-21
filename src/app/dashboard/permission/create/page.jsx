@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   MenuItem,
   Alert,
   Container,
@@ -103,17 +102,24 @@ export default function CreatePermissionPage() {
 
           <Form methods={methods} onSubmit={onSubmit}>
             <Stack spacing={3}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  columnGap: 3,
+                  rowGap: 2,
+                }}
+              >
+                <Box>
                   <Field.Text name="title" label="عنوان" />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Text name="slug" label="اسلاگ" />
-                </Grid>
-                <Grid item xs={12}>
+                </Box>
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Field.Text name="description" label="توضیحات" multiline rows={2} />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Select name="permission_type" label="نوع دسترسی">
                     {PERMISSION_TYPES.map((t) => (
                       <MenuItem key={t} value={t}>
@@ -121,24 +127,24 @@ export default function CreatePermissionPage() {
                       </MenuItem>
                     ))}
                   </Field.Select>
-                </Grid>
-                <Grid item xs={12} md={6} sx={{ display: 'flex', alignItems: 'center' }}>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Field.Switch name="active" label="فعال" />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Text name="content_str" label="Content (رشته)" />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Text name="content" label="Content (عدد)" />
-                </Grid>
-                <Grid item xs={12}>
+                </Box>
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Field.Text
                     name="processes_raw"
                     label="شناسه فرایندها (با ویرگول)"
                     placeholder="مثال: 1, 2, 5"
                   />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">
                 <Button variant="outlined" onClick={() => router.back()}>

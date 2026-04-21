@@ -11,7 +11,6 @@ import {
   Button,
   Card,
   CardContent,
-  Grid,
   MenuItem,
   Typography,
   IconButton,
@@ -173,14 +172,21 @@ export default function UserSearchPage() {
           <Stack spacing={2}>
             <Typography variant="h6">فیلتر کاربران</Typography>
             <Divider />
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={3}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                columnGap: 3,
+                rowGap: 2,
+              }}
+            >
+              <Box>
                 <Field.Text name="name" label="نام / نام خانوادگی" />
-              </Grid>
-              <Grid item xs={12} md={3}>
+              </Box>
+              <Box>
                 <Field.Text name="mobile" label="موبایل" />
-              </Grid>
-              <Grid item xs={12} md={3}>
+              </Box>
+              <Box>
                 <Field.Select name="role_id" label="نقش" placeholder="همه">
                   <MenuItem value="">همه</MenuItem>
                   {roles.map((r) => (
@@ -189,8 +195,8 @@ export default function UserSearchPage() {
                     </MenuItem>
                   ))}
                 </Field.Select>
-              </Grid>
-              <Grid item xs={12} md={3}>
+              </Box>
+              <Box>
                 <Field.Select name="user_type" label="نوع کاربر" placeholder="همه">
                   <MenuItem value="">همه</MenuItem>
                   {USER_TYPE_OPTIONS.map((o) => (
@@ -199,11 +205,18 @@ export default function UserSearchPage() {
                     </MenuItem>
                   ))}
                 </Field.Select>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
 
-            <Grid container spacing={2}>
-              <Grid item xs={12} md={6}>
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                columnGap: 3,
+                rowGap: 2,
+              }}
+            >
+              <Box>
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   فعال
                 </Typography>
@@ -230,8 +243,8 @@ export default function UserSearchPage() {
                     غیرفعال
                   </Button>
                 </Stack>
-              </Grid>
-              <Grid item xs={12} md={6}>
+              </Box>
+              <Box>
                 <Typography variant="body2" sx={{ mb: 1 }}>
                   تأیید شده
                 </Typography>
@@ -258,8 +271,8 @@ export default function UserSearchPage() {
                     خیر
                   </Button>
                 </Stack>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
 
             <Stack direction="row" justifyContent="flex-end" spacing={2}>
               <Button onClick={() => reset()}>پاک کردن</Button>

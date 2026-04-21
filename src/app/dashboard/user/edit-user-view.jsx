@@ -11,13 +11,13 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   MenuItem,
   Alert,
   Container,
   Divider,
   Stack,
   Chip,
+  Box,
 } from '@mui/material';
 
 import { Form, Field } from 'src/components/hook-form';
@@ -129,20 +129,27 @@ export default function EditUserView({ user, readOnly }) {
 
           <Form methods={methods} onSubmit={onSubmit}>
             <Stack spacing={3}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  columnGap: 3,
+                  rowGap: 2,
+                }}
+              >
+                <Box>
                   <Field.Text name="name" label="نام" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Text name="family" label="نام خانوادگی" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Text name="mobile" label="موبایل" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Text name="email" label="ایمیل" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Select name="role_id" label="نقش (Role)" disabled={readOnly}>
                     {roles.map((r) => (
                       <MenuItem key={r.id} value={r.id}>
@@ -150,8 +157,8 @@ export default function EditUserView({ user, readOnly }) {
                       </MenuItem>
                     ))}
                   </Field.Select>
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Select name="branch_id" label="شعبه" disabled={readOnly}>
                     {mockBranches.map((b) => (
                       <MenuItem key={b.id} value={b.id}>
@@ -159,8 +166,8 @@ export default function EditUserView({ user, readOnly }) {
                       </MenuItem>
                     ))}
                   </Field.Select>
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Box>
+                <Box>
                   <Field.Select name="user_type" label="نوع کاربر" disabled={readOnly}>
                     {USER_TYPE_OPTIONS.map((o) => (
                       <MenuItem key={o.value} value={o.value}>
@@ -168,14 +175,14 @@ export default function EditUserView({ user, readOnly }) {
                       </MenuItem>
                     ))}
                   </Field.Select>
-                </Grid>
-                <Grid item xs={12} md={3} sx={{ display: 'flex', alignItems: 'center' }}>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Field.Switch name="active" label="فعال" disabled={readOnly} />
-                </Grid>
-                <Grid item xs={12} md={3} sx={{ display: 'flex', alignItems: 'center' }}>
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center' }}>
                   <Field.Switch name="verified" label="تأیید شده" disabled={readOnly} />
-                </Grid>
-              </Grid>
+                </Box>
+              </Box>
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">
                 <Button variant="outlined" onClick={() => router.push(paths.dashboard.user.search)}>

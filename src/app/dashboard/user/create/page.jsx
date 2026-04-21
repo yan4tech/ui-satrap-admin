@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   Typography,
-  Grid,
   MenuItem,
   Alert,
   Container,
@@ -96,20 +95,27 @@ export default function CreateUserPage() {
 
           <Form methods={methods} onSubmit={onSubmit}>
             <Stack spacing={3}>
-              <Grid container spacing={2}>
-                <Grid item xs={12} md={6}>
+              <Stack
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  columnGap: 3,
+                  rowGap: 2,
+                }}
+              >
+                <Stack>
                   <Field.Text name="name" label="نام" />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Stack>
+                <Stack>
                   <Field.Text name="family" label="نام خانوادگی" />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Stack>
+                <Stack>
                   <Field.Text name="mobile" label="موبایل" />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Stack>
+                <Stack>
                   <Field.Text name="email" label="ایمیل" />
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Stack>
+                <Stack>
                   <Field.Select name="role_id" label="نقش (Role)">
                     {roles.map((r) => (
                       <MenuItem key={r.id} value={r.id}>
@@ -117,8 +123,8 @@ export default function CreateUserPage() {
                       </MenuItem>
                     ))}
                   </Field.Select>
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Stack>
+                <Stack>
                   <Field.Select name="branch_id" label="شعبه">
                     {mockBranches.map((b) => (
                       <MenuItem key={b.id} value={b.id}>
@@ -126,8 +132,8 @@ export default function CreateUserPage() {
                       </MenuItem>
                     ))}
                   </Field.Select>
-                </Grid>
-                <Grid item xs={12} md={6}>
+                </Stack>
+                <Stack>
                   <Field.Select name="user_type" label="نوع کاربر">
                     {USER_TYPE_OPTIONS.map((o) => (
                       <MenuItem key={o.value} value={o.value}>
@@ -135,14 +141,14 @@ export default function CreateUserPage() {
                       </MenuItem>
                     ))}
                   </Field.Select>
-                </Grid>
-                <Grid item xs={12} md={3} sx={{ display: 'flex', alignItems: 'center' }}>
+                </Stack>
+                <Stack sx={{ display: 'flex', alignItems: 'center' }}>
                   <Field.Switch name="active" label="فعال" />
-                </Grid>
-                <Grid item xs={12} md={3} sx={{ display: 'flex', alignItems: 'center' }}>
+                </Stack>
+                <Stack sx={{ display: 'flex', alignItems: 'center' }}>
                   <Field.Switch name="verified" label="تأیید شده" />
-                </Grid>
-              </Grid>
+                </Stack>
+              </Stack>
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">
                 <Button variant="outlined" onClick={() => router.back()}>

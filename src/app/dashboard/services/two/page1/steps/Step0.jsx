@@ -75,22 +75,26 @@ export default function Page0() {
         </Box>
       </Grid>
 
+      <Box sx={{ width: { xs: '100%', md: '100%' } }}></Box>
+
       {/* وضعیت ثبت نام در سامانه ثنا */}
-      <Grid item xs={12} md={6}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-          <Field.Select name="sana_registration_status" label="وضعیت ثبت نام متقاضی در سامانه ثنا قوه قضاییه">
-            {SANA_STATUS_OPTIONS.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </Field.Select>
-          <InfoHint text="متقاضی باید در سامانه ثنا ثبت نام کرده باشد." />
-        </Box>
-      </Grid>
+      <Box sx={{ width: { xs: '100%', md: '45%' } }}>
+        <Field.Select
+          name="sana_registration_status"
+          label="وضعیت ثبت نام متقاضی در سامانه ثنا قوه قضاییه"
+        >
+          {SANA_STATUS_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Field.Select>
+        <InfoHint text="متقاضی باید در سامانه ثنا ثبت نام کرده باشد." />
+      </Box>
+      <Box sx={{ width: { xs: '100%', md: '100%' } }}></Box>
 
       {/* سمت متقاضی (کمبو باکس) */}
-      <Box sx={{ width: { xs: '100%', md: '50%' } }}>
+      <Box sx={{ width: { xs: '100%', md: '45%' } }}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
           <Field.Select name="applicant_role" label="سمت متقاضی">
             {APPLICANT_ROLE_OPTIONS.map((option) => (

@@ -41,6 +41,12 @@ const ICONS = {
   role: icon('ic-label'),
   permission: icon('ic-lock'),
   userMgmt: icon('ic-user'),
+  services: icon('ic-menu-item'),
+  serviceOne: icon('ic-tour'),
+  serviceTwo: icon('ic-kanban'),
+  serviceThree: icon('ic-course'),
+  list: icon('ic-file'),
+  create: icon('ic-order'),
 };
 
 // ----------------------------------------------------------------------
@@ -102,34 +108,37 @@ export const navData = [
         ],
       },
       {
-        title: 'شعبه',
+        title: 'مدیریت شعبات',
         path: paths.dashboard.branch.create,
         icon: ICONS.branch,
         children: [
-          { title: 'شعبه جدید', path: paths.dashboard.branch.create },
-          { title: 'لیست شعبات', path: paths.dashboard.branch.search },
+          { title: 'شعبه جدید', path: paths.dashboard.branch.create, icon: ICONS.create },
+          { title: 'لیست شعبات', path: paths.dashboard.branch.search, icon: ICONS.list },
         ],
       },
       {
         title: 'خدمات',
         path: paths.dashboard.services.list,
-        icon: ICONS.menuItem,
+        icon: ICONS.services,
         children: [
-          { title: 'لیست', path: paths.dashboard.services.list },
+          { title: 'لیست', path: paths.dashboard.services.list, icon: ICONS.list },
           {
             title: 'خدمت شماره یک',
             path: paths.dashboard.services.one,
-            children: [{ title: 'جدید', path: paths.dashboard.services.one }],
+            icon: ICONS.serviceOne,
+            children: [{ title: 'جدید', path: paths.dashboard.services.one, icon: ICONS.create }],
           },
           {
             title: 'خدمت شماره دو',
             path: paths.dashboard.services.two,
-            children: [{ title: 'جدید', path: paths.dashboard.services.two }],
+            icon: ICONS.serviceTwo,
+            children: [{ title: 'جدید', path: paths.dashboard.services.two, icon: ICONS.create }],
           },
           {
             title: 'خدمت شماره سه',
             path: paths.dashboard.services.three,
-            children: [{ title: 'جدید', path: paths.dashboard.services.three }],
+            icon: ICONS.serviceThree,
+            children: [{ title: 'جدید', path: paths.dashboard.services.three, icon: ICONS.create }],
           },
         ],
       },

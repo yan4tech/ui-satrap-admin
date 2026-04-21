@@ -53,6 +53,15 @@ const ICONS = {
 
 export const navData = [
   /**
+   * Dashboard
+   */
+  {
+    subheader: 'داشبورد',
+    items: [
+      { title: 'داشبورد', path: paths.dashboard.root, icon: ICONS.dashboard },
+    ],
+  },
+  /**
    * Overview
    */
   // {

@@ -14,6 +14,7 @@ import {
   Grid,
   IconButton,
   MenuItem,
+  NoSsr,
   Stack,
   Typography,
   Tooltip,
@@ -479,17 +480,19 @@ export default function ServicesListPage() {
             نتیجه جستجو
           </Typography>
 
-          <DataGrid
-            rows={rows}
-            columns={columns}
-            rowCount={filteredRows.length}
-            paginationMode="server"
-            paginationModel={paginationModel}
-            onPaginationModelChange={setPaginationModel}
-            pageSizeOptions={[10, 20]}
-            autoHeight
-            disableRowSelectionOnClick
-          />
+          <NoSsr>
+            <DataGrid
+              rows={rows}
+              columns={columns}
+              rowCount={filteredRows.length}
+              paginationMode="server"
+              paginationModel={paginationModel}
+              onPaginationModelChange={setPaginationModel}
+              pageSizeOptions={[10, 20]}
+              autoHeight
+              disableRowSelectionOnClick
+            />
+          </NoSsr>
         </CardContent>
       </Card>
     </Stack>

@@ -164,7 +164,7 @@ export default function EditBranch({ branchData }) {
   });
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
       <Card sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h5" fontWeight={700}>

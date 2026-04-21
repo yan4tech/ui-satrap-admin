@@ -163,7 +163,7 @@ const CreateBranch = () => {
   });
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
       <Card sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>

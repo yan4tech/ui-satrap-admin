@@ -101,7 +101,7 @@ export default function EditRoleView({ role, readOnly }) {
   });
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
       <Card sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>

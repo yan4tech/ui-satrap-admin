@@ -102,7 +102,7 @@ export default function EditPermissionView({ permission, readOnly }) {
   });
 
   return (
-    <Container maxWidth="md">
+    <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
       <Card sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 4 }}>
           <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>

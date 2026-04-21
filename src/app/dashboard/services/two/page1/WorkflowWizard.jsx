@@ -176,6 +176,7 @@ export default function WorkflowWizard() {
       applicant_family: '',
       national_id: '',
       mobile: '',
+      sana_registration_status: '',
       email: '',
       address: '',
 

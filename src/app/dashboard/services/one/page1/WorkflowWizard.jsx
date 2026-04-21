@@ -22,9 +22,6 @@ import {
 import Step0 from './steps/Step0';
 import Step1 from './steps/Step1';
 import Step2 from './steps/Step2';
-import Step3 from './steps/Step3';
-import Step4 from './steps/Step4';
-import Step5 from './steps/Step5';
 
 const REVIEW_STATUS = {
   PENDING: 'pending',
@@ -41,11 +38,9 @@ const REVIEW_STATUS_META = {
 };
 
 const REVIEWABLE_STEPS = [
-  { key: 'step0', title: 'اطلاعات شخصی', Component: Step0 },
-  { key: 'step1', title: 'اطلاعات نماینده', Component: Step1 },
-  { key: 'step2', title: 'اطلاعات مکانی', Component: Step2 },
-  { key: 'step3', title: 'اطلاعات ملک', Component: Step3 },
-  { key: 'step4', title: 'دسترسی به دیگران', Component: Step4 },
+  { key: 'step0', title: 'اطلاعات اولیه متقاضی', Component: Step0 },
+  { key: 'step1', title: 'اطلاعات ادعا', Component: Step1 },
+  { key: 'step2', title: 'اطلاعات نمایندگی', Component: Step2 },
 ];
 
 function ReviewDecisionCard({ step, review, isReviewer, onStatusChange, onCommentChange }) {
@@ -130,7 +125,12 @@ function ApplicantReviewFeedback({ step, review, isReviewer }) {
           <Typography variant="body2" fontWeight={700}>
             نتیجه بررسی {step.title}
           </Typography>
-          <Chip label={currentMeta.label} color={currentMeta.color} size="small" variant="outlined" />
+          <Chip
+            label={currentMeta.label}
+            color={currentMeta.color}
+            size="small"
+            variant="outlined"
+          />
         </Stack>
       </Alert>
 
@@ -270,7 +270,9 @@ export default function WorkflowWizard() {
       >
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
           <Typography variant="h5" textAlign="center" mb={3}>
-            {isReviewer ? 'بررسی و تایید اطلاعات متقاضی توسط شرکت' : 'تکمیل فرم درخواست اولیه توسط متقاضی'}
+            {isReviewer
+              ? 'بررسی و تایید اطلاعات متقاضی توسط شرکت'
+              : 'تکمیل فرم درخواست اولیه توسط متقاضی'}
           </Typography>
 
           <Stack direction="row" spacing={1} sx={{ mb: 2 }}>

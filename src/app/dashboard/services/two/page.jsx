@@ -20,12 +20,7 @@ import Page2 from './page2/WorkflowWizard';
 import PaymentPage from './payment/WorkflowWizard';
 import RegistrationTrackingPage from './registration-tracking/WorkflowWizard';
 
-const steps = [
-  'پرداخت',
-  'اطلاعات اولیه',
-  'تایید توسط سازمان ثبت',
-  'گواهی اقدام',
-];
+const steps = ['پرداخت', 'اطلاعات اولیه', 'تایید توسط سازمان ثبت', 'گواهی اقدام'];
 
 const stepSchemas = [
   z.object({}),
@@ -79,7 +74,13 @@ export default function WorkflowWizard() {
   };
 
   const onSubmit = (data) => {
+    if (activeStep < steps.length - 1) {
+      handleNext();
+      return;
+    }
+
     console.log('FINAL WORKFLOW DATA:', data);
+    console.log('activeStep : ', activeStep);
     alert('فرآیند کامل شد 🎉');
   };
 
@@ -118,20 +119,29 @@ export default function WorkflowWizard() {
         </Stepper>
 
         <FormProvider {...methods}>
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+            }}
+          >
             <Box sx={{ minHeight: 120 }}>{renderStep()}</Box>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-              <Button variant="outlined" disabled={activeStep === 0} onClick={handleBack}>
+              <Button
+                type="button"
+                variant="outlined"
+                disabled={activeStep === 0}
+                onClick={handleBack}
+              >
                 قبلی
               </Button>
 
               {activeStep < steps.length - 1 ? (
-                <Button variant="contained" onClick={handleNext}>
+                <Button type="button" variant="contained" onClick={handleNext}>
                   بعدی
                 </Button>
               ) : (
-                <Button type="submit" variant="contained" color="success">
+                <Button type="button" variant="contained" color="success" onClick={handleSubmit(onSubmit)}>
                   پایان
                 </Button>
               )}

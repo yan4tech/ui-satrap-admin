@@ -147,7 +147,7 @@ export default function Page1() {
       ) : null}
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
         <>
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <NoSsr>
               <Field.DatePicker
                 name="representation_doc_date"
@@ -157,11 +157,11 @@ export default function Page1() {
             </NoSsr>
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Field.Text name="representation_doc_id" label="شناسه سند رسمی نمایندگی" />
           </Grid>
 
-          <Grid item xs={12} md={4}>
+          <Grid item xs={12} md={6}>
             <Field.Text name="verification_code" label="رمز تصدیق" />
           </Grid>
         </>

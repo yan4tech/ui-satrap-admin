@@ -18,17 +18,13 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Page1 from './page1/WorkflowWizard';
 import Page2 from './page2/WorkflowWizard';
 import PaymentPage from './payment/WorkflowWizard';
-import SurveyPaymentPage from './payment-survey/WorkflowWizard';
 import RegistrationTrackingPage from './registration-tracking/WorkflowWizard';
-import SurveyRegistrationTrackingPage from './survey-registration-tracking/WorkflowWizard';
 
 const steps = [
   'پرداخت',
   'اطلاعات اولیه',
   'تایید توسط سازمان ثبت',
-  'پرداخت مرحله نقشه برداری',
-  'نقشه برداری',
-  'تایید نقشه برداری توسط سازمان ثبت',
+  'گواهی اقدام',
 ];
 
 const stepSchemas = [
@@ -40,18 +36,12 @@ const stepSchemas = [
     }),
   }),
   z.object({}),
-  z.object({}),
-  z.object({
-    surveyRegistrationTracking: z.object({
-      sentTrackingCode: z.string().min(1, 'کد رهگیری ارسالی را وارد کنید'),
-    }),
-  }),
 ];
 
 export default function WorkflowWizard() {
   const [activeStep, setActiveStep] = useState(0);
   const [approvalState, setApprovalState] = useState({});
-  const approvalSteps = [2, 5];
+  const approvalSteps = [2];
 
   const methods = useForm({
     resolver: zodResolver(stepSchemas[activeStep] || z.object({})),
@@ -68,7 +58,6 @@ export default function WorkflowWizard() {
         description: '',
       },
       registrationTracking: { sentTrackingCode: '' },
-      surveyRegistrationTracking: { sentTrackingCode: '' },
     },
   });
 
@@ -106,13 +95,7 @@ export default function WorkflowWizard() {
         return <RegistrationTrackingPage />;
 
       case 3:
-        return <SurveyPaymentPage />;
-
-      case 4:
         return <Page2 />;
-
-      case 5:
-        return <SurveyRegistrationTrackingPage />;
 
       default:
         return null;

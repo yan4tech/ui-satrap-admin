@@ -130,20 +130,20 @@ export default function Page1() {
             width: { xs: '100%', md: '50%' },
           }}
         >
-          <Grid container spacing={2}>
-            <Grid item xs={12} md={6}>
-              <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                <Field.Select name="representation_method" label="نحوه احراز نمایندگی">
-                  {REPRESENTATION_METHOD_OPTIONS.map((o) => (
-                    <MenuItem key={o.value} value={o.value}>
-                      {o.label}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-                <InfoHint text="اطلاعات پایه (بارگذاری سند نمایندگی / استعلام پایگاه اطلاعات اشخاص حقوقی)." />
-              </Box>
-            </Grid>
-          </Grid>
+          {/* <Grid container spacing={2}>
+            <Grid item xs={12} md={6}> */}
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Select name="representation_method" label="نحوه احراز نمایندگی">
+              {REPRESENTATION_METHOD_OPTIONS.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </Field.Select>
+            <InfoHint text="اطلاعات پایه (بارگذاری سند نمایندگی / استعلام پایگاه اطلاعات اشخاص حقوقی)." />
+          </Box>
+          {/* </Grid>
+          </Grid> */}
         </Box>
       ) : null}
 

@@ -49,18 +49,18 @@ export const navData = [
   /**
    * Overview
    */
-  {
-    subheader: 'Overview',
-    items: [
-      {
-        title: 'One',
-        path: paths.dashboard.root,
-        icon: ICONS.dashboard,
-        info: <Label>v{CONFIG.appVersion}</Label>,
-      },
-      { title: 'Two', path: paths.dashboard.two, icon: ICONS.ecommerce },
-    ],
-  },
+  // {
+  //   subheader: 'Overview',
+  //   items: [
+  //     {
+  //       title: 'One',
+  //       path: paths.dashboard.root,
+  //       icon: ICONS.dashboard,
+  //       info: <Label>v{CONFIG.appVersion}</Label>,
+  //     },
+  //     { title: 'Two', path: paths.dashboard.two, icon: ICONS.ecommerce },
+  //   ],
+  // },
   /**
    * Management
    */

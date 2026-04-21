@@ -54,8 +54,6 @@ const CreateBranch = () => {
     { id: 2, name: 'خدمت شماره 2' },
     { id: 3, name: 'خدمت شماره 3' },
     { id: 4, name: 'خدمت شماره 4' },
-    { id: 5, name: 'پشتیبانی فنی' },
-    { id: 6, name: 'مشاوره' },
   ];
 
   const fetchProvinces = async () => [

@@ -37,13 +37,13 @@ const REVIEW_STATUS_META = {
   [REVIEW_STATUS.NEEDS_CORRECTION]: { label: 'نیاز به اصلاح', color: 'info' },
 };
 
-const REVIEWABLE_STEPS = [
+const FORM_SECTIONS = [
   { key: 'step0', title: 'اطلاعات اولیه متقاضی', Component: Step0 },
   { key: 'step1', title: 'اطلاعات ادعا', Component: Step1 },
   { key: 'step2', title: 'اطلاعات نمایندگی', Component: Step2 },
 ];
 
-function ReviewDecisionCard({ step, review, isReviewer, onStatusChange, onCommentChange }) {
+function ReviewDecisionCard({ review, isReviewer, onStatusChange, onCommentChange }) {
   if (!isReviewer) return null;
 
   const currentMeta = REVIEW_STATUS_META[review.status];
@@ -54,7 +54,7 @@ function ReviewDecisionCard({ step, review, isReviewer, onStatusChange, onCommen
     <Box sx={{ mt: 2, p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ md: 'center' }}>
         <Typography variant="body2" fontWeight={700}>
-          نتیجه بررسی {step.title}
+          نتیجه بررسی کل فرم
         </Typography>
         <Chip
           label={currentMeta.label}
@@ -68,21 +68,21 @@ function ReviewDecisionCard({ step, review, isReviewer, onStatusChange, onCommen
         <Button
           variant={review.status === REVIEW_STATUS.APPROVED ? 'contained' : 'outlined'}
           color="success"
-          onClick={() => onStatusChange(step.key, REVIEW_STATUS.APPROVED)}
+          onClick={() => onStatusChange(REVIEW_STATUS.APPROVED)}
         >
           تایید
         </Button>
         <Button
           variant={review.status === REVIEW_STATUS.NEEDS_CORRECTION ? 'contained' : 'outlined'}
           color="info"
-          onClick={() => onStatusChange(step.key, REVIEW_STATUS.NEEDS_CORRECTION)}
+          onClick={() => onStatusChange(REVIEW_STATUS.NEEDS_CORRECTION)}
         >
           نیاز به اصلاح
         </Button>
         <Button
           variant={review.status === REVIEW_STATUS.REJECTED ? 'contained' : 'outlined'}
           color="error"
-          onClick={() => onStatusChange(step.key, REVIEW_STATUS.REJECTED)}
+          onClick={() => onStatusChange(REVIEW_STATUS.REJECTED)}
         >
           رد
         </Button>
@@ -95,7 +95,7 @@ function ReviewDecisionCard({ step, review, isReviewer, onStatusChange, onCommen
         label="توضیح کارشناس"
         sx={{ mt: 1.5 }}
         value={review.comment}
-        onChange={(event) => onCommentChange(step.key, event.target.value)}
+        onChange={(event) => onCommentChange(event.target.value)}
         error={isCommentRequired && !review.comment.trim()}
         helperText={
           isCommentRequired && !review.comment.trim()
@@ -107,7 +107,7 @@ function ReviewDecisionCard({ step, review, isReviewer, onStatusChange, onCommen
   );
 }
 
-function ApplicantReviewFeedback({ step, review, isReviewer }) {
+function ApplicantReviewFeedback({ review, isReviewer }) {
   if (isReviewer) return null;
 
   const currentMeta = REVIEW_STATUS_META[review.status];
@@ -123,7 +123,7 @@ function ApplicantReviewFeedback({ step, review, isReviewer }) {
       <Alert severity={statusToSeverity[review.status]} sx={{ mb: 1.5 }}>
         <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
           <Typography variant="body2" fontWeight={700}>
-            نتیجه بررسی {step.title}
+            نتیجه بررسی کل فرم
           </Typography>
           <Chip
             label={currentMeta.label}
@@ -155,12 +155,7 @@ function ApplicantReviewFeedback({ step, review, isReviewer }) {
 export default function WorkflowWizard() {
   const [activeRole, setActiveRole] = useState('applicant');
   const [workflowStatus, setWorkflowStatus] = useState('draft');
-  const [reviews, setReviews] = useState(() =>
-    REVIEWABLE_STEPS.reduce((acc, step) => {
-      acc[step.key] = { status: REVIEW_STATUS.PENDING, comment: '' };
-      return acc;
-    }, {})
-  );
+  const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
 
   const methods = useForm({
     resolver: zodResolver(z.object({})),
@@ -204,45 +199,31 @@ export default function WorkflowWizard() {
   const canFinalizeReview = useMemo(() => {
     if (!isReviewer) return false;
 
-    return REVIEWABLE_STEPS.every((step) => {
-      const current = reviews[step.key];
-      if (
-        current.status === REVIEW_STATUS.REJECTED ||
-        current.status === REVIEW_STATUS.NEEDS_CORRECTION
-      ) {
-        return Boolean(current.comment.trim());
-      }
-      return current.status !== REVIEW_STATUS.PENDING;
-    });
-  }, [isReviewer, reviews]);
+    if (review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION) {
+      return Boolean(review.comment.trim());
+    }
+    return review.status !== REVIEW_STATUS.PENDING;
+  }, [isReviewer, review]);
 
-  const handleReviewStatusChange = (stepKey, status) => {
-    setReviews((prev) => ({
+  const handleReviewStatusChange = (status) => {
+    setReview((prev) => ({
       ...prev,
-      [stepKey]: {
-        ...prev[stepKey],
-        status,
-      },
+      status,
     }));
   };
 
-  const handleReviewCommentChange = (stepKey, comment) => {
-    setReviews((prev) => ({
+  const handleReviewCommentChange = (comment) => {
+    setReview((prev) => ({
       ...prev,
-      [stepKey]: {
-        ...prev[stepKey],
-        comment,
-      },
+      comment,
     }));
   };
 
   const handleFinalizeReview = () => {
     if (!canFinalizeReview) return;
 
-    const hasCorrection = Object.values(reviews).some(
-      (review) =>
-        review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION
-    );
+    const hasCorrection =
+      review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION;
     setWorkflowStatus(hasCorrection ? 'returned_for_edit' : 'approved');
     alert(hasCorrection ? 'درخواست برای اصلاح برگشت داده شد.' : 'درخواست توسط شرکت تایید شد.');
   };
@@ -306,7 +287,7 @@ export default function WorkflowWizard() {
           <FormProvider {...methods}>
             <form onSubmit={handleSubmit(onSubmit)}>
               <Box sx={{ minHeight: 250, display: 'grid', gap: 4 }}>
-                {REVIEWABLE_STEPS.map((step, index) => (
+                {FORM_SECTIONS.map((step, index) => (
                   <React.Fragment key={step.key}>
                     <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
                       <Typography variant="subtitle1" fontWeight={700} mb={2}>
@@ -319,36 +300,33 @@ export default function WorkflowWizard() {
                       >
                         <step.Component />
                       </fieldset>
-
-                      <ReviewDecisionCard
-                        step={step}
-                        review={reviews[step.key]}
-                        isReviewer={isReviewer}
-                        onStatusChange={handleReviewStatusChange}
-                        onCommentChange={handleReviewCommentChange}
-                      />
-
-                      <ApplicantReviewFeedback
-                        step={step}
-                        review={reviews[step.key]}
-                        isReviewer={isReviewer}
-                      />
                     </Box>
-                    {index < REVIEWABLE_STEPS.length - 1 ? <Divider /> : null}
+                    {index < FORM_SECTIONS.length - 1 ? <Divider /> : null}
                   </React.Fragment>
                 ))}
 
-                {isReviewer ? (
-                  <>
-                    <Divider />
-                    <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
-                      <Typography variant="subtitle1" fontWeight={700} mb={2}>
-                        تخصیص کارشناس نقشه برداری
-                      </Typography>
-                      <Step5 />
-                    </Box>
-                  </>
-                ) : null}
+                <Box
+                  sx={{
+                    border: '1px solid',
+                    borderColor: 'primary.main',
+                    borderRadius: 2,
+                    p: 2,
+                    bgcolor: 'background.paper',
+                  }}
+                >
+                  <Typography variant="subtitle1" fontWeight={700}>
+                    نتیجه بررسی کل فرم
+                  </Typography>
+
+                  <ReviewDecisionCard
+                    review={review}
+                    isReviewer={isReviewer}
+                    onStatusChange={handleReviewStatusChange}
+                    onCommentChange={handleReviewCommentChange}
+                  />
+
+                  <ApplicantReviewFeedback review={review} isReviewer={isReviewer} />
+                </Box>
               </Box>
 
               {isReviewer ? (

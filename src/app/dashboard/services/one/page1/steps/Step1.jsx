@@ -1,6 +1,6 @@
 import React from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { Box, Grid, MenuItem, Typography } from '@mui/material';
+import { Box, Grid, MenuItem, Typography, NoSsr } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
 const REPRESENTATION_METHOD_OPTIONS = [
@@ -34,17 +34,23 @@ export default function Page1() {
       </Box>
 
       {/* تاریخ سند نمایندگی */}
-      <Grid item xs={12} md={6}>
-        <Field.Text name="representation_doc_date" label="تاریخ سند نمایندگی" />
+      <Grid item xs={12} md={4}>
+        <NoSsr>
+          <Field.DatePicker
+            name="representation_doc_date"
+            label="تاریخ سند نمایندگی"
+            slotProps={{ textField: { fullWidth: true } }}
+          />
+        </NoSsr>
       </Grid>
 
       {/* شناسه سند رسمی */}
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={4}>
         <Field.Text name="representation_doc_id" label="شناسه سند رسمی نمایندگی" />
       </Grid>
 
       {/* رمز تصدیق */}
-      <Grid item xs={12} md={6}>
+      <Grid item xs={12} md={4}>
         <Field.Text name="verification_code" label="رمز تصدیق" />
       </Grid>
 

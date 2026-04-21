@@ -75,6 +75,30 @@ const pendingTasks = [
   { label: 'بازبینی خطاهای ثبت‌شده سرویس دو', progress: 30 },
 ];
 
+const serviceBreakdown = [
+  {
+    name: 'خدمت شماره یک',
+    waitingReview: 42,
+    waitingRegistryReply: 18,
+    completed: 133,
+    rejected: 9,
+  },
+  {
+    name: 'خدمت شماره دو',
+    waitingReview: 27,
+    waitingRegistryReply: 12,
+    completed: 98,
+    rejected: 14,
+  },
+  {
+    name: 'خدمت شماره سه',
+    waitingReview: 31,
+    waitingRegistryReply: 16,
+    completed: 121,
+    rejected: 7,
+  },
+];
+
 export default function Page() {
   return (
     <Box
@@ -123,6 +147,42 @@ export default function Page() {
                       {item.change}
                     </Typography>
                   </Box>
+                </Stack>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+
+        <Grid container spacing={2}>
+          {serviceBreakdown.map((service) => (
+            <Grid key={service.name} size={{ xs: 12, md: 4 }}>
+              <Card sx={{ borderRadius: 2, border: '1px solid', borderColor: 'divider', height: '100%' }}>
+                <Stack spacing={1.5} sx={{ p: 2.5 }}>
+                  <Typography variant="h6">{service.name}</Typography>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      در انتظار بررسی
+                    </Typography>
+                    <Chip label={service.waitingReview} color="warning" size="small" />
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      در انتظار پاسخ سازمان ثبت
+                    </Typography>
+                    <Chip label={service.waitingRegistryReply} color="info" size="small" />
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      پایان یافته
+                    </Typography>
+                    <Chip label={service.completed} color="success" size="small" />
+                  </Stack>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center">
+                    <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                      ریجکت شده
+                    </Typography>
+                    <Chip label={service.rejected} color="error" size="small" />
+                  </Stack>
                 </Stack>
               </Card>
             </Grid>

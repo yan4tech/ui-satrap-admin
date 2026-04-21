@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   CardContent,
+  Collapse,
   MenuItem,
   Typography,
   IconButton,
@@ -20,7 +21,6 @@ import {
   DialogContent,
   DialogContentText,
   DialogActions,
-  Paper,
   Stack,
   Divider,
   Chip,
@@ -62,6 +62,7 @@ export default function UserSearchPage() {
   const [rowCount, setRowCount] = useState(0);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
+  const [isSearchOpen, setIsSearchOpen] = useState(true);
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
@@ -167,122 +168,176 @@ export default function UserSearchPage() {
 
   return (
     <>
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Form methods={methods} onSubmit={onSubmit}>
-          <Stack spacing={2}>
+      <Card
+        sx={{
+          mb: 3,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: (theme) => theme.shadows[2],
+          overflow: 'hidden',
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Box
+            sx={{
+              mb: 2.5,
+              px: 2,
+              py: 1.5,
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+              border: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              cursor: 'pointer',
+            }}
+            onClick={() => setIsSearchOpen((prev) => !prev)}
+          >
+            <Icon
+              icon={isSearchOpen ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-left-linear'}
+              width={18}
+            />
+            <Icon icon="solar:filter-linear" width={20} />
             <Typography variant="h6">فیلتر کاربران</Typography>
-            <Divider />
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                columnGap: 3,
-                rowGap: 2,
-              }}
-            >
-              <Box>
-                <Field.Text name="name" label="نام / نام خانوادگی" />
-              </Box>
-              <Box>
-                <Field.Text name="mobile" label="موبایل" />
-              </Box>
-              <Box>
-                <Field.Select name="role_id" label="نقش" placeholder="همه">
-                  <MenuItem value="">همه</MenuItem>
-                  {roles.map((r) => (
-                    <MenuItem key={r.id} value={String(r.id)}>
-                      {r.title}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
-              <Box>
-                <Field.Select name="user_type" label="نوع کاربر" placeholder="همه">
-                  <MenuItem value="">همه</MenuItem>
-                  {USER_TYPE_OPTIONS.map((o) => (
-                    <MenuItem key={o.value} value={String(o.value)}>
-                      {o.label}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
-            </Box>
+          </Box>
+          <Collapse in={isSearchOpen}>
+            <Form methods={methods} onSubmit={onSubmit}>
+              <Stack spacing={2}>
+                <Divider />
+                <Box
+                  sx={{
+                    p: { xs: 1, md: 2 },
+                    borderRadius: 2,
+                    bgcolor: 'background.neutral',
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
+                    <Field.Text name="name" label="نام / نام خانوادگی" />
+                  </Box>
+                  <Box>
+                    <Field.Text name="mobile" label="موبایل" />
+                  </Box>
+                  <Box>
+                    <Field.Select name="role_id" label="نقش" placeholder="همه">
+                      <MenuItem value="">همه</MenuItem>
+                      {roles.map((r) => (
+                        <MenuItem key={r.id} value={String(r.id)}>
+                          {r.title}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Box>
+                  <Box>
+                    <Field.Select name="user_type" label="نوع کاربر" placeholder="همه">
+                      <MenuItem value="">همه</MenuItem>
+                      {USER_TYPE_OPTIONS.map((o) => (
+                        <MenuItem key={o.value} value={String(o.value)}>
+                          {o.label}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Box>
+                </Box>
 
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                columnGap: 3,
-                rowGap: 2,
-              }}
-            >
-              <Box>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  فعال
-                </Typography>
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    size="small"
-                    variant={activeVal === '' ? 'contained' : 'outlined'}
-                    onClick={() => setValue('active', '')}
-                  >
-                    همه
-                  </Button>
-                  <Button
-                    size="small"
-                    variant={activeVal === 'true' ? 'contained' : 'outlined'}
-                    onClick={() => setValue('active', 'true')}
-                  >
-                    فعال
-                  </Button>
-                  <Button
-                    size="small"
-                    variant={activeVal === 'false' ? 'contained' : 'outlined'}
-                    onClick={() => setValue('active', 'false')}
-                  >
-                    غیرفعال
-                  </Button>
-                </Stack>
-              </Box>
-              <Box>
-                <Typography variant="body2" sx={{ mb: 1 }}>
-                  تأیید شده
-                </Typography>
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    size="small"
-                    variant={verifiedVal === '' ? 'contained' : 'outlined'}
-                    onClick={() => setValue('verified', '')}
-                  >
-                    همه
-                  </Button>
-                  <Button
-                    size="small"
-                    variant={verifiedVal === 'true' ? 'contained' : 'outlined'}
-                    onClick={() => setValue('verified', 'true')}
-                  >
-                    بله
-                  </Button>
-                  <Button
-                    size="small"
-                    variant={verifiedVal === 'false' ? 'contained' : 'outlined'}
-                    onClick={() => setValue('verified', 'false')}
-                  >
-                    خیر
-                  </Button>
-                </Stack>
-              </Box>
-            </Box>
+                <Box
+                  sx={{
+                    p: { xs: 1, md: 2 },
+                    borderRadius: 2,
+                    bgcolor: 'background.neutral',
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      فعال
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        size="small"
+                        variant={activeVal === '' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('active', '')}
+                      >
+                        همه
+                      </Button>
+                      <Button
+                        size="small"
+                        variant={activeVal === 'true' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('active', 'true')}
+                      >
+                        فعال
+                      </Button>
+                      <Button
+                        size="small"
+                        variant={activeVal === 'false' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('active', 'false')}
+                      >
+                        غیرفعال
+                      </Button>
+                    </Stack>
+                  </Box>
+                  <Box>
+                    <Typography variant="body2" sx={{ mb: 1 }}>
+                      تأیید شده
+                    </Typography>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        size="small"
+                        variant={verifiedVal === '' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('verified', '')}
+                      >
+                        همه
+                      </Button>
+                      <Button
+                        size="small"
+                        variant={verifiedVal === 'true' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('verified', 'true')}
+                      >
+                        بله
+                      </Button>
+                      <Button
+                        size="small"
+                        variant={verifiedVal === 'false' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('verified', 'false')}
+                      >
+                        خیر
+                      </Button>
+                    </Stack>
+                  </Box>
+                </Box>
 
-            <Stack direction="row" justifyContent="flex-end" spacing={2}>
-              <Button onClick={() => reset()}>پاک کردن</Button>
-              <LoadingButton type="submit" variant="contained">
-                جستجو
-              </LoadingButton>
-            </Stack>
-          </Stack>
-        </Form>
-      </Paper>
+                <Box
+                  sx={{
+                    pt: 2,
+                    borderTop: '1px dashed',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: 1,
+                  }}
+                >
+                  <Button onClick={() => reset()}>پاک کردن</Button>
+                  <LoadingButton type="submit" variant="contained">
+                    جستجو
+                  </LoadingButton>
+                </Box>
+              </Stack>
+            </Form>
+          </Collapse>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent>

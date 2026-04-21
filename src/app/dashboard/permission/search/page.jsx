@@ -11,6 +11,7 @@ import {
   Button,
   Card,
   CardContent,
+  Collapse,
   MenuItem,
   Typography,
   IconButton,
@@ -51,6 +52,7 @@ export default function PermissionSearchPage() {
   const [rowCount, setRowCount] = useState(0);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
+  const [isSearchOpen, setIsSearchOpen] = useState(true);
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
@@ -135,74 +137,124 @@ export default function PermissionSearchPage() {
 
   return (
     <>
-      <Paper sx={{ p: 2, mb: 3 }}>
-        <Form methods={methods} onSubmit={onSubmit}>
-          <Stack spacing={2}>
+      <Card
+        sx={{
+          mb: 3,
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: (theme) => theme.shadows[2],
+          overflow: 'hidden',
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          <Box
+            sx={{
+              mb: 2.5,
+              px: 2,
+              py: 1.5,
+              borderRadius: 2,
+              bgcolor: 'action.hover',
+              border: '1px solid',
+              borderColor: 'divider',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              cursor: 'pointer',
+            }}
+            onClick={() => setIsSearchOpen((prev) => !prev)}
+          >
+            <Icon
+              icon={isSearchOpen ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-left-linear'}
+              width={18}
+            />
+            <Icon icon="solar:filter-linear" width={20} />
             <Typography variant="h6">فیلتر دسترسی‌ها</Typography>
-            <Divider />
-            <Box
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                columnGap: 3,
-                rowGap: 2,
-              }}
-            >
-              <Box>
-                <Field.Text name="title" label="عنوان / اسلاگ / توضیح" />
-              </Box>
-              <Box>
-                <Field.Select name="permission_type" label="نوع" placeholder="همه">
-                  <MenuItem value="">همه</MenuItem>
-                  {PERMISSION_TYPES.map((t) => (
-                    <MenuItem key={t} value={t}>
-                      {t}
-                    </MenuItem>
-                  ))}
-                </Field.Select>
-              </Box>
-              <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-                <Box sx={{ pt: 1 }}>
-                  <Typography sx={{ mb: 1 }} variant="body2">
-                    فعال بودن
-                  </Typography>
-                  <Stack direction="row" spacing={1}>
-                    <Button
-                      size="small"
-                      variant={isActiveValue === '' ? 'contained' : 'outlined'}
-                      onClick={() => setValue('active', '')}
-                    >
-                      همه
-                    </Button>
-                    <Button
-                      size="small"
-                      color="success"
-                      variant={isActiveValue === 'true' ? 'contained' : 'outlined'}
-                      onClick={() => setValue('active', 'true')}
-                    >
-                      فعال
-                    </Button>
-                    <Button
-                      size="small"
-                      color="inherit"
-                      variant={isActiveValue === 'false' ? 'contained' : 'outlined'}
-                      onClick={() => setValue('active', 'false')}
-                    >
-                      غیرفعال
-                    </Button>
-                  </Stack>
+          </Box>
+
+          <Collapse in={isSearchOpen}>
+            <Form methods={methods} onSubmit={onSubmit}>
+              <Stack spacing={2}>
+                <Divider />
+                <Box
+                  sx={{
+                    p: { xs: 1, md: 2 },
+                    borderRadius: 2,
+                    bgcolor: 'background.neutral',
+                    border: '1px dashed',
+                    borderColor: 'divider',
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
+                  <Box>
+                    <Field.Text name="title" label="عنوان / اسلاگ / توضیح" />
+                  </Box>
+                  <Box>
+                    <Field.Select name="permission_type" label="نوع" placeholder="همه">
+                      <MenuItem value="">همه</MenuItem>
+                      {PERMISSION_TYPES.map((t) => (
+                        <MenuItem key={t} value={t}>
+                          {t}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Box>
+                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                    <Box sx={{ pt: 1 }}>
+                      <Typography sx={{ mb: 1 }} variant="body2">
+                        فعال بودن
+                      </Typography>
+                      <Stack direction="row" spacing={1}>
+                        <Button
+                          size="small"
+                          variant={isActiveValue === '' ? 'contained' : 'outlined'}
+                          onClick={() => setValue('active', '')}
+                        >
+                          همه
+                        </Button>
+                        <Button
+                          size="small"
+                          color="success"
+                          variant={isActiveValue === 'true' ? 'contained' : 'outlined'}
+                          onClick={() => setValue('active', 'true')}
+                        >
+                          فعال
+                        </Button>
+                        <Button
+                          size="small"
+                          color="inherit"
+                          variant={isActiveValue === 'false' ? 'contained' : 'outlined'}
+                          onClick={() => setValue('active', 'false')}
+                        >
+                          غیرفعال
+                        </Button>
+                      </Stack>
+                    </Box>
+                  </Box>
                 </Box>
-              </Box>
-            </Box>
-            <Stack direction="row" justifyContent="flex-end" spacing={2}>
-              <Button onClick={() => reset()}>پاک کردن</Button>
-              <LoadingButton type="submit" variant="contained">
-                جستجو
-              </LoadingButton>
-            </Stack>
-          </Stack>
-        </Form>
-      </Paper>
+                <Box
+                  sx={{
+                    pt: 2,
+                    borderTop: '1px dashed',
+                    borderColor: 'divider',
+                    display: 'flex',
+                    justifyContent: 'flex-end',
+                    gap: 1,
+                  }}
+                >
+                  <Button onClick={() => reset()}>پاک کردن</Button>
+                  <LoadingButton type="submit" variant="contained">
+                    جستجو
+                  </LoadingButton>
+                </Box>
+              </Stack>
+            </Form>
+          </Collapse>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardContent>

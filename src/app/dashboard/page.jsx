@@ -142,10 +142,23 @@ export default function Page() {
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       {item.title}
                     </Typography>
-                    <Typography variant="h4">{toFaDigits(item.value)}</Typography>
                     <Typography
-                      variant="caption"
-                      sx={{ color: item.trend === 'up' ? 'success.main' : 'error.main' }}
+                      variant="h3"
+                      sx={{
+                        fontWeight: 800,
+                        lineHeight: 1.1,
+                        letterSpacing: '0.02em',
+                        color: 'text.primary',
+                      }}
+                    >
+                      {toFaDigits(item.value)}
+                    </Typography>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 700,
+                        color: item.trend === 'up' ? 'success.main' : 'error.main',
+                      }}
                     >
                       {toFaDigits(item.change)}
                     </Typography>
@@ -166,7 +179,11 @@ export default function Page() {
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       در انتظار بررسی
                     </Typography>
-                    <Chip label={toFaDigits(service.waitingReview)} color="warning" size="small" />
+                    <Chip
+                      label={toFaDigits(service.waitingReview)}
+                      color="warning"
+                      sx={{ fontWeight: 800, minWidth: 56 }}
+                    />
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
@@ -175,20 +192,28 @@ export default function Page() {
                     <Chip
                       label={toFaDigits(service.waitingRegistryReply)}
                       color="info"
-                      size="small"
+                      sx={{ fontWeight: 800, minWidth: 56 }}
                     />
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       پایان یافته
                     </Typography>
-                    <Chip label={toFaDigits(service.completed)} color="success" size="small" />
+                    <Chip
+                      label={toFaDigits(service.completed)}
+                      color="success"
+                      sx={{ fontWeight: 800, minWidth: 56 }}
+                    />
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center">
                     <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                       ریجکت شده
                     </Typography>
-                    <Chip label={toFaDigits(service.rejected)} color="error" size="small" />
+                    <Chip
+                      label={toFaDigits(service.rejected)}
+                      color="error"
+                      sx={{ fontWeight: 800, minWidth: 56 }}
+                    />
                   </Stack>
                 </Stack>
               </Card>

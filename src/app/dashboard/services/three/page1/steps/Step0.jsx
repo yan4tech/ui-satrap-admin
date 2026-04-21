@@ -1,4 +1,5 @@
 import React from 'react';
+import { useFormContext } from 'react-hook-form';
 import { Grid, MenuItem, Box, IconButton, Popover, Typography } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
@@ -11,6 +12,11 @@ const APPLICANT_ROLE_OPTIONS = [
 const SANA_STATUS_OPTIONS = [
   { value: 'registered', label: 'در سامانه ثنا ثبت نام کرده است' },
   { value: 'not_registered', label: 'در سامانه ثنا ثبت نام نکرده است' },
+];
+
+const NOTE5_AWARENESS_OPTIONS = [
+  { value: 'aware', label: 'مطلع هستم' },
+  { value: 'not_aware', label: 'مطلع نیستم' },
 ];
 
 function InfoHint({ text }) {
@@ -57,6 +63,8 @@ function InfoHint({ text }) {
 }
 
 export default function Page0() {
+  useFormContext();
+
   return (
     <Grid container spacing={2}>
       {/* کد ملی متقاضی */}
@@ -70,31 +78,30 @@ export default function Page0() {
       {/* شماره تلفن */}
       <Grid item xs={12} md={6}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-          <Field.Text name="mobile" label="شماره تلفن" />
+          <Field.Text name="applicant_mobile" label="شماره تلفن همراه متقاضی" />
           <InfoHint text="شماره تلفن باید در سامانه شاهکار به نام متقاضی ثبت شده باشد." />
         </Box>
       </Grid>
 
-      <Box sx={{ width: { xs: '100%', md: '100%' } }}></Box>
-
       {/* وضعیت ثبت نام در سامانه ثنا */}
-      <Box sx={{ width: { xs: '100%', md: '45%' } }}>
-        <Field.Select
-          name="sana_registration_status"
-          label="وضعیت ثبت نام متقاضی در سامانه ثنا قوه قضاییه"
-        >
-          {SANA_STATUS_OPTIONS.map((option) => (
-            <MenuItem key={option.value} value={option.value}>
-              {option.label}
-            </MenuItem>
-          ))}
-        </Field.Select>
-        <InfoHint text="متقاضی باید در سامانه ثنا ثبت نام کرده باشد." />
-      </Box>
-      <Box sx={{ width: { xs: '100%', md: '100%' } }}></Box>
+      <Grid item xs={12} md={6}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+          <Field.Select
+            name="sana_registration_status"
+            label="وضعیت ثبت نام متقاضی در سامانه ثنا قوه قضاییه"
+          >
+            {SANA_STATUS_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Field.Select>
+          <InfoHint text="متقاضی باید در سامانه ثنا ثبت نام کرده باشد." />
+        </Box>
+      </Grid>
 
       {/* سمت متقاضی (کمبو باکس) */}
-      <Box sx={{ width: { xs: '100%', md: '45%' } }}>
+      <Grid item xs={12} md={6}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
           <Field.Select name="applicant_role" label="سمت متقاضی">
             {APPLICANT_ROLE_OPTIONS.map((option) => (
@@ -105,7 +112,29 @@ export default function Page0() {
           </Field.Select>
           <InfoHint text="اطلاعات پایه (اصیل / نماینده قانونی شخص حقیقی / نماینده شخص حقوقی)." />
         </Box>
-      </Box>
+      </Grid>
+
+      {/* اعلام اطلاع متقاضی از مفاد تبصره ۵ ماده ۱۰ قانون */}
+      <Grid item xs={12} md={6}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+          <Field.Select name="note5_acknowledgment" label="اعلام اطلاع متقاضی از مفاد تبصره ۵ ماده ۱۰ قانون">
+            {NOTE5_AWARENESS_OPTIONS.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </Field.Select>
+          <InfoHint text="متقاضی باید از مفاد تبصره مذکور مطلع باشد." />
+        </Box>
+      </Grid>
+
+      {/* کد رهگیری نقشه */}
+      <Grid item xs={12} md={6}>
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+          <Field.Text name="map_tracking_code" label="کد رهگیری نقشه" />
+          <InfoHint text="متقاضی باید مجوز دسترسی به این نقشه را در سامانه ژئوا داشته باشد." />
+        </Box>
+      </Grid>
     </Grid>
   );
 }

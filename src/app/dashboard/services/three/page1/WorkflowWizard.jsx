@@ -41,8 +41,8 @@ const REVIEW_STATUS_META = {
 };
 
 const FORM_SECTIONS = [
-  { key: 'step0', title: 'اطلاعات شخصی', Component: Step0 },
-  { key: 'step1', title: 'اطلاعات ادعا', Component: Step1 },
+  { key: 'step0', title: 'اطلاعات اولیه متقاضی', Component: Step0 },
+  // { key: 'step1', title: 'اطلاعات ادعا', Component: Step1 },
   // { key: 'step2', title: 'اطلاعات مکانی', Component: Step2 },
   // { key: 'step3', title: 'اطلاعات ملک', Component: Step3 },
   // { key: 'step4', title: 'دسترسی به دیگران', Component: Step4 },
@@ -219,7 +219,10 @@ export default function WorkflowWizard() {
   const canFinalizeReview = useMemo(() => {
     if (!isReviewer) return false;
 
-    if (review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION) {
+    if (
+      review.status === REVIEW_STATUS.REJECTED ||
+      review.status === REVIEW_STATUS.NEEDS_CORRECTION
+    ) {
       return Boolean(review.comment.trim());
     }
     return review.status !== REVIEW_STATUS.PENDING;
@@ -320,7 +323,6 @@ export default function WorkflowWizard() {
                       >
                         <step.Component />
                       </fieldset>
-
                     </Box>
                     {index < FORM_SECTIONS.length - 1 ? <Divider /> : null}
                   </React.Fragment>

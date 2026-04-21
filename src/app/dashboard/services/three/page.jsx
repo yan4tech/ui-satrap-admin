@@ -15,9 +15,9 @@ import {
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import Page1 from '../two/page1/WorkflowWizard';
-import Page2 from '../two/page2/WorkflowWizard';
-import PaymentPage from '../two/payment/WorkflowWizard';
+import Page1 from './page1/WorkflowWizard';
+import Page2 from './page2/WorkflowWizard';
+import PaymentPage from './payment/WorkflowWizard';
 import RegistrationTrackingPage from '../two/registration-tracking/WorkflowWizard';
 
 const steps = ['پرداخت', 'اطلاعات اولیه', 'تایید توسط سازمان ثبت', 'گواهی اقدام'];
@@ -141,7 +141,12 @@ export default function WorkflowWizard() {
                   بعدی
                 </Button>
               ) : (
-                <Button type="button" variant="contained" color="success" onClick={handleSubmit(onSubmit)}>
+                <Button
+                  type="button"
+                  variant="contained"
+                  color="success"
+                  onClick={handleSubmit(onSubmit)}
+                >
                   پایان
                 </Button>
               )}

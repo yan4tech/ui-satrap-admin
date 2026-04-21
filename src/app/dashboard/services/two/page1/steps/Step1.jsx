@@ -72,17 +72,16 @@ export default function Page1() {
 
   return (
     <Grid container spacing={2}>
-      <Grid item xs={12} md={6}>
-        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-          <Field.Select name="is_claimant_deceased" label="آیا مدعی فوت شده است؟">
-            {YES_NO_OPTIONS.map((o) => (
-              <MenuItem key={o.value} value={o.value}>
-                {o.label}
-              </MenuItem>
-            ))}
-          </Field.Select>
-        </Box>
-      </Grid>
+      <Box sx={{ width: { xs: '100%', md: '45%' } }}>
+        <Field.Select name="is_claimant_deceased" label="آیا مدعی فوت شده است؟">
+          {YES_NO_OPTIONS.map((o) => (
+            <MenuItem key={o.value} value={o.value}>
+              {o.label}
+            </MenuItem>
+          ))}
+        </Field.Select>
+      </Box>
+      <Box sx={{ width: { xs: '100%', md: '50%' } }}></Box>
 
       <Grid item xs={12} md={6}>
         <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
@@ -90,6 +89,8 @@ export default function Page1() {
           <InfoHint text="نباید از تاریخ درج ادعا در سامانه بیش از دو سال گذشته باشد. در محیط آزمایشی، این بازه از زمان راه‌اندازی رسمی محاسبه می‌شود." />
         </Box>
       </Grid>
+
+      <Box sx={{ width: { xs: '100%', md: '50%' } }}></Box>
 
       {isDeceased ? (
         <>
@@ -109,21 +110,28 @@ export default function Page1() {
         </>
       ) : null}
 
-      {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) ? (
+      {isLegalRepresentativeCompany || isLegalRepresentativeIndividual ? (
         <Grid item xs={12} md={6}>
-          <Field.Select name="representation_method" label="نحوه احراز نمایندگی">
-            {REPRESENTATION_METHOD_OPTIONS.map((o) => (
-              <MenuItem key={o.value} value={o.value}>
-                {o.label}
-              </MenuItem>
-            ))}
-          </Field.Select>
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Select name="representation_method" label="نحوه احراز نمایندگی">
+              {REPRESENTATION_METHOD_OPTIONS.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </Field.Select>
+            <InfoHint text="اطلاعات پایه (بارگذاری سند نمایندگی / استعلام پایگاه اطلاعات اشخاص حقوقی)." />
+          </Box>
         </Grid>
       ) : null}
+      <Box sx={{ width: { xs: '100%', md: '50%' } }}></Box>
 
       {isLegalRepresentativeCompany ? (
         <Grid item xs={12} md={6}>
-          <Field.Text name="legal_entity_national_id" label="شناسه ملی شخص حقوقی" />
+          <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
+            <Field.Text name="legal_entity_national_id" label="شناسه ملی شخص حقوقی" />
+            <InfoHint text="شناسه ملی شخص حقوقی الزامی است." />
+          </Box>
         </Grid>
       ) : null}
 
@@ -132,23 +140,23 @@ export default function Page1() {
           <Field.Text name="national_id_asil" label="کد ملی اصیل" />
         </Grid>
       ) : null}
+      <Box sx={{ width: { xs: '100%', md: '100%' } }}>
+        {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
+          <>
+            <Grid item xs={12} md={6}>
+              <Field.Text name="representation_doc_date" label="تاریخ تنظیم سند نمایندگی" />
+            </Grid>
 
-      {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) ? (
-        <>
-          <Grid item xs={12} md={6}>
-            <Field.Text name="representation_doc_date" label="تاریخ تنظیم سند نمایندگی" />
-          </Grid>
+            <Grid item xs={12} md={6}>
+              <Field.Text name="representation_doc_id" label="شناسه سند رسمی نمایندگی" />
+            </Grid>
 
-          <Grid item xs={12} md={6}>
-            <Field.Text name="representation_doc_id" label="شناسه سند رسمی نمایندگی" />
-          </Grid>
-
-          <Grid item xs={12} md={6}>
-            <Field.Text name="verification_code" label="رمز تصدیق" />
-          </Grid>
-        </>
-      ) : null}
-
+            <Grid item xs={12} md={6}>
+              <Field.Text name="verification_code" label="رمز تصدیق" />
+            </Grid>
+          </>
+        ) : null}
+      </Box>
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
         <Grid item xs={12}>
           <Controller
@@ -228,6 +236,7 @@ export default function Page1() {
         </Grid>
       ) : null}
 
+      <Box sx={{ width: { xs: '100%', md: '100%' } }}></Box>
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
         <Grid item xs={12} md={6}>
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
@@ -239,26 +248,22 @@ export default function Page1() {
 
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
         <>
-          <Grid item xs={12} md={6}>
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-              <Field.Select name="expert_representation_result" label="نظر کارشناس مبتنی بر احراز نمایندگی">
-                {REPRESENTATION_STATUS_OPTIONS.map((o) => (
-                  <MenuItem key={o.value} value={o.value}>
-                    {o.label}
-                  </MenuItem>
-                ))}
-              </Field.Select>
-              <InfoHint text="در صورت عدم احراز نمایندگی توسط کارشناس، ادامه فرآیند امکان‌پذیر نخواهد بود." />
-            </Box>
-          </Grid>
+          <Box sx={{ width: { xs: '100%', md: '100%' } }}>
+            <Field.Select
+              name="expert_representation_result"
+              label="نظر کارشناس مبتنی بر احراز نمایندگی"
+            >
+              {REPRESENTATION_STATUS_OPTIONS.map((o) => (
+                <MenuItem key={o.value} value={o.value}>
+                  {o.label}
+                </MenuItem>
+              ))}
+            </Field.Select>
+            <InfoHint text="در صورت عدم احراز نمایندگی توسط کارشناس، ادامه فرآیند امکان‌پذیر نخواهد بود." />
+          </Box>
 
           <Grid item xs={12}>
-            <Field.Text
-              name="expert_description"
-              label="توضیحات کارشناس"
-              multiline
-              rows={3}
-            />
+            <Field.Text name="expert_description" label="توضیحات کارشناس" multiline rows={3} />
           </Grid>
         </>
       ) : null}

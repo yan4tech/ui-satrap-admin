@@ -43,9 +43,9 @@ const REVIEW_STATUS_META = {
 const REVIEWABLE_STEPS = [
   { key: 'step0', title: 'اطلاعات شخصی', Component: Step0 },
   { key: 'step1', title: 'اطلاعات ادعا', Component: Step1 },
-  { key: 'step2', title: 'اطلاعات مکانی', Component: Step2 },
-  { key: 'step3', title: 'اطلاعات ملک', Component: Step3 },
-  { key: 'step4', title: 'دسترسی به دیگران', Component: Step4 },
+  // { key: 'step2', title: 'اطلاعات مکانی', Component: Step2 },
+  // { key: 'step3', title: 'اطلاعات ملک', Component: Step3 },
+  // { key: 'step4', title: 'دسترسی به دیگران', Component: Step4 },
 ];
 
 function ReviewDecisionCard({ step, review, isReviewer, onStatusChange, onCommentChange }) {

@@ -102,7 +102,20 @@ const serviceBreakdown = [
 const toFaDigits = (value) =>
   String(value).replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)]);
 
+const monthlyRequests = [180, 220, 210, 260, 240, 290];
+
+const statusDistribution = [
+  { label: 'در انتظار بررسی', value: 100, color: 'warning.main' },
+  { label: 'در انتظار پاسخ ثبت', value: 46, color: 'info.main' },
+  { label: 'پایان یافته', value: 352, color: 'success.main' },
+  { label: 'ریجکت شده', value: 30, color: 'error.main' },
+];
+
 export default function Page() {
+  const maxMonthly = Math.max(...monthlyRequests);
+  const maxServiceCompleted = Math.max(...serviceBreakdown.map((item) => item.completed));
+  const totalStatus = statusDistribution.reduce((sum, item) => sum + item.value, 0);
+
   return (
     <Box
       sx={{
@@ -219,6 +232,98 @@ export default function Page() {
               </Card>
             </Grid>
           ))}
+        </Grid>
+
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
+              <CardHeader title="روند ۶ ماهه درخواست‌ها" />
+              <Stack spacing={1.25} sx={{ px: 2.5, pb: 2.5 }}>
+                {monthlyRequests.map((value, index) => (
+                  <Box key={`month-${index}`}>
+                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        ماه {toFaDigits(index + 1)}
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                        {toFaDigits(value)}
+                      </Typography>
+                    </Stack>
+                    <Box sx={{ bgcolor: 'grey.200', borderRadius: 99, height: 8 }}>
+                      <Box
+                        sx={{
+                          height: 1,
+                          borderRadius: 99,
+                          bgcolor: 'primary.main',
+                          width: `${(value / maxMonthly) * 100}%`,
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            </Card>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
+              <CardHeader title="سهم وضعیت خدمات" />
+              <Stack spacing={1.25} sx={{ px: 2.5, pb: 2.5 }}>
+                {statusDistribution.map((item) => (
+                  <Box key={item.label}>
+                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {item.label}
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                        {toFaDigits(item.value)}
+                      </Typography>
+                    </Stack>
+                    <Box sx={{ bgcolor: 'grey.200', borderRadius: 99, height: 8 }}>
+                      <Box
+                        sx={{
+                          height: 1,
+                          borderRadius: 99,
+                          bgcolor: item.color,
+                          width: `${(item.value / totalStatus) * 100}%`,
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            </Card>
+          </Grid>
+
+          <Grid size={{ xs: 12, md: 4 }}>
+            <Card sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
+              <CardHeader title="مقایسه خروجی خدمات" />
+              <Stack spacing={1.25} sx={{ px: 2.5, pb: 2.5 }}>
+                {serviceBreakdown.map((service) => (
+                  <Box key={`completed-${service.name}`}>
+                    <Stack direction="row" justifyContent="space-between" sx={{ mb: 0.5 }}>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {service.name}
+                      </Typography>
+                      <Typography variant="caption" sx={{ fontWeight: 700 }}>
+                        {toFaDigits(service.completed)}
+                      </Typography>
+                    </Stack>
+                    <Box sx={{ bgcolor: 'grey.200', borderRadius: 99, height: 8 }}>
+                      <Box
+                        sx={{
+                          height: 1,
+                          borderRadius: 99,
+                          bgcolor: 'success.main',
+                          width: `${(service.completed / maxServiceCompleted) * 100}%`,
+                        }}
+                      />
+                    </Box>
+                  </Box>
+                ))}
+              </Stack>
+            </Card>
+          </Grid>
         </Grid>
 
         <Grid container spacing={2}>

@@ -3,7 +3,7 @@
 import axios, { endpoints } from 'src/lib/axios';
 
 import { setSession } from './utils';
-import { JWT_STORAGE_KEY } from './constant';
+import { JWT_STORAGE_KEY, JWT_REFRESH_STORAGE_KEY } from './constant';
 
 // ----------------------------------------------------------------------
 
@@ -27,6 +27,58 @@ export const signInWithPassword = async ({ email, password }) => {
     console.error('Error during sign in:', error);
     throw error;
   }
+};
+
+/** **************************************
+ * Sign in (mobile step 1)
+ *************************************** */
+export const submitMobile = async ({ mobile }) => {
+  const res = await axios.post(
+    endpoints.auth.submitMobile,
+    { mobile },
+    {
+      headers: {
+        mode: 'mobile',
+      },
+    }
+  );
+
+  if (res?.data?.status !== 'success') {
+    throw new Error('ارسال کد تایید ناموفق بود.');
+  }
+
+  return res.data;
+};
+
+/** **************************************
+ * Sign in (mobile step 2)
+ *************************************** */
+export const submitMobileCode = async ({ mobile, code }) => {
+  const res = await axios.post(
+    endpoints.auth.submitCode,
+    { mobile, code: Number(code) },
+    {
+      headers: {
+        mode: 'mobile',
+      },
+    }
+  );
+
+  const accessToken = res?.data?.access_token;
+  const refreshToken = res?.data?.refresh_token;
+  const status = res?.data?.status;
+
+  if (!accessToken || status !== 'success') {
+    throw new Error('کد تایید نامعتبر است یا ورود انجام نشد.');
+  }
+
+  await setSession(accessToken);
+
+  if (refreshToken) {
+    sessionStorage.setItem(JWT_REFRESH_STORAGE_KEY, refreshToken);
+  }
+
+  return { accessToken, refreshToken };
 };
 
 /** **************************************
@@ -61,7 +113,18 @@ export const signUp = async ({ email, password, firstName, lastName }) => {
  *************************************** */
 export const signOut = async () => {
   try {
+    const res = await axios.get(endpoints.auth.logout, {
+      headers: {
+        mode: 'company',
+      },
+    });
+
+    if (res?.data?.status !== 'success') {
+      throw new Error('خروج از حساب کاربری ناموفق بود.');
+    }
+
     await setSession(null);
+    sessionStorage.removeItem(JWT_REFRESH_STORAGE_KEY);
   } catch (error) {
     console.error('Error during sign out:', error);
     throw error;

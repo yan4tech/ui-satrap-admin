@@ -27,9 +27,18 @@ export function AuthProvider({ children }) {
       if (accessToken && isValidToken(accessToken)) {
         setSession(accessToken);
 
-        const res = await axios.get(endpoints.auth.me);
+        const res = await axios.get(endpoints.auth.me, {
+          headers: {
+            mode: 'company',
+          },
+        });
 
-        const { user } = res.data;
+        const user = res?.data?.data?.user ?? res?.data?.user;
+
+        if (!user) {
+          setState({ user: null, loading: false });
+          return;
+        }
 
         setState({ user: { ...user, accessToken }, loading: false });
       } else {

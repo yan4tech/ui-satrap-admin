@@ -1,41 +1,40 @@
 'use client';
 
 import { z as zod } from 'zod';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
-import { useBoolean } from 'minimal-shared/hooks';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import Box from '@mui/material/Box';
 import Link from '@mui/material/Link';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import InputAdornment from '@mui/material/InputAdornment';
+import Stack from '@mui/material/Stack';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
-import { Iconify } from 'src/components/iconify';
 import { Form, Field } from 'src/components/hook-form';
 
 import { useAuthContext } from '../../hooks';
 import { getErrorMessage } from '../../utils';
 import { FormHead } from '../../components/form-head';
-import { signInWithPassword } from '../../context/jwt';
+import { submitMobile, submitMobileCode } from '../../context/jwt';
 
 // ----------------------------------------------------------------------
 
 export const SignInSchema = zod.object({
-  email: zod
+  mobile: zod
     .string()
-    .min(1, { message: 'Email is required!' })
-    .email({ message: 'Email must be a valid email address!' }),
-  password: zod
+    .trim()
+    .regex(/^09\d{9}$/, { message: 'شماره موبایل معتبر نیست.' }),
+  code: zod
     .string()
-    .min(1, { message: 'Password is required!' })
-    .min(6, { message: 'Password must be at least 6 characters!' }),
+    .optional()
+    .refine((value) => !value || /^\d{4,6}$/.test(value), {
+      message: 'کد تایید باید بین 4 تا 6 رقم باشد.',
+    }),
 });
 
 // ----------------------------------------------------------------------
@@ -43,15 +42,15 @@ export const SignInSchema = zod.object({
 export function JwtSignInView() {
   const router = useRouter();
 
-  const showPassword = useBoolean();
-
   const { checkUserSession } = useAuthContext();
 
+  const [step, setStep] = useState('mobile');
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   const defaultValues = {
-    email: 'demo@minimals.cc',
-    password: '@2Minimal',
+    mobile: '',
+    code: '',
   };
 
   const methods = useForm({
@@ -61,14 +60,39 @@ export function JwtSignInView() {
 
   const {
     handleSubmit,
+    watch,
+    setValue,
     formState: { isSubmitting },
   } = methods;
 
+  const mobileValue = watch('mobile');
+
+  const submitLabel = useMemo(() => {
+    if (isSubmitting) return step === 'mobile' ? 'در حال ارسال...' : 'در حال تایید...';
+    return step === 'mobile' ? 'ارسال کد تایید' : 'تایید و ورود';
+  }, [isSubmitting, step]);
+
   const onSubmit = handleSubmit(async (data) => {
     try {
-      await signInWithPassword({ email: data.email, password: data.password });
-      await checkUserSession?.();
+      setErrorMessage(null);
 
+      if (step === 'mobile') {
+        await submitMobile({ mobile: data.mobile.trim() });
+        setSuccessMessage('کد تایید برای شماره شما ارسال شد.');
+        setStep('code');
+        return;
+      }
+
+      if (!data.code) {
+        throw new Error('کد تایید را وارد کنید.');
+      }
+
+      await submitMobileCode({
+        mobile: data.mobile.trim(),
+        code: data.code,
+      });
+      await checkUserSession?.();
+      router.push(paths.dashboard.root);
       router.refresh();
     } catch (error) {
       console.error(error);
@@ -79,40 +103,59 @@ export function JwtSignInView() {
 
   const renderForm = () => (
     <Box sx={{ gap: 3, display: 'flex', flexDirection: 'column' }}>
-      <Field.Text name="email" label="Email address" slotProps={{ inputLabel: { shrink: true } }} />
+      <Field.Text
+        name="mobile"
+        label="شماره موبایل"
+        placeholder="09123456789"
+        slotProps={{ inputLabel: { shrink: true } }}
+        disabled={step === 'code'}
+      />
 
-      <Box sx={{ gap: 1.5, display: 'flex', flexDirection: 'column' }}>
-        <Link
-          component={RouterLink}
-          href="#"
-          variant="body2"
-          color="inherit"
-          sx={{ alignSelf: 'flex-end' }}
-        >
-          Forgot password?
-        </Link>
+      {step === 'code' && (
+        <>
+          <Field.Text
+            name="code"
+            label="کد تایید"
+            placeholder="کد 4 تا 6 رقمی"
+            slotProps={{ inputLabel: { shrink: true } }}
+          />
 
-        <Field.Text
-          name="password"
-          label="Password"
-          placeholder="6+ characters"
-          type={showPassword.value ? 'text' : 'password'}
-          slotProps={{
-            inputLabel: { shrink: true },
-            input: {
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton onClick={showPassword.onToggle} edge="end">
-                    <Iconify
-                      icon={showPassword.value ? 'solar:eye-bold' : 'solar:eye-closed-bold'}
-                    />
-                  </IconButton>
-                </InputAdornment>
-              ),
-            },
-          }}
-        />
-      </Box>
+          <Stack direction="row" spacing={1} justifyContent="space-between">
+            <Link
+              component="button"
+              type="button"
+              variant="body2"
+              color="inherit"
+              onClick={async () => {
+                try {
+                  setErrorMessage(null);
+                  await submitMobile({ mobile: mobileValue.trim() });
+                  setSuccessMessage('کد تایید مجددا ارسال شد.');
+                } catch (error) {
+                  const feedbackMessage = getErrorMessage(error);
+                  setErrorMessage(feedbackMessage);
+                }
+              }}
+            >
+              ارسال دوباره کد
+            </Link>
+
+            <Link
+              component="button"
+              type="button"
+              variant="body2"
+              color="inherit"
+              onClick={() => {
+                setStep('mobile');
+                setValue('code', '');
+                setSuccessMessage(null);
+              }}
+            >
+              تغییر شماره موبایل
+            </Link>
+          </Stack>
+        </>
+      )}
 
       <Button
         fullWidth
@@ -121,9 +164,9 @@ export function JwtSignInView() {
         type="submit"
         variant="contained"
         loading={isSubmitting}
-        loadingIndicator="Sign in..."
+        loadingIndicator={submitLabel}
       >
-        Sign in
+        {submitLabel}
       </Button>
     </Box>
   );
@@ -131,23 +174,23 @@ export function JwtSignInView() {
   return (
     <>
       <FormHead
-        title="Sign in to your account"
+        title="ورود با شماره موبایل"
         description={
           <>
-            {`Don’t have an account? `}
+            {`حساب ندارید؟ `}
             <Link component={RouterLink} href={paths.auth.jwt.signUp} variant="subtitle2">
-              Get started
+              شروع کنید
             </Link>
           </>
         }
         sx={{ textAlign: { xs: 'center', md: 'left' } }}
       />
 
-      <Alert severity="info" sx={{ mb: 3 }}>
-        Use <strong>{defaultValues.email}</strong>
-        {' with password '}
-        <strong>{defaultValues.password}</strong>
-      </Alert>
+      {!!successMessage && (
+        <Alert severity="success" sx={{ mb: 3 }}>
+          {successMessage}
+        </Alert>
+      )}
 
       {!!errorMessage && (
         <Alert severity="error" sx={{ mb: 3 }}>

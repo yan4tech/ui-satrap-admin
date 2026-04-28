@@ -6,27 +6,20 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
 import EditBranchView from '../../edit-branch-view';
+import axios from 'src/lib/axios';
 
-/** Mock fetch — align with search list (`searchBranches` mock). Replace with API call. */
 async function fetchBranchById(rawId) {
   const id = Number(rawId);
   if (!Number.isFinite(id) || id < 1) return null;
 
-  const i = id - 1;
-  const isEven = i % 2 === 0;
-
-  return {
-    ID: id,
-    title: `شعبه ${id}`,
-    province: isEven ? '1' : '2',
-    city: isEven ? '10' : '21',
-    phone: '021123456',
-    is_active: isEven,
-    max_users: String(10 + (i % 5)),
-    ip: '',
-    address: '',
-    description: '',
-  };
+  try {
+    const res = await axios.get(`/api/membership/branch/${id}`, {
+      headers: { mode: 'company' },
+    });
+    return res?.data || null;
+  } catch {
+    return null;
+  }
 }
 
 export default function BranchEditPage() {

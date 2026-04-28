@@ -21,6 +21,14 @@ import {
   FormControlLabel,
   Radio,
   RadioGroup,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Snackbar,
 } from '@mui/material';
 
 import Autocomplete from '@mui/material/Autocomplete';
@@ -46,8 +54,7 @@ export const BranchSchema = zod.object({
   phone: zod.string().trim().min(1, 'شماره تلفن الزامی است'),
   address: zod.string().trim().min(1, 'نشانی شعبه الزامی است'),
   description: zod.string().optional(),
-  max_users: zod
-    .coerce
+  max_users: zod.coerce
     .number({
       invalid_type_error: 'تعداد کاربران باید عدد باشد',
       required_error: 'تعداد کاربران مجاز الزامی است',
@@ -55,7 +62,12 @@ export const BranchSchema = zod.object({
     .int('تعداد کاربران باید عدد صحیح باشد')
     .min(1, 'تعداد کاربران باید حداقل 1 باشد'),
   is_active: zod.boolean(),
-  permissions: zod.array(zod.number()).min(1, 'حداقل یک خدمت باید انتخاب شود'),
+  permissions: zod.array(zod.number()),
+});
+
+const DocumentSchema = zod.object({
+  title: zod.string().trim().min(1, 'عنوان مدرک الزامی است'),
+  file: zod.instanceof(File, { message: 'فایل مدرک الزامی است' }),
 });
 
 // --------------------------------------
@@ -63,9 +75,15 @@ export const BranchSchema = zod.object({
 // --------------------------------------
 export default function EditBranch({ branchData }) {
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
   const [permissionsList, setPermissionsList] = useState([]);
+  const [documents, setDocuments] = useState(branchData?.documents || []);
+  const [newDocuments, setNewDocuments] = useState([
+    { rowId: Date.now(), title: '', file: null, previewUrl: null },
+  ]);
+  const [deleteDocumentIds, setDeleteDocumentIds] = useState([]);
 
   // fake APIs
   const fetchProvinces = async () => [
@@ -113,6 +131,24 @@ export default function EditBranch({ branchData }) {
 
   const selectedProvince = watch('province');
 
+  useEffect(() => {
+    setDocuments(branchData?.documents || []);
+    setDeleteDocumentIds([]);
+    setNewDocuments([{ rowId: Date.now(), title: '', file: null, previewUrl: null }]);
+    methods.reset({
+      title: branchData?.title || '',
+      province: String(branchData?.province || ''),
+      city: String(branchData?.city || ''),
+      ip: branchData?.ip || '',
+      phone: branchData?.phone || '',
+      address: branchData?.address || '',
+      description: branchData?.description || '',
+      max_users: branchData?.max_users || '',
+      is_active: branchData?.is_active || false,
+      permissions: branchData?.permissions?.map((p) => p?.ID ?? p?.id).filter(Boolean) || [],
+    });
+  }, [branchData, methods]);
+
   // load provinces
   useEffect(() => {
     (async () => {
@@ -145,9 +181,13 @@ export default function EditBranch({ branchData }) {
     (async () => {
       const res = await fetchCitiesByProvince(selectedProvince);
       setCities(res);
-      setValue('city', '');
+      const currentCity = methods.getValues('city');
+      const cityExistsInProvince = res.some((c) => String(c.id) === String(currentCity));
+      if (!cityExistsInProvince) {
+        setValue('city', '');
+      }
     })();
-  }, [selectedProvince, setValue]);
+  }, [selectedProvince, setValue, methods]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -160,23 +200,80 @@ export default function EditBranch({ branchData }) {
 
       const payload = {
         title: data.title,
-        province: Number(data.province),
-        city: Number(data.city),
-        ip: data.ip,
-        phone: data.phone,
-        address: data.address,
-        description: data.description || '',
-        is_active: data.is_active,
         max_users: Number(data.max_users),
-        permissions: data.permissions,
+        user_ids: (branchData?.users || []).map((u) => u?.ID ?? u?.id).filter(Boolean),
+        permission_ids: data.permissions,
+        delete_document_ids: deleteDocumentIds,
       };
 
-      await axios.put(`/api/membership/branch/${branchId}`, payload);
+      const validNewDocuments = newDocuments.filter((doc) => doc.title.trim() || doc.file);
+      const parsedNewDocuments = [];
+
+      for (const doc of validNewDocuments) {
+        const parsed = DocumentSchema.safeParse(doc);
+        if (!parsed.success) {
+          setSuccessMessage(null);
+          setErrorMessage(parsed.error.issues[0]?.message || 'اطلاعات مدارک جدید نامعتبر است');
+          return;
+        }
+        parsedNewDocuments.push(parsed.data);
+      }
+
+      const formData = new FormData();
+      formData.append('payload', JSON.stringify(payload));
+      parsedNewDocuments.forEach((doc) => {
+        formData.append('documents', doc.file);
+        formData.append('document_tags', doc.title.trim());
+      });
+
+      await axios.put(`/api/membership/branch/${branchId}`, formData, {
+        headers: {
+          mode: 'company',
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setDeleteDocumentIds([]);
+      setNewDocuments([{ rowId: Date.now(), title: '', file: null, previewUrl: null }]);
       setErrorMessage(null);
+      setSuccessMessage('ویرایش شعبه و مدارک با موفقیت انجام شد');
     } catch {
+      setSuccessMessage(null);
       setErrorMessage('خطا در ویرایش اطلاعات');
     }
   });
+
+  const handleToggleDeleteDocument = (docId) => {
+    if (!docId) return;
+    setDeleteDocumentIds((prev) =>
+      prev.includes(docId) ? prev.filter((id) => id !== docId) : [...prev, docId]
+    );
+  };
+
+  const addNewDocumentRow = () => {
+    setNewDocuments((prev) => [
+      ...prev,
+      { rowId: Date.now() + Math.random(), title: '', file: null, previewUrl: null },
+    ]);
+  };
+
+  const removeNewDocumentRow = (rowId) => {
+    setNewDocuments((prev) => {
+      if (prev.length === 1) return prev;
+      return prev.filter((row) => row.rowId !== rowId);
+    });
+  };
+
+  const updateNewDocumentRow = (rowId, field, value) => {
+    setNewDocuments((prev) =>
+      prev.map((row) => (row.rowId === rowId ? { ...row, [field]: value } : row))
+    );
+  };
+
+  const handleCloseToast = () => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+  };
 
   return (
     <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
@@ -195,6 +292,11 @@ export default function EditBranch({ branchData }) {
           {!!errorMessage && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {errorMessage}
+            </Alert>
+          )}
+          {!!successMessage && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {successMessage}
             </Alert>
           )}
 
@@ -242,18 +344,14 @@ export default function EditBranch({ branchData }) {
                             borderRadius: 2,
                           }}
                         >
-                          <Typography
-                            variant="subtitle1"
-                            fontWeight={700}
-                            sx={{ mb: 1.5, textAlign: 'right' }}
-                          >
+                          <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
                             وضعیت شعبه
                           </Typography>
                           <RadioGroup
                             row
                             value={field.value ? 'true' : 'false'}
                             onChange={(event) => field.onChange(event.target.value === 'true')}
-                            sx={{ direction: 'rtl', gap: 3 }}
+                            sx={{ gap: 3 }}
                           >
                             <FormControlLabel
                               value="true"
@@ -364,6 +462,231 @@ export default function EditBranch({ branchData }) {
                 </Box>
               </Box>
 
+              <Divider />
+
+              <Box>
+                <Typography fontWeight={700} sx={{ mb: 2 }}>
+                  مدیریت مدارک و مستندات
+                </Typography>
+
+                <Box sx={{ mb: 3 }}>
+                  <Typography fontWeight={600} sx={{ mb: 1.5 }}>
+                    مدارک قبلی
+                  </Typography>
+                  <TableContainer
+                    component={Paper}
+                    variant="outlined"
+                    sx={{ borderRadius: 2, borderColor: 'info.light', backgroundColor: 'background.neutral' }}
+                  >
+                    <Table size="small">
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: 'info.lighter' }}>
+                          <TableCell>نام مدرک</TableCell>
+                          <TableCell>تصویر مدرک</TableCell>
+                          <TableCell width={130}>حذف</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {documents.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={3}>
+                              <Typography variant="body2" color="text.secondary">
+                                مدرکی ثبت نشده است.
+                              </Typography>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                        {documents.map((doc, index) => {
+                          const docId = doc?.ID ?? doc?.id;
+                          const isMarkedForDelete = deleteDocumentIds.includes(docId);
+                          const docTitle = doc?.title || doc?.Title || '-';
+                          const docFileName = doc?.file_name || doc?.fileName || doc?.FileName || '-';
+                          const docPath = doc?.path || doc?.Path || '-';
+
+                          return (
+                            <TableRow key={`${docPath || docFileName || docId}-${index}`} hover>
+                              <TableCell>{docTitle}</TableCell>
+                              <TableCell>
+                                <Typography variant="body2" color="text.secondary">
+                                  {docFileName}
+                                </Typography>
+                                <Typography variant="caption" color="text.secondary">
+                                  {docPath}
+                                </Typography>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  type="button"
+                                  color={isMarkedForDelete ? 'inherit' : 'error'}
+                                  variant="outlined"
+                                  size="small"
+                                  onClick={() => handleToggleDeleteDocument(docId)}
+                                >
+                                  {isMarkedForDelete ? 'لغو حذف' : 'حذف'}
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+
+                <Box sx={{ mt: 3 }}>
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                    <Typography fontWeight={600}>مدارک جدید</Typography>
+                    <Button type="button" variant="contained" onClick={addNewDocumentRow}>
+                      + افزودن سطر
+                    </Button>
+                  </Box>
+
+                  <TableContainer
+                    component={Paper}
+                    variant="outlined"
+                    sx={{ borderRadius: 2, borderColor: 'success.light' }}
+                  >
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: 'success.lighter' }}>
+                          <TableCell>نام مدرک</TableCell>
+                          <TableCell>تصویر مدرک</TableCell>
+                          <TableCell width={120}>حذف</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {newDocuments.map((row) => (
+                          <TableRow key={row.rowId}>
+                            <TableCell>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                placeholder="نام مدرک را وارد کنید"
+                                value={row.title}
+                                onChange={(event) =>
+                                  updateNewDocumentRow(row.rowId, 'title', event.target.value)
+                                }
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Box
+                                component="label"
+                                sx={{
+                                  position: 'relative',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  width: '100%',
+                                  minHeight: 84,
+                                  px: 2,
+                                  border: '1px solid',
+                                  borderColor: 'text.primary',
+                                  borderRadius: 0.5,
+                                  cursor: 'pointer',
+                                  backgroundColor: 'background.paper',
+                                  overflow: 'hidden',
+                                }}
+                              >
+                                <input
+                                  type="file"
+                                  accept="image/*"
+                                  hidden
+                                  onChange={(event) => {
+                                    const file = event.target.files?.[0] ?? null;
+
+                                    if (!file) {
+                                      updateNewDocumentRow(row.rowId, 'file', null);
+                                      updateNewDocumentRow(row.rowId, 'previewUrl', null);
+                                      return;
+                                    }
+
+                                    const reader = new FileReader();
+                                    reader.onloadend = () => {
+                                      updateNewDocumentRow(row.rowId, 'file', file);
+                                      updateNewDocumentRow(
+                                        row.rowId,
+                                        'previewUrl',
+                                        typeof reader.result === 'string' ? reader.result : null
+                                      );
+                                    };
+                                    reader.readAsDataURL(file);
+                                  }}
+                                />
+                                {row.previewUrl ? (
+                                  <Box
+                                    component="img"
+                                    src={row.previewUrl}
+                                    alt={row.file?.name || 'پیش نمایش تصویر'}
+                                    sx={{
+                                      width: '100%',
+                                      maxHeight: 110,
+                                      objectFit: 'contain',
+                                      pointerEvents: 'none',
+                                    }}
+                                  />
+                                ) : (
+                                  <>
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        width: '75%',
+                                        borderTop: '1px solid',
+                                        borderColor: 'text.secondary',
+                                        transform: 'rotate(15deg)',
+                                        pointerEvents: 'none',
+                                      }}
+                                    >
+                                      &nbsp;
+                                    </Box>
+                                    <Box
+                                      sx={{
+                                        position: 'absolute',
+                                        width: '75%',
+                                        borderTop: '1px solid',
+                                        borderColor: 'text.secondary',
+                                        transform: 'rotate(-15deg)',
+                                        pointerEvents: 'none',
+                                      }}
+                                    >
+                                      &nbsp;
+                                    </Box>
+                                    <Typography
+                                      variant="body2"
+                                      sx={{
+                                        zIndex: 1,
+                                        px: 1,
+                                        backgroundColor: 'background.paper',
+                                        maxWidth: '100%',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                        whiteSpace: 'nowrap',
+                                      }}
+                                    >
+                                      تصویر مدرک جدید
+                                    </Typography>
+                                  </>
+                                )}
+                              </Box>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                type="button"
+                                color="error"
+                                variant="outlined"
+                                size="small"
+                                onClick={() => removeNewDocumentRow(row.rowId)}
+                              >
+                                حذف
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
+              </Box>
+
               <Button
                 type="submit"
                 variant="contained"
@@ -377,6 +700,21 @@ export default function EditBranch({ branchData }) {
           </Form>
         </CardContent>
       </Card>
+      <Snackbar
+        open={!!errorMessage || !!successMessage}
+        autoHideDuration={4000}
+        onClose={handleCloseToast}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert
+          onClose={handleCloseToast}
+          severity={errorMessage ? 'error' : 'success'}
+          variant="filled"
+          sx={{ minWidth: 320 }}
+        >
+          {errorMessage || successMessage}
+        </Alert>
+      </Snackbar>
     </Container>
   );
 }

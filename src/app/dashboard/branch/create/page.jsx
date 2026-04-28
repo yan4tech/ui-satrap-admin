@@ -4,6 +4,7 @@ import { z as zod } from 'zod';
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { useRouter } from 'next/navigation';
 
 import {
   Box,
@@ -27,6 +28,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 
 import { Form, Field } from 'src/components/hook-form';
 import axios from 'src/lib/axios';
+import { paths } from 'src/routes/paths';
 
 // --------------------------------------
 // ZOD
@@ -60,7 +62,9 @@ export const BranchSchema = zod.object({
 // --------------------------------------
 
 const CreateBranch = () => {
+  const router = useRouter();
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
 
@@ -138,11 +142,20 @@ const CreateBranch = () => {
         is_active: data.is_active,
         max_users: Number(data.max_users),
       };
-      await axios.post('/api/membership/branch', payload, {
+      const res = await axios.post('/api/membership/branch', payload, {
         headers: { mode: 'company' },
       });
+      const createdId = res?.data?.ID;
       setErrorMessage(null);
+      setSuccessMessage('شعبه با موفقیت ثبت شد. در حال انتقال به صفحه ویرایش...');
+
+      if (createdId) {
+        setTimeout(() => {
+          router.push(paths.dashboard.branch.edit(createdId));
+        }, 900);
+      }
     } catch {
+      setSuccessMessage(null);
       setErrorMessage('خطا در ثبت اطلاعات');
     }
   });
@@ -164,6 +177,11 @@ const CreateBranch = () => {
           {!!errorMessage && (
             <Alert severity="error" sx={{ mb: 2 }}>
               {errorMessage}
+            </Alert>
+          )}
+          {!!successMessage && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {successMessage}
             </Alert>
           )}
 

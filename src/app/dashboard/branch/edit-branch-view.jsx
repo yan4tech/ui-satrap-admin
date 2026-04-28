@@ -73,7 +73,7 @@ const DocumentSchema = zod.object({
 // --------------------------------------
 // COMPONENT
 // --------------------------------------
-export default function EditBranch({ branchData }) {
+export default function EditBranch({ branchData, onSaved }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [provinces, setProvinces] = useState([]);
@@ -84,6 +84,8 @@ export default function EditBranch({ branchData }) {
     { rowId: Date.now(), title: '', file: null, previewUrl: null },
   ]);
   const [deleteDocumentIds, setDeleteDocumentIds] = useState([]);
+
+  const normalizeIsActive = (value) => value === true || value === 'true' || value === 1;
 
   // fake APIs
   const fetchProvinces = async () => [
@@ -116,7 +118,7 @@ export default function EditBranch({ branchData }) {
       address: branchData?.address || '',
       description: branchData?.description || '',
       max_users: branchData?.max_users || '',
-      is_active: branchData?.is_active || false,
+      is_active: normalizeIsActive(branchData?.is_active),
       permissions: branchData?.permissions?.map((p) => p?.ID ?? p?.id).filter(Boolean) || [],
     },
   });
@@ -144,7 +146,7 @@ export default function EditBranch({ branchData }) {
       address: branchData?.address || '',
       description: branchData?.description || '',
       max_users: branchData?.max_users || '',
-      is_active: branchData?.is_active || false,
+      is_active: normalizeIsActive(branchData?.is_active),
       permissions: branchData?.permissions?.map((p) => p?.ID ?? p?.id).filter(Boolean) || [],
     });
   }, [branchData, methods]);
@@ -164,16 +166,34 @@ export default function EditBranch({ branchData }) {
         const res = await axios.get('/api/membership/ac/permission?permission_type=PROCESS', {
           headers: { mode: 'company' },
         });
-        const options = (res?.data?.data || []).map((item) => ({
+        const apiOptions = (res?.data?.data || []).map((item) => ({
           id: item.ID,
           title: item.title,
         }));
-        setPermissionsList(options);
+        const currentBranchOptions = (branchData?.permissions || [])
+          .map((item) => ({
+            id: item?.ID ?? item?.id,
+            title: item?.title || '-',
+          }))
+          .filter((item) => item.id);
+
+        const mergedOptionsMap = new Map();
+        [...apiOptions, ...currentBranchOptions].forEach((item) => {
+          mergedOptionsMap.set(item.id, item);
+        });
+
+        setPermissionsList(Array.from(mergedOptionsMap.values()));
       } catch {
-        setPermissionsList([]);
+        const fallbackOptions = (branchData?.permissions || [])
+          .map((item) => ({
+            id: item?.ID ?? item?.id,
+            title: item?.title || '-',
+          }))
+          .filter((item) => item.id);
+        setPermissionsList(fallbackOptions);
       }
     })();
-  }, []);
+  }, [branchData]);
 
   useEffect(() => {
     if (!selectedProvince) return;
@@ -201,6 +221,7 @@ export default function EditBranch({ branchData }) {
       const payload = {
         title: data.title,
         max_users: Number(data.max_users),
+        is_active: data.is_active,
         user_ids: (branchData?.users || []).map((u) => u?.ID ?? u?.id).filter(Boolean),
         permission_ids: data.permissions,
         delete_document_ids: deleteDocumentIds,
@@ -232,6 +253,10 @@ export default function EditBranch({ branchData }) {
           'Content-Type': 'multipart/form-data',
         },
       });
+
+      if (onSaved) {
+        await onSaved();
+      }
 
       setDeleteDocumentIds([]);
       setNewDocuments([{ rowId: Date.now(), title: '', file: null, previewUrl: null }]);
@@ -276,18 +301,36 @@ export default function EditBranch({ branchData }) {
   };
 
   return (
-    <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
-      <Card sx={{ borderRadius: 3 }}>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" fontWeight={700}>
+    <Container
+      maxWidth={false}
+      disableGutters
+      sx={{
+        mr: 0,
+        p: { xs: 1.5, md: 3 },
+        background:
+          'linear-gradient(180deg, rgba(33,150,243,0.08) 0%, rgba(255,255,255,0.95) 45%, rgba(76,175,80,0.06) 100%)',
+        borderRadius: 3,
+      }}
+    >
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'divider',
+          boxShadow: '0 10px 30px rgba(15, 23, 42, 0.08)',
+          overflow: 'hidden',
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+          <Typography variant="h4" fontWeight={800}>
             ویرایش شعبه
           </Typography>
 
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            اطلاعات را ویرایش کنید
+          <Typography variant="body2" color="text.secondary" sx={{ mb: 3.5, mt: 1 }}>
+            اطلاعات شعبه را ویرایش کنید و در پایان تغییرات را ذخیره کنید
           </Typography>
 
-          <Divider sx={{ mb: 3 }} />
+          <Divider sx={{ mb: 3.5 }} />
 
           {!!errorMessage && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -301,10 +344,18 @@ export default function EditBranch({ branchData }) {
           )}
 
           <Form methods={methods} onSubmit={onSubmit}>
-            <Stack spacing={4}>
+            <Stack spacing={3}>
               {/* BASIC */}
-              <Box>
-                <Typography fontWeight={600} sx={{ mb: 2 }}>
+              <Box
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'background.paper',
+                }}
+              >
+                <Typography fontWeight={700} sx={{ mb: 2, fontSize: 18 }}>
                   اطلاعات پایه شعبه
                 </Typography>
 
@@ -377,10 +428,19 @@ export default function EditBranch({ branchData }) {
                 </Box>
               </Box>
 
-              <Divider />
-
               {/* LOCATION */}
-              <Box>
+              <Box
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'background.paper',
+                }}
+              >
+                <Typography fontWeight={700} sx={{ mb: 2, fontSize: 18 }}>
+                  اطلاعات موقعیت
+                </Typography>
                 <Box
                   sx={{
                     display: 'grid',
@@ -416,11 +476,17 @@ export default function EditBranch({ branchData }) {
                 </Box>
               </Box>
 
-              <Divider />
-
               {/* SERVICES */}
-              <Box>
-                <Typography fontWeight={600} sx={{ mb: 2 }}>
+              <Box
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'background.paper',
+                }}
+              >
+                <Typography fontWeight={700} sx={{ mb: 2, fontSize: 18 }}>
                   انتخاب خدمات
                 </Typography>
 
@@ -443,17 +509,25 @@ export default function EditBranch({ branchData }) {
                 />
               </Box>
 
-              <Divider />
-
               {/* ADDRESS */}
               <Box
                 sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'background.paper',
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
                   columnGap: 3,
                   rowGap: 2,
                 }}
               >
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                  <Typography fontWeight={700} sx={{ fontSize: 18 }}>
+                    آدرس و توضیحات
+                  </Typography>
+                </Box>
                 <Box>
                   <Field.Text name="address" label="نشانی شعبه" multiline rows={3} />
                 </Box>
@@ -462,10 +536,16 @@ export default function EditBranch({ branchData }) {
                 </Box>
               </Box>
 
-              <Divider />
-
-              <Box>
-                <Typography fontWeight={700} sx={{ mb: 2 }}>
+              <Box
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 2.5,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  backgroundColor: 'background.paper',
+                }}
+              >
+                <Typography fontWeight={700} sx={{ mb: 2, fontSize: 18 }}>
                   مدیریت مدارک و مستندات
                 </Typography>
 
@@ -692,7 +772,13 @@ export default function EditBranch({ branchData }) {
                 variant="contained"
                 size="large"
                 loading={isSubmitting}
-                sx={{ py: 1.5, borderRadius: 2 }}
+                sx={{
+                  py: 1.5,
+                  borderRadius: 2,
+                  fontWeight: 700,
+                  fontSize: 16,
+                  boxShadow: '0 8px 20px rgba(25,118,210,0.35)',
+                }}
               >
                 ذخیره تغییرات
               </Button>

@@ -32,24 +32,16 @@ import { Icon } from '@iconify/react';
 
 import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
-
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-
-import dayjs from 'dayjs';
-import jalaliday from 'jalaliday';
-
-dayjs.extend(jalaliday);
-dayjs.calendar('jalali');
+import axios from 'src/lib/axios';
 
 // ---------------------- SCHEMA ----------------------
 const SearchSchema = zod.object({
   branch_number: zod.string().optional(),
   title: zod.string().optional(),
+  phone: zod.string().optional(),
+  ip: zod.string().optional(),
   province: zod.number().optional(),
   city: zod.number().optional(),
-  village: zod.number().optional(),
   is_active: zod.string().optional(),
   from_date: zod.any().optional(),
   to_date: zod.any().optional(),
@@ -60,9 +52,10 @@ const BranchSearch = () => {
 
   const [rows, setRows] = useState([]);
   const [rowCount, setRowCount] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [cities, setCities] = useState([]);
-  const [villages, setVillages] = useState([]);
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
@@ -79,6 +72,12 @@ const BranchSearch = () => {
     { id: 1, name: 'تهران' },
     { id: 2, name: 'اصفهان' },
   ];
+  const allCities = [
+    { id: 10, name: 'تهران' },
+    { id: 11, name: 'اسلامشهر' },
+    { id: 20, name: 'اصفهان' },
+    { id: 21, name: 'کاشان' },
+  ];
 
   const fetchCitiesByProvince = async (provinceId) => {
     const data = {
@@ -94,52 +93,40 @@ const BranchSearch = () => {
     return data[provinceId] || [];
   };
 
-  const fetchVillagesByCity = async (cityId) => {
-    const data = {
-      10: [
-        { id: 100, name: 'روستای A' },
-        { id: 101, name: 'روستای B' },
-      ],
-      20: [
-        { id: 200, name: 'روستای C' },
-        { id: 201, name: 'روستای D' },
-      ],
-    };
-    return data[cityId] || [];
-  };
-
   const searchBranches = async (filters, page, pageSize) => {
-    const allData = Array.from({ length: 37 }).map((_, i) => ({
-      id: i + 1,
-      branch_number: `BR-${String(i + 1).padStart(4, '0')}`,
-      title: `شعبه ${i + 1}`,
-      province: i % 2 === 0 ? 'تهران' : 'اصفهان',
-      city: i % 2 === 0 ? 'تهران' : 'کاشان',
-      phone: '021123456',
-      is_active: i % 2 === 0,
-    }));
+    const params = {
+      limit: pageSize,
+      offset: page * pageSize,
+    };
 
-    const filteredData = allData.filter((item) => {
-      if (
-        filters.branch_number &&
-        !item.branch_number.toLowerCase().includes(filters.branch_number.toLowerCase())
-      ) {
-        return false;
-      }
+    if (filters.branch_number) params.branch_number = filters.branch_number;
+    if (filters.title) params.title = filters.title;
+    if (filters.phone) params.phone = filters.phone;
+    if (filters.ip) params.ip = filters.ip;
+    if (filters.province) params.province = filters.province;
+    if (filters.city) params.city = filters.city;
+    if (filters.is_active !== '') params.is_active = filters.is_active;
 
-      if (filters.title && !item.title.toLowerCase().includes(filters.title.toLowerCase())) {
-        return false;
-      }
-
-      return true;
+    const res = await axios.get('/api/membership/branch', {
+      params,
+      headers: { mode: 'company' },
     });
 
-    const start = page * pageSize;
-    const end = start + pageSize;
+    const payload = res?.data ?? {};
+    const data = Array.isArray(payload?.data) ? payload.data : [];
+    const mapped = data.map((item) => ({
+      id: item.ID,
+      title: item.title || '-',
+      province: provinces.find((p) => p.id === item.province)?.name || item.province || '-',
+      city: allCities.find((c) => c.id === item.city)?.name || item.city || '-',
+      ip: item.ip || '-',
+      phone: item.phone || '-',
+      is_active: Boolean(item.is_active),
+    }));
 
     return {
-      data: filteredData.slice(start, end),
-      total: filteredData.length,
+      data: mapped,
+      total: Number(payload?.total ?? payload?.count ?? mapped.length),
     };
   };
 
@@ -148,9 +135,10 @@ const BranchSearch = () => {
     defaultValues: {
       branch_number: '',
       title: '',
+      phone: '',
+      ip: '',
       province: undefined,
       city: undefined,
-      village: undefined,
       is_active: '',
       from_date: null,
       to_date: null,
@@ -169,46 +157,31 @@ const BranchSearch = () => {
       if (!selectedProvince) {
         setCities([]);
         setValue('city', undefined);
-        setVillages([]);
-        setValue('village', undefined);
         return;
       }
 
       const res = await fetchCitiesByProvince(selectedProvince);
       setCities(res);
       setValue('city', undefined);
-
-      setVillages([]);
-      setValue('village', undefined);
     };
 
     load();
   }, [selectedProvince, setValue]);
 
-  // city -> village
-  useEffect(() => {
-    const load = async () => {
-      if (!selectedCity) {
-        setVillages([]);
-        setValue('village', undefined);
-        return;
-      }
-
-      const res = await fetchVillagesByCity(selectedCity);
-      setVillages(res);
-      setValue('village', undefined);
-    };
-
-    load();
-  }, [selectedCity, setValue]);
-
   const fetchData = useCallback(async () => {
-    const filters = getValues();
-
-    const res = await searchBranches(filters, paginationModel.page, paginationModel.pageSize);
-
-    setRows(res.data);
-    setRowCount(res.total);
+    setLoading(true);
+    try {
+      const filters = getValues();
+      const res = await searchBranches(filters, paginationModel.page, paginationModel.pageSize);
+      setRows(res.data);
+      setRowCount(res.total);
+    } catch (error) {
+      console.error('Failed to fetch branches:', error);
+      setRows([]);
+      setRowCount(0);
+    } finally {
+      setLoading(false);
+    }
   }, [paginationModel, getValues]);
 
   useEffect(() => {
@@ -216,8 +189,11 @@ const BranchSearch = () => {
   }, [fetchData]);
 
   const onSubmit = handleSubmit(() => {
+    if (paginationModel.page === 0) {
+      fetchData();
+      return;
+    }
     setPaginationModel((p) => ({ ...p, page: 0 }));
-    fetchData();
   });
 
   const handleEdit = (row) => router.push(paths.dashboard.branch.edit(row.id));
@@ -226,17 +202,28 @@ const BranchSearch = () => {
   const openDeleteDialog = (row) => setDeleteDialog({ open: true, row });
   const closeDeleteDialog = () => setDeleteDialog({ open: false, row: null });
 
-  const confirmDelete = () => {
-    setRows((p) => p.filter((r) => r.id !== deleteDialog.row.id));
-    setRowCount((p) => p - 1);
-    closeDeleteDialog();
+  const confirmDelete = async () => {
+    if (!deleteDialog.row?.id) return;
+    setDeleteLoading(true);
+    try {
+      await axios.delete(`/api/membership/branch/${deleteDialog.row.id}`, {
+        headers: { mode: 'company' },
+      });
+      closeDeleteDialog();
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to delete branch:', error);
+    } finally {
+      setDeleteLoading(false);
+    }
   };
 
   const columns = [
-    { field: 'branch_number', headerName: 'شماره شعبه', flex: 1 },
+    { field: 'id', headerName: 'شناسه', flex: 0.7 },
     { field: 'title', headerName: 'عنوان', flex: 1 },
     { field: 'province', headerName: 'استان', flex: 1 },
     { field: 'city', headerName: 'شهر', flex: 1 },
+    { field: 'ip', headerName: 'IP', flex: 1 },
     { field: 'phone', headerName: 'تلفن', flex: 1 },
     {
       field: 'is_active',
@@ -340,6 +327,14 @@ const BranchSearch = () => {
                   </Box>
 
                   <Box>
+                    <Field.Text name="phone" label="تلفن" />
+                  </Box>
+
+                  <Box>
+                    <Field.Text name="ip" label="IP" />
+                  </Box>
+
+                  <Box>
                     <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                       {provinces.map((p) => (
                         <MenuItem key={p.id} value={p.id}>
@@ -359,21 +354,6 @@ const BranchSearch = () => {
                       {cities.map((c) => (
                         <MenuItem key={c.id} value={c.id}>
                           {c.name}
-                        </MenuItem>
-                      ))}
-                    </Field.Select>
-                  </Box>
-
-                  <Box>
-                    <Field.Select
-                      name="village"
-                      label="روستا"
-                      disabled={!selectedCity}
-                      placeholder="انتخاب روستا/ده"
-                    >
-                      {villages.map((v) => (
-                        <MenuItem key={v.id} value={v.id}>
-                          {v.name}
                         </MenuItem>
                       ))}
                     </Field.Select>
@@ -456,7 +436,11 @@ const BranchSearch = () => {
                     onClick={() => {
                       reset();
                       setCities([]);
-                      setVillages([]);
+                      if (paginationModel.page === 0) {
+                        fetchData();
+                        return;
+                      }
+                      setPaginationModel((p) => ({ ...p, page: 0 }));
                     }}
                   >
                     پاک کردن
@@ -474,15 +458,20 @@ const BranchSearch = () => {
 
       <Card>
         <CardContent>
-          <Typography variant="h5">لیست شعب</Typography>
+          <Typography variant="h5" sx={{ mb: 2 }}>
+            لیست شعب
+          </Typography>
 
           <DataGrid
             rows={rows}
             columns={columns}
             rowCount={rowCount}
+            loading={loading}
+            pagination
             paginationMode="server"
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
+            pageSizeOptions={[10, 20, 50, 100]}
             autoHeight
           />
         </CardContent>
@@ -495,7 +484,7 @@ const BranchSearch = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDeleteDialog}>انصراف</Button>
-          <Button color="error" onClick={confirmDelete}>
+          <Button color="error" onClick={confirmDelete} disabled={deleteLoading}>
             حذف
           </Button>
         </DialogActions>

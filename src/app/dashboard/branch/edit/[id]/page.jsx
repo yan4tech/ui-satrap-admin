@@ -30,11 +30,22 @@ export default function BranchEditPage() {
   const [branch, setBranch] = useState(null);
   const [status, setStatus] = useState('loading');
 
+  const reloadBranch = async () => {
+    setStatus('loading');
+    const data = await fetchBranchById(rawId);
+    if (!data) {
+      setBranch(null);
+      setStatus('notfound');
+      return;
+    }
+    setBranch(data);
+    setStatus('ready');
+  };
+
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      setStatus('loading');
       const data = await fetchBranchById(rawId);
       if (cancelled) return;
       if (!data) {
@@ -69,5 +80,5 @@ export default function BranchEditPage() {
     );
   }
 
-  return <EditBranchView branchData={branch} readOnly={readOnly} />;
+  return <EditBranchView branchData={branch} readOnly={readOnly} onSaved={reloadBranch} />;
 }

@@ -17,11 +17,6 @@ import {
   ButtonGroup,
   IconButton,
   Tooltip,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
   Stack,
   Chip,
 } from '@mui/material';
@@ -53,7 +48,6 @@ const BranchSearch = () => {
   const [rows, setRows] = useState([]);
   const [rowCount, setRowCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const [cities, setCities] = useState([]);
 
@@ -62,11 +56,6 @@ const BranchSearch = () => {
     pageSize: 10,
   });
   const [isSearchOpen, setIsSearchOpen] = useState(true);
-
-  const [deleteDialog, setDeleteDialog] = useState({
-    open: false,
-    row: null,
-  });
 
   const provinces = [
     { id: 1, name: 'تهران' },
@@ -197,26 +186,6 @@ const BranchSearch = () => {
   });
 
   const handleEdit = (row) => router.push(paths.dashboard.branch.edit(row.id));
-  const handleDetails = (row) => router.push(paths.dashboard.branch.details(row.id));
-
-  const openDeleteDialog = (row) => setDeleteDialog({ open: true, row });
-  const closeDeleteDialog = () => setDeleteDialog({ open: false, row: null });
-
-  const confirmDelete = async () => {
-    if (!deleteDialog.row?.id) return;
-    setDeleteLoading(true);
-    try {
-      await axios.delete(`/api/membership/branch/${deleteDialog.row.id}`, {
-        headers: { mode: 'company' },
-      });
-      closeDeleteDialog();
-      await fetchData();
-    } catch (error) {
-      console.error('Failed to delete branch:', error);
-    } finally {
-      setDeleteLoading(false);
-    }
-  };
 
   const columns = [
     { field: 'id', headerName: 'شناسه', flex: 0.7 },
@@ -243,20 +212,14 @@ const BranchSearch = () => {
       flex: 1.5,
       renderCell: (params) => (
         <>
-          <Tooltip title="جزئیات">
-            <IconButton onClick={() => handleDetails(params.row)}>
-              <Icon icon="mdi:eye-outline" width="20" />
-            </IconButton>
-          </Tooltip>
-
           <Tooltip title="ویرایش">
             <IconButton onClick={() => handleEdit(params.row)}>
               <Icon icon="mdi:pencil-outline" width="20" />
             </IconButton>
           </Tooltip>
 
-          <Tooltip title="حذف">
-            <IconButton color="error" onClick={() => openDeleteDialog(params.row)}>
+          <Tooltip title="حذف (غیرفعال)">
+            <IconButton color="error" disabled>
               <Icon icon="mdi:delete-outline" width="20" />
             </IconButton>
           </Tooltip>
@@ -476,19 +439,6 @@ const BranchSearch = () => {
           />
         </CardContent>
       </Card>
-
-      <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>
-        <DialogTitle>حذف</DialogTitle>
-        <DialogContent>
-          <DialogContentText>آیا مطمئن هستید؟</DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDeleteDialog}>انصراف</Button>
-          <Button color="error" onClick={confirmDelete} disabled={deleteLoading}>
-            حذف
-          </Button>
-        </DialogActions>
-      </Dialog>
     </>
   );
 };

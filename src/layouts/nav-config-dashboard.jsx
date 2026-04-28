@@ -88,21 +88,21 @@ export const navData = [
         icon: ICONS.userMgmt,
         children: [
           {
-            title: 'نقش',
-            path: paths.dashboard.role.create,
-            icon: ICONS.role,
-            children: [
-              { title: 'جدید', path: paths.dashboard.role.create },
-              { title: 'لیست', path: paths.dashboard.role.search },
-            ],
-          },
-          {
             title: 'دسترسی',
             path: paths.dashboard.permission.create,
             icon: ICONS.permission,
             children: [
               { title: 'جدید', path: paths.dashboard.permission.create },
               { title: 'لیست', path: paths.dashboard.permission.search },
+            ],
+          },
+          {
+            title: 'نقش',
+            path: paths.dashboard.role.create,
+            icon: ICONS.role,
+            children: [
+              { title: 'جدید', path: paths.dashboard.role.create },
+              { title: 'لیست', path: paths.dashboard.role.search },
             ],
           },
           {

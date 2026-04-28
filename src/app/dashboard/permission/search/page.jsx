@@ -371,9 +371,10 @@ export default function PermissionSearchPage() {
 
       <Card>
         <CardContent>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            لیست دسترسی‌ها
-          </Typography>
+          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1} sx={{ mb: 2 }}>
+            <Typography variant="h5">لیست دسترسی‌ها</Typography>
+            <Chip size="small" variant="outlined" color="primary" label={`${rowCount} رکورد`} />
+          </Stack>
           <DataGrid
             rows={rows}
             columns={columns}
@@ -384,6 +385,19 @@ export default function PermissionSearchPage() {
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
             autoHeight
+            sx={{
+              border: '1px solid',
+              borderColor: 'divider',
+              borderRadius: 2,
+              '& .MuiDataGrid-columnHeaders': {
+                bgcolor: 'background.neutral',
+                borderBottom: '1px solid',
+                borderColor: 'divider',
+              },
+              '& .MuiDataGrid-row:nth-of-type(even)': {
+                bgcolor: 'action.hover',
+              },
+            }}
           />
         </CardContent>
       </Card>

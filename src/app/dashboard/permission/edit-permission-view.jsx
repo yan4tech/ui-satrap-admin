@@ -141,9 +141,19 @@ export default function EditPermissionView({ permission, readOnly }) {
     <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
       <Card sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
-            {readOnly ? 'جزئیات دسترسی' : 'ویرایش دسترسی'}
-          </Typography>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between" sx={{ mb: 1 }}>
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                {readOnly ? 'جزئیات دسترسی' : 'ویرایش دسترسی'}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                مدیریت جزئیات دسترسی انتخاب‌شده
+              </Typography>
+            </Box>
+            {permission?.permission_type && (
+              <Chip size="small" color="info" variant="outlined" label={permission.permission_type} />
+            )}
+          </Stack>
           {!readOnly && (
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               شناسه: {permission?.id}
@@ -204,7 +214,7 @@ export default function EditPermissionView({ permission, readOnly }) {
                     <Field.Text name="slug" label="اسلاگ" disabled={readOnly} />
                   </Box>
                 )}
-                <Box>
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Typography sx={{ mb: 1 }} variant="body2">
                     وضعیت
                   </Typography>
@@ -220,7 +230,7 @@ export default function EditPermissionView({ permission, readOnly }) {
                     </Button>
                     <Button
                       size="small"
-                      color="inherit"
+                      color="error"
                       disabled={readOnly}
                       variant={!isActive ? 'contained' : 'outlined'}
                       onClick={() => setValue('active', false)}
@@ -230,23 +240,56 @@ export default function EditPermissionView({ permission, readOnly }) {
                   </Stack>
                 </Box>
                 {selectedPermissionType === 'API' && (
-                  <>
-                    <Box>
-                      <Field.Text name="api_path" label="ApiPath" disabled={readOnly} />
+                  <Box
+                    sx={{
+                      gridColumn: { xs: 'span 1', md: 'span 2' },
+                      p: 2,
+                      borderRadius: 2,
+                      border: '1px dashed',
+                      borderColor: 'info.main',
+                      bgcolor: 'info.lighter',
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                      تنظیمات API
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                        columnGap: 2,
+                        rowGap: 2,
+                      }}
+                    >
+                      <Box>
+                        <Field.Text name="api_path" label="ApiPath" disabled={readOnly} />
+                      </Box>
+                      <Box>
+                        <Field.Select name="api_method" label="ApiMethod" disabled={readOnly}>
+                          {API_METHODS.map((method) => (
+                            <MenuItem key={method} value={method}>
+                              {method}
+                            </MenuItem>
+                          ))}
+                        </Field.Select>
+                      </Box>
                     </Box>
-                    <Box>
-                      <Field.Select name="api_method" label="ApiMethod" disabled={readOnly}>
-                        {API_METHODS.map((method) => (
-                          <MenuItem key={method} value={method}>
-                            {method}
-                          </MenuItem>
-                        ))}
-                      </Field.Select>
-                    </Box>
-                  </>
+                  </Box>
                 )}
                 {(selectedPermissionType === 'SERVICE' || selectedPermissionType === 'PROCESS') && (
-                  <Box>
+                  <Box
+                    sx={{
+                      gridColumn: { xs: 'span 1', md: 'span 2' },
+                      p: 2,
+                      borderRadius: 2,
+                      border: '1px dashed',
+                      borderColor: 'warning.main',
+                      bgcolor: 'warning.lighter',
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                      شناسه خدمت
+                    </Typography>
                     <Field.Text
                       name="process"
                       label="شناسه خدمت (Process)"

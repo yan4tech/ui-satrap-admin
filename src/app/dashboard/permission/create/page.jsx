@@ -17,6 +17,7 @@ import {
   Container,
   Divider,
   Stack,
+  Chip,
 } from '@mui/material';
 
 import { Form, Field } from 'src/components/hook-form';
@@ -105,9 +106,16 @@ export default function CreatePermissionPage() {
     <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
       <Card sx={{ borderRadius: 3 }}>
         <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
-            دسترسی جدید
-          </Typography>
+          <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} justifyContent="space-between" sx={{ mb: 1 }}>
+            <Box>
+              <Typography variant="h5" fontWeight={700}>
+                دسترسی جدید
+              </Typography>
+              <Typography variant="caption" color="info.main" sx={{ display: 'block', mt: 0.5 }}>
+                اطلاعات دسترسی را کامل کنید و سپس ثبت کنید.
+              </Typography>
+            </Box>
+          </Stack>
 
           <Divider sx={{ mb: 3 }} />
 
@@ -147,7 +155,7 @@ export default function CreatePermissionPage() {
                     <Field.Text name="slug" label="اسلاگ" />
                   </Box>
                 )}
-                <Box>
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Typography sx={{ mb: 1 }} variant="body2">
                     وضعیت
                   </Typography>
@@ -162,7 +170,7 @@ export default function CreatePermissionPage() {
                     </Button>
                     <Button
                       size="small"
-                      color="inherit"
+                      color="error"
                       variant={!isActive ? 'contained' : 'outlined'}
                       onClick={() => setValue('active', false)}
                     >
@@ -171,23 +179,56 @@ export default function CreatePermissionPage() {
                   </Stack>
                 </Box>
                 {selectedPermissionType === 'API' && (
-                  <>
-                    <Box>
-                      <Field.Text name="api_path" label="ApiPath" placeholder="/api/example" />
+                  <Box
+                    sx={{
+                      gridColumn: { xs: 'span 1', md: 'span 2' },
+                      p: 2,
+                      borderRadius: 2,
+                      border: '1px dashed',
+                      borderColor: 'info.main',
+                      bgcolor: 'info.lighter',
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                      تنظیمات API
+                    </Typography>
+                    <Box
+                      sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                        columnGap: 2,
+                        rowGap: 2,
+                      }}
+                    >
+                      <Box>
+                        <Field.Text name="api_path" label="ApiPath" placeholder="/api/example" />
+                      </Box>
+                      <Box>
+                        <Field.Select name="api_method" label="ApiMethod">
+                          {API_METHODS.map((method) => (
+                            <MenuItem key={method} value={method}>
+                              {method}
+                            </MenuItem>
+                          ))}
+                        </Field.Select>
+                      </Box>
                     </Box>
-                    <Box>
-                      <Field.Select name="api_method" label="ApiMethod">
-                        {API_METHODS.map((method) => (
-                          <MenuItem key={method} value={method}>
-                            {method}
-                          </MenuItem>
-                        ))}
-                      </Field.Select>
-                    </Box>
-                  </>
+                  </Box>
                 )}
                 {(selectedPermissionType === 'SERVICE' || selectedPermissionType === 'PROCESS') && (
-                  <Box>
+                  <Box
+                    sx={{
+                      gridColumn: { xs: 'span 1', md: 'span 2' },
+                      p: 2,
+                      borderRadius: 2,
+                      border: '1px dashed',
+                      borderColor: 'warning.main',
+                      bgcolor: 'warning.lighter',
+                    }}
+                  >
+                    <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
+                      شناسه خدمت
+                    </Typography>
                     <Field.Text name="process" label="شناسه خدمت (Process)" type="number" />
                   </Box>
                 )}

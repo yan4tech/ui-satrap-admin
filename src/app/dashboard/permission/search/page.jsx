@@ -36,6 +36,7 @@ import { paths } from 'src/routes/paths';
 
 import {
   PERMISSION_TYPES,
+  API_METHODS,
   searchPermissions,
   deletePermission,
 } from 'src/app/dashboard/_lib/access-control-mock';
@@ -43,6 +44,7 @@ import {
 const SearchSchema = zod.object({
   title: zod.string().optional(),
   permission_type: zod.string().optional(),
+  api_method: zod.string().optional(),
   active: zod.string().optional(),
 });
 
@@ -56,11 +58,18 @@ export default function PermissionSearchPage() {
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
-    defaultValues: { title: '', permission_type: '', active: '' },
+    defaultValues: { title: '', permission_type: '', api_method: '', active: '' },
   });
 
   const { handleSubmit, watch, setValue, getValues, reset } = methods;
   const isActiveValue = watch('active');
+  const selectedPermissionType = watch('permission_type');
+
+  useEffect(() => {
+    if (selectedPermissionType !== 'API') {
+      setValue('api_method', '');
+    }
+  }, [selectedPermissionType, setValue]);
 
   const fetchData = useCallback(async () => {
     const filters = getValues();
@@ -169,6 +178,17 @@ export default function PermissionSearchPage() {
 
   return (
     <>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<Icon icon="mdi:plus" width="20" />}
+          onClick={() => router.push(paths.dashboard.permission.create)}
+        >
+          دسترسی جدید
+        </Button>
+      </Box>
+
       <Card
         sx={{
           mb: 3,
@@ -222,9 +242,6 @@ export default function PermissionSearchPage() {
                   }}
                 >
                   <Box>
-                    <Field.Text name="title" label="عنوان / اسلاگ / توضیح / ApiPath / ApiMethod" />
-                  </Box>
-                  <Box>
                     <Field.Select name="permission_type" label="نوع" placeholder="همه">
                       <MenuItem value="">همه</MenuItem>
                       {PERMISSION_TYPES.map((t) => (
@@ -234,10 +251,25 @@ export default function PermissionSearchPage() {
                       ))}
                     </Field.Select>
                   </Box>
+                  {selectedPermissionType === 'API' && (
+                    <Box>
+                      <Field.Select name="api_method" label="ApiMethod" placeholder="همه">
+                        <MenuItem value="">همه</MenuItem>
+                        {API_METHODS.map((method) => (
+                          <MenuItem key={method} value={method}>
+                            {method}
+                          </MenuItem>
+                        ))}
+                      </Field.Select>
+                    </Box>
+                  )}
+                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                    <Field.Text name="title" label="عنوان / اسلاگ / توضیح / ApiPath / ApiMethod" />
+                  </Box>
                   <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                     <Box sx={{ pt: 1 }}>
                       <Typography sx={{ mb: 1 }} variant="body2">
-                        فعال بودن
+                        وضعیت
                       </Typography>
                       <Stack direction="row" spacing={1}>
                         <Button
@@ -257,7 +289,7 @@ export default function PermissionSearchPage() {
                         </Button>
                         <Button
                           size="small"
-                          color="inherit"
+                          color="error"
                           variant={isActiveValue === 'false' ? 'contained' : 'outlined'}
                           onClick={() => setValue('active', 'false')}
                         >

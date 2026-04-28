@@ -307,6 +307,9 @@ export function searchPermissions(filters, page, pageSize) {
   if (filters.permission_type) {
     rows = rows.filter((p) => p.permission_type === filters.permission_type);
   }
+  if (filters.api_method) {
+    rows = rows.filter((p) => p.api_method === filters.api_method);
+  }
   if (filters.active === 'true') rows = rows.filter((p) => p.active);
   if (filters.active === 'false') rows = rows.filter((p) => !p.active);
   const total = rows.length;

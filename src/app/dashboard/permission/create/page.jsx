@@ -24,29 +24,38 @@ import { paths } from 'src/routes/paths';
 
 import {
   PERMISSION_TYPES,
+  API_METHODS,
   createPermission,
 } from 'src/app/dashboard/_lib/access-control-mock';
 
-const PermissionSchema = zod.object({
-  title: zod.string().min(1, 'عنوان الزامی است'),
-  slug: zod.string().min(1, 'اسلاگ الزامی است'),
-  description: zod.string().optional(),
-  permission_type: zod.enum(['API', 'UI', 'SERVICE', 'PROCESS']),
-  active: zod.boolean(),
-  content_str: zod.string().optional(),
-  content: zod.string().optional(),
-  processes_raw: zod.string().optional(),
-});
-
-function parseProcesses(raw) {
-  if (!raw || !String(raw).trim()) return [];
-  return String(raw)
-    .split(/[,،\s]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map(Number)
-    .filter((n) => Number.isFinite(n));
-}
+const PermissionSchema = zod
+  .object({
+    title: zod.string().min(1, 'عنوان الزامی است'),
+    slug: zod.string().min(1, 'اسلاگ الزامی است'),
+    description: zod.string().optional(),
+    permission_type: zod.enum(['API', 'UI', 'SERVICE', 'PROCESS']),
+    active: zod.boolean(),
+    api_path: zod.string().optional(),
+    api_method: zod.string().optional(),
+    process: zod.coerce.number().int().min(0, 'فرایند باید عدد صحیح مثبت باشد'),
+  })
+  .superRefine((data, ctx) => {
+    if (data.permission_type !== 'API') return;
+    if (!String(data.api_path ?? '').trim()) {
+      ctx.addIssue({
+        code: zod.ZodIssueCode.custom,
+        path: ['api_path'],
+        message: 'برای نوع API مسیر سرویس الزامی است',
+      });
+    }
+    if (!API_METHODS.includes(String(data.api_method ?? ''))) {
+      ctx.addIssue({
+        code: zod.ZodIssueCode.custom,
+        path: ['api_method'],
+        message: 'متد API باید یکی از پروتکل‌های معتبر باشد',
+      });
+    }
+  });
 
 export default function CreatePermissionPage() {
   const router = useRouter();
@@ -60,22 +69,25 @@ export default function CreatePermissionPage() {
       description: '',
       permission_type: 'UI',
       active: true,
-      content_str: '',
-      content: '0',
-      processes_raw: '',
+      api_path: '',
+      api_method: '',
+      process: 0,
     },
   });
 
-  const { handleSubmit, formState: { isSubmitting } } = methods;
+  const {
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { isSubmitting },
+  } = methods;
+  const selectedPermissionType = watch('permission_type');
+  const isActive = watch('active');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       setErrorMessage(null);
-      createPermission({
-        ...data,
-        content: data.content,
-        processes: parseProcesses(data.processes_raw),
-      });
+      createPermission(data);
       router.push(paths.dashboard.permission.search);
     } catch {
       setErrorMessage('خطا در ثبت دسترسی');
@@ -89,9 +101,7 @@ export default function CreatePermissionPage() {
           <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
             دسترسی جدید
           </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            فیلدها مطابق مدل Permission در بک‌اند هستند.
-          </Typography>
+
           <Divider sx={{ mb: 3 }} />
 
           {!!errorMessage && (
@@ -114,9 +124,6 @@ export default function CreatePermissionPage() {
                   <Field.Text name="title" label="عنوان" />
                 </Box>
                 <Box>
-                  <Field.Text name="slug" label="اسلاگ" />
-                </Box>
-                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Field.Text name="description" label="توضیحات" multiline rows={2} />
                 </Box>
                 <Box>
@@ -128,22 +135,55 @@ export default function CreatePermissionPage() {
                     ))}
                   </Field.Select>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Field.Switch name="active" label="فعال" />
-                </Box>
+                {selectedPermissionType === 'UI' && (
+                  <Box>
+                    <Field.Text name="slug" label="اسلاگ" />
+                  </Box>
+                )}
                 <Box>
-                  <Field.Text name="content_str" label="Content (رشته)" />
+                  <Typography sx={{ mb: 1 }} variant="body2">
+                    وضعیت
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      size="small"
+                      color="success"
+                      variant={isActive ? 'contained' : 'outlined'}
+                      onClick={() => setValue('active', true)}
+                    >
+                      فعال
+                    </Button>
+                    <Button
+                      size="small"
+                      color="inherit"
+                      variant={!isActive ? 'contained' : 'outlined'}
+                      onClick={() => setValue('active', false)}
+                    >
+                      غیرفعال
+                    </Button>
+                  </Stack>
                 </Box>
-                <Box>
-                  <Field.Text name="content" label="Content (عدد)" />
-                </Box>
-                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-                  <Field.Text
-                    name="processes_raw"
-                    label="شناسه فرایندها (با ویرگول)"
-                    placeholder="مثال: 1, 2, 5"
-                  />
-                </Box>
+                {selectedPermissionType === 'API' && (
+                  <>
+                    <Box>
+                      <Field.Text name="api_path" label="ApiPath" placeholder="/api/example" />
+                    </Box>
+                    <Box>
+                      <Field.Select name="api_method" label="ApiMethod">
+                        {API_METHODS.map((method) => (
+                          <MenuItem key={method} value={method}>
+                            {method}
+                          </MenuItem>
+                        ))}
+                      </Field.Select>
+                    </Box>
+                  </>
+                )}
+                {selectedPermissionType === 'SERVICE' && (
+                  <Box>
+                    <Field.Text name="process" label="Process" type="number" />
+                  </Box>
+                )}
               </Box>
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">

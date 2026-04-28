@@ -79,7 +79,6 @@ export default function PermissionSearchPage() {
   });
 
   const handleEdit = (row) => router.push(paths.dashboard.permission.edit(row.id));
-  const handleDetails = (row) => router.push(paths.dashboard.permission.details(row.id));
 
   const openDeleteDialog = (row) => setDeleteDialog({ open: true, row });
   const closeDeleteDialog = () => setDeleteDialog({ open: false, row: null });
@@ -95,7 +94,45 @@ export default function PermissionSearchPage() {
   const columns = [
     { field: 'title', headerName: 'عنوان', flex: 1 },
     { field: 'slug', headerName: 'اسلاگ', flex: 1 },
-    { field: 'permission_type', headerName: 'نوع', width: 110 },
+    {
+      field: 'permission_type',
+      headerName: 'نوع',
+      width: 130,
+      renderCell: (params) => {
+        const colorByType = {
+          API: 'info',
+          UI: 'primary',
+          SERVICE: 'warning',
+          PROCESS: 'secondary',
+        };
+        return (
+          <Chip
+            label={params.value}
+            color={colorByType[params.value] || 'default'}
+            size="small"
+            variant="outlined"
+          />
+        );
+      },
+    },
+    {
+      field: 'api_path',
+      headerName: 'ApiPath',
+      flex: 1.1,
+      renderCell: (params) => (params.row.permission_type === 'API' ? (params.value || '—') : '—'),
+    },
+    {
+      field: 'api_method',
+      headerName: 'ApiMethod',
+      width: 120,
+      renderCell: (params) =>
+        params.row.permission_type === 'API' ? (
+          <Chip label={params.value || '—'} color="info" size="small" variant="outlined" />
+        ) : (
+          '—'
+        ),
+    },
+    { field: 'process', headerName: 'Process', width: 90 },
     {
       field: 'active',
       headerName: 'وضعیت',
@@ -103,7 +140,7 @@ export default function PermissionSearchPage() {
       renderCell: (params) => (
         <Chip
           label={params.value ? 'فعال' : 'غیرفعال'}
-          color={params.value ? 'success' : 'default'}
+          color={params.value ? 'success' : 'error'}
           size="small"
         />
       ),
@@ -115,11 +152,6 @@ export default function PermissionSearchPage() {
       sortable: false,
       renderCell: (params) => (
         <>
-          <Tooltip title="جزئیات">
-            <IconButton onClick={() => handleDetails(params.row)}>
-              <Icon icon="mdi:eye-outline" width="20" />
-            </IconButton>
-          </Tooltip>
           <Tooltip title="ویرایش">
             <IconButton onClick={() => handleEdit(params.row)}>
               <Icon icon="mdi:pencil-outline" width="20" />
@@ -190,7 +222,7 @@ export default function PermissionSearchPage() {
                   }}
                 >
                   <Box>
-                    <Field.Text name="title" label="عنوان / اسلاگ / توضیح" />
+                    <Field.Text name="title" label="عنوان / اسلاگ / توضیح / ApiPath / ApiMethod" />
                   </Box>
                   <Box>
                     <Field.Select name="permission_type" label="نوع" placeholder="همه">

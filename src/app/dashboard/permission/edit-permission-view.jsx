@@ -25,29 +25,38 @@ import { paths } from 'src/routes/paths';
 
 import {
   PERMISSION_TYPES,
+  API_METHODS,
   updatePermission,
 } from 'src/app/dashboard/_lib/access-control-mock';
 
-const PermissionSchema = zod.object({
-  title: zod.string().min(1),
-  slug: zod.string().min(1),
-  description: zod.string().optional(),
-  permission_type: zod.enum(['API', 'UI', 'SERVICE', 'PROCESS']),
-  active: zod.boolean(),
-  content_str: zod.string().optional(),
-  content: zod.string().optional(),
-  processes_raw: zod.string().optional(),
-});
-
-function parseProcesses(raw) {
-  if (!raw || !String(raw).trim()) return [];
-  return String(raw)
-    .split(/[,،\s]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map(Number)
-    .filter((n) => Number.isFinite(n));
-}
+const PermissionSchema = zod
+  .object({
+    title: zod.string().min(1),
+    slug: zod.string().min(1),
+    description: zod.string().optional(),
+    permission_type: zod.enum(['API', 'UI', 'SERVICE', 'PROCESS']),
+    active: zod.boolean(),
+    api_path: zod.string().optional(),
+    api_method: zod.string().optional(),
+    process: zod.coerce.number().int().min(0),
+  })
+  .superRefine((data, ctx) => {
+    if (data.permission_type !== 'API') return;
+    if (!String(data.api_path ?? '').trim()) {
+      ctx.addIssue({
+        code: zod.ZodIssueCode.custom,
+        path: ['api_path'],
+        message: 'برای نوع API مسیر سرویس الزامی است',
+      });
+    }
+    if (!API_METHODS.includes(String(data.api_method ?? ''))) {
+      ctx.addIssue({
+        code: zod.ZodIssueCode.custom,
+        path: ['api_method'],
+        message: 'متد API باید معتبر باشد',
+      });
+    }
+  });
 
 /**
  * @param {{ permission: object, readOnly?: boolean }} props
@@ -64,13 +73,21 @@ export default function EditPermissionView({ permission, readOnly }) {
       description: '',
       permission_type: 'UI',
       active: false,
-      content_str: '',
-      content: '0',
-      processes_raw: '',
+      api_path: '',
+      api_method: '',
+      process: 0,
     },
   });
 
-  const { handleSubmit, reset, formState: { isSubmitting } } = methods;
+  const {
+    handleSubmit,
+    reset,
+    watch,
+    setValue,
+    formState: { isSubmitting },
+  } = methods;
+  const selectedPermissionType = watch('permission_type');
+  const isActive = watch('active');
 
   useEffect(() => {
     if (!permission) return;
@@ -80,9 +97,9 @@ export default function EditPermissionView({ permission, readOnly }) {
       description: permission.description ?? '',
       permission_type: permission.permission_type,
       active: permission.active,
-      content_str: permission.content_str ?? '',
-      content: String(permission.content ?? 0),
-      processes_raw: (permission.processes || []).join(', '),
+      api_path: permission.api_path ?? '',
+      api_method: permission.api_method ?? '',
+      process: Number(permission.process ?? 0),
     });
   }, [permission, reset]);
 
@@ -90,11 +107,7 @@ export default function EditPermissionView({ permission, readOnly }) {
     if (readOnly) return;
     try {
       setErrorMessage(null);
-      updatePermission(permission.id, {
-        ...data,
-        content: data.content,
-        processes: parseProcesses(data.processes_raw),
-      });
+      updatePermission(permission.id, data);
       router.push(paths.dashboard.permission.search);
     } catch {
       setErrorMessage('خطا در ذخیره');
@@ -146,9 +159,6 @@ export default function EditPermissionView({ permission, readOnly }) {
                   <Field.Text name="title" label="عنوان" disabled={readOnly} />
                 </Box>
                 <Box>
-                  <Field.Text name="slug" label="اسلاگ" disabled={readOnly} />
-                </Box>
-                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Field.Text
                     name="description"
                     label="توضیحات"
@@ -166,22 +176,57 @@ export default function EditPermissionView({ permission, readOnly }) {
                     ))}
                   </Field.Select>
                 </Box>
-                <Box sx={{ display: 'flex', alignItems: 'center' }}>
-                  <Field.Switch name="active" label="فعال" disabled={readOnly} />
-                </Box>
+                {selectedPermissionType === 'UI' && (
+                  <Box>
+                    <Field.Text name="slug" label="اسلاگ" disabled={readOnly} />
+                  </Box>
+                )}
                 <Box>
-                  <Field.Text name="content_str" label="Content (رشته)" disabled={readOnly} />
+                  <Typography sx={{ mb: 1 }} variant="body2">
+                    وضعیت
+                  </Typography>
+                  <Stack direction="row" spacing={1}>
+                    <Button
+                      size="small"
+                      color="success"
+                      disabled={readOnly}
+                      variant={isActive ? 'contained' : 'outlined'}
+                      onClick={() => setValue('active', true)}
+                    >
+                      فعال
+                    </Button>
+                    <Button
+                      size="small"
+                      color="inherit"
+                      disabled={readOnly}
+                      variant={!isActive ? 'contained' : 'outlined'}
+                      onClick={() => setValue('active', false)}
+                    >
+                      غیرفعال
+                    </Button>
+                  </Stack>
                 </Box>
-                <Box>
-                  <Field.Text name="content" label="Content (عدد)" disabled={readOnly} />
-                </Box>
-                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-                  <Field.Text
-                    name="processes_raw"
-                    label="شناسه فرایندها"
-                    disabled={readOnly}
-                  />
-                </Box>
+                {selectedPermissionType === 'API' && (
+                  <>
+                    <Box>
+                      <Field.Text name="api_path" label="ApiPath" disabled={readOnly} />
+                    </Box>
+                    <Box>
+                      <Field.Select name="api_method" label="ApiMethod" disabled={readOnly}>
+                        {API_METHODS.map((method) => (
+                          <MenuItem key={method} value={method}>
+                            {method}
+                          </MenuItem>
+                        ))}
+                      </Field.Select>
+                    </Box>
+                  </>
+                )}
+                {selectedPermissionType === 'SERVICE' && (
+                  <Box>
+                    <Field.Text name="process" label="Process" type="number" disabled={readOnly} />
+                  </Box>
+                )}
               </Box>
 
               <Stack direction="row" spacing={2} justifyContent="flex-end">

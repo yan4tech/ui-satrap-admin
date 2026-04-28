@@ -4,8 +4,9 @@
  */
 
 const PERMISSION_TYPES = ['API', 'UI', 'SERVICE', 'PROCESS'];
+const API_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD'];
 
-/** @typedef {{ id: number, title: string, slug: string, description: string, permission_type: string, active: boolean, content_str: string, content: number, processes: number[] }} Permission */
+/** @typedef {{ id: number, title: string, slug: string, description: string, permission_type: string, active: boolean, api_path: string, api_method: string, process: number }} Permission */
 
 /** @typedef {{ id: number, title: string, slug: string, description: string, active: boolean, content: string, permission_ids: number[] }} Role */
 
@@ -20,9 +21,9 @@ let permissions = [
     description: 'دسترسی به صفحه اصلی داشبورد',
     permission_type: 'UI',
     active: true,
-    content_str: '',
-    content: 0,
-    processes: [],
+    api_path: '',
+    api_method: '',
+    process: 0,
   },
   {
     id: 2,
@@ -31,9 +32,9 @@ let permissions = [
     description: 'ایجاد و ویرایش شعبه',
     permission_type: 'API',
     active: true,
-    content_str: '/api/branches',
-    content: 10,
-    processes: [1, 2],
+    api_path: '/api/branches',
+    api_method: 'GET',
+    process: 10,
   },
   {
     id: 3,
@@ -42,9 +43,9 @@ let permissions = [
     description: 'خروجی گزارش',
     permission_type: 'PROCESS',
     active: false,
-    content_str: '',
-    content: 0,
-    processes: [5],
+    api_path: '',
+    api_method: '',
+    process: 5,
   },
   {
     id: 4,
@@ -53,9 +54,9 @@ let permissions = [
     description: 'ارسال اعلان',
     permission_type: 'SERVICE',
     active: true,
-    content_str: 'notify',
-    content: 3,
-    processes: [],
+    api_path: '',
+    api_method: '',
+    process: 3,
   },
 ];
 
@@ -127,7 +128,7 @@ export const USER_TYPE_OPTIONS = [
   { value: 4, label: 'ناظر' },
 ];
 
-export { PERMISSION_TYPES, mockBranches };
+export { PERMISSION_TYPES, API_METHODS, mockBranches };
 
 export function listPermissions() {
   return [...permissions];
@@ -138,6 +139,7 @@ export function getPermission(id) {
 }
 
 export function createPermission(data) {
+  const isApi = data.permission_type === 'API';
   const row = {
     id: nextPermId++,
     title: data.title,
@@ -145,9 +147,9 @@ export function createPermission(data) {
     description: data.description ?? '',
     permission_type: data.permission_type,
     active: !!data.active,
-    content_str: data.content_str ?? '',
-    content: Number(data.content) || 0,
-    processes: Array.isArray(data.processes) ? data.processes.map(Number) : [],
+    api_path: isApi ? (data.api_path ?? '') : '',
+    api_method: isApi ? (data.api_method ?? '') : '',
+    process: Number(data.process) || 0,
   };
   permissions = [...permissions, row];
   return row;
@@ -157,17 +159,19 @@ export function updatePermission(id, data) {
   const idx = permissions.findIndex((p) => p.id === Number(id));
   if (idx === -1) return null;
   const prev = permissions[idx];
+  const nextPermissionType = data.permission_type ?? prev.permission_type;
+  const isApi = nextPermissionType === 'API';
   const row = {
     ...prev,
     ...data,
     id: prev.id,
-    content: data.content !== undefined ? Number(data.content) || 0 : prev.content,
-    processes:
-      data.processes !== undefined
-        ? Array.isArray(data.processes)
-          ? data.processes.map(Number)
-          : prev.processes
-        : prev.processes,
+    api_path: isApi
+      ? (data.api_path !== undefined ? data.api_path : prev.api_path)
+      : '',
+    api_method: isApi
+      ? (data.api_method !== undefined ? data.api_method : prev.api_method)
+      : '',
+    process: data.process !== undefined ? Number(data.process) || 0 : prev.process,
   };
   permissions = permissions.map((p) => (p.id === row.id ? row : p));
   return row;
@@ -292,7 +296,12 @@ export function searchPermissions(filters, page, pageSize) {
   if (filters.title) {
     const q = filters.title.trim();
     rows = rows.filter(
-      (p) => p.title.includes(q) || p.slug.includes(q) || p.description.includes(q)
+      (p) =>
+        p.title.includes(q) ||
+        p.slug.includes(q) ||
+        p.description.includes(q) ||
+        p.api_path.includes(q) ||
+        p.api_method.includes(q)
     );
   }
   if (filters.permission_type) {

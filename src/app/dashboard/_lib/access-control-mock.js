@@ -295,14 +295,11 @@ export function searchPermissions(filters, page, pageSize) {
   let rows = [...permissions];
   if (filters.title) {
     const q = filters.title.trim();
-    rows = rows.filter(
-      (p) =>
-        p.title.includes(q) ||
-        p.slug.includes(q) ||
-        p.description.includes(q) ||
-        p.api_path.includes(q) ||
-        p.api_method.includes(q)
-    );
+    rows = rows.filter((p) => p.title.includes(q));
+  }
+  if (filters.slug) {
+    const q = filters.slug.trim();
+    rows = rows.filter((p) => p.slug.includes(q));
   }
   if (filters.permission_type) {
     rows = rows.filter((p) => p.permission_type === filters.permission_type);

@@ -43,6 +43,7 @@ import {
 
 const SearchSchema = zod.object({
   title: zod.string().optional(),
+  slug: zod.string().optional(),
   permission_type: zod.string().optional(),
   api_method: zod.string().optional(),
   active: zod.string().optional(),
@@ -58,7 +59,7 @@ export default function PermissionSearchPage() {
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
-    defaultValues: { title: '', permission_type: '', api_method: '', active: '' },
+    defaultValues: { title: '', slug: '', permission_type: '', api_method: '', active: '' },
   });
 
   const { handleSubmit, watch, setValue, getValues, reset } = methods;
@@ -68,6 +69,9 @@ export default function PermissionSearchPage() {
   useEffect(() => {
     if (selectedPermissionType !== 'API') {
       setValue('api_method', '');
+    }
+    if (selectedPermissionType !== 'UI') {
+      setValue('slug', '');
     }
   }, [selectedPermissionType, setValue]);
 
@@ -263,8 +267,13 @@ export default function PermissionSearchPage() {
                       </Field.Select>
                     </Box>
                   )}
+                  {selectedPermissionType === 'UI' && (
+                    <Box>
+                      <Field.Text name="slug" label="اسلاگ" />
+                    </Box>
+                  )}
                   <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-                    <Field.Text name="title" label="عنوان / اسلاگ / توضیح / ApiPath / ApiMethod" />
+                    <Field.Text name="title" label="عنوان" />
                   </Box>
                   <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                     <Box sx={{ pt: 1 }}>

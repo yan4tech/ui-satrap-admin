@@ -31,7 +31,7 @@ import {
 const PermissionSchema = zod
   .object({
     title: zod.string().min(1, 'عنوان الزامی است'),
-    slug: zod.string().min(1, 'اسلاگ الزامی است'),
+    slug: zod.string().optional(),
     description: zod.string().optional(),
     permission_type: zod.enum(['API', 'UI', 'SERVICE', 'PROCESS']),
     active: zod.boolean(),
@@ -40,6 +40,13 @@ const PermissionSchema = zod
     process: zod.coerce.number().int().min(0, 'فرایند باید عدد صحیح مثبت باشد'),
   })
   .superRefine((data, ctx) => {
+    if (data.permission_type === 'UI' && !String(data.slug ?? '').trim()) {
+      ctx.addIssue({
+        code: zod.ZodIssueCode.custom,
+        path: ['slug'],
+        message: 'برای نوع UI اسلاگ الزامی است',
+      });
+    }
     if (data.permission_type !== 'API') return;
     if (!String(data.api_path ?? '').trim()) {
       ctx.addIssue({

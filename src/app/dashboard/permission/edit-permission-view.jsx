@@ -26,13 +26,13 @@ import { paths } from 'src/routes/paths';
 import {
   PERMISSION_TYPES,
   API_METHODS,
-  updatePermission,
 } from 'src/app/dashboard/_lib/access-control-mock';
+import axios from 'src/lib/axios';
 
 const PermissionSchema = zod
   .object({
     title: zod.string().min(1),
-    slug: zod.string().min(1),
+    slug: zod.string().optional(),
     description: zod.string().optional(),
     permission_type: zod.enum(['API', 'UI', 'SERVICE', 'PROCESS']),
     active: zod.boolean(),
@@ -41,6 +41,13 @@ const PermissionSchema = zod
     process: zod.coerce.number().int().min(0),
   })
   .superRefine((data, ctx) => {
+    if (data.permission_type === 'UI' && !String(data.slug ?? '').trim()) {
+      ctx.addIssue({
+        code: zod.ZodIssueCode.custom,
+        path: ['slug'],
+        message: 'برای نوع UI اسلاگ الزامی است',
+      });
+    }
     if (data.permission_type !== 'API') return;
     if (!String(data.api_path ?? '').trim()) {
       ctx.addIssue({
@@ -107,10 +114,26 @@ export default function EditPermissionView({ permission, readOnly }) {
     if (readOnly) return;
     try {
       setErrorMessage(null);
-      updatePermission(permission.id, data);
+      const payload = {
+        title: data.title,
+        slug: data.permission_type === 'UI' ? data.slug : '',
+        description: data.description ?? '',
+        permission_type: data.permission_type,
+        active: Boolean(data.active),
+        api_path: data.permission_type === 'API' ? (data.api_path ?? '') : '',
+        api_method: data.permission_type === 'API' ? (data.api_method ?? '') : '',
+        process:
+          data.permission_type === 'SERVICE' || data.permission_type === 'PROCESS'
+            ? Number(data.process ?? 0)
+            : 0,
+      };
+
+      await axios.put(`/api/membership/ac/permission/${permission.id}`, payload, {
+        headers: { mode: 'company' },
+      });
       router.push(paths.dashboard.permission.search);
-    } catch {
-      setErrorMessage('خطا در ذخیره');
+    } catch (error) {
+      setErrorMessage(error?.message || 'خطا در ذخیره');
     }
   });
 

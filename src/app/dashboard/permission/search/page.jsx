@@ -146,7 +146,6 @@ export default function PermissionSearchPage() {
 
   const columns = [
     { field: 'title', headerName: 'عنوان', flex: 1 },
-    { field: 'slug', headerName: 'اسلاگ', flex: 1 },
     {
       field: 'permission_type',
       headerName: 'نوع',
@@ -168,6 +167,7 @@ export default function PermissionSearchPage() {
         );
       },
     },
+    { field: 'slug', headerName: 'اسلاگ', flex: 1 },
     {
       field: 'api_path',
       headerName: 'ApiPath',

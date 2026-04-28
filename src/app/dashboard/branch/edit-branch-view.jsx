@@ -35,6 +35,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 
 import { Form, Field } from 'src/components/hook-form';
 import axios from 'src/lib/axios';
+import { CONFIG } from 'src/global-config';
 
 // --------------------------------------
 // ZOD SCHEMA
@@ -300,6 +301,27 @@ export default function EditBranch({ branchData, onSaved }) {
     setSuccessMessage(null);
   };
 
+  const getDocumentDownloadUrl = (rawPath) => {
+    if (!rawPath || rawPath === '-') return null;
+
+    const sourcePath = String(rawPath).trim();
+    if (!sourcePath) return null;
+
+    if (/^https?:\/\//i.test(sourcePath)) {
+      return sourcePath;
+    }
+
+    const normalizedPath = sourcePath.replace(/\\/g, '/').replace(/^\/+/, '');
+
+    if (!normalizedPath) return null;
+
+    if (!CONFIG.serverUrl) {
+      return `/${normalizedPath}`;
+    }
+
+    return `${CONFIG.serverUrl.replace(/\/+$/, '')}/${normalizedPath}`;
+  };
+
   return (
     <Container
       maxWidth={false}
@@ -563,7 +585,7 @@ export default function EditBranch({ branchData, onSaved }) {
                         <TableRow sx={{ backgroundColor: 'info.lighter' }}>
                           <TableCell>نام مدرک</TableCell>
                           <TableCell>تصویر مدرک</TableCell>
-                          <TableCell width={130}>حذف</TableCell>
+                          <TableCell width={220}>عملیات</TableCell>
                         </TableRow>
                       </TableHead>
                       <TableBody>
@@ -582,6 +604,7 @@ export default function EditBranch({ branchData, onSaved }) {
                           const docTitle = doc?.title || doc?.Title || '-';
                           const docFileName = doc?.file_name || doc?.fileName || doc?.FileName || '-';
                           const docPath = doc?.path || doc?.Path || '-';
+                          const downloadUrl = getDocumentDownloadUrl(docPath);
 
                           return (
                             <TableRow key={`${docPath || docFileName || docId}-${index}`} hover>
@@ -595,15 +618,30 @@ export default function EditBranch({ branchData, onSaved }) {
                                 </Typography>
                               </TableCell>
                               <TableCell>
-                                <Button
-                                  type="button"
-                                  color={isMarkedForDelete ? 'inherit' : 'error'}
-                                  variant="outlined"
-                                  size="small"
-                                  onClick={() => handleToggleDeleteDocument(docId)}
-                                >
-                                  {isMarkedForDelete ? 'لغو حذف' : 'حذف'}
-                                </Button>
+                                <Stack direction="row" spacing={1}>
+                                  <Button
+                                    component="a"
+                                    href={downloadUrl || undefined}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    download={docFileName !== '-' ? docFileName : true}
+                                    variant="outlined"
+                                    size="small"
+                                    color="primary"
+                                    disabled={!downloadUrl}
+                                  >
+                                    دانلود
+                                  </Button>
+                                  <Button
+                                    type="button"
+                                    color={isMarkedForDelete ? 'inherit' : 'error'}
+                                    variant="outlined"
+                                    size="small"
+                                    onClick={() => handleToggleDeleteDocument(docId)}
+                                  >
+                                    {isMarkedForDelete ? 'لغو حذف' : 'حذف'}
+                                  </Button>
+                                </Stack>
                               </TableCell>
                             </TableRow>
                           );

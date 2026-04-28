@@ -222,9 +222,14 @@ export default function EditPermissionView({ permission, readOnly }) {
                     </Box>
                   </>
                 )}
-                {selectedPermissionType === 'SERVICE' && (
+                {(selectedPermissionType === 'SERVICE' || selectedPermissionType === 'PROCESS') && (
                   <Box>
-                    <Field.Text name="process" label="Process" type="number" disabled={readOnly} />
+                    <Field.Text
+                      name="process"
+                      label="شناسه خدمت (Process)"
+                      type="number"
+                      disabled={readOnly}
+                    />
                   </Box>
                 )}
               </Box>

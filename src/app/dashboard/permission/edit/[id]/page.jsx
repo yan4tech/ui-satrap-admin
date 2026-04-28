@@ -6,7 +6,34 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
 import EditPermissionView from '../../edit-permission-view';
-import { getPermission } from 'src/app/dashboard/_lib/access-control-mock';
+import axios from 'src/lib/axios';
+
+async function fetchPermissionById(rawId) {
+  const id = Number(rawId);
+  if (!Number.isFinite(id) || id < 1) return null;
+
+  try {
+    const res = await axios.get(`/api/membership/ac/permission/${id}`, {
+      headers: { mode: 'company' },
+    });
+    const item = res?.data?.data ?? res?.data ?? null;
+    if (!item) return null;
+
+    return {
+      id: item?.ID ?? item?.id,
+      title: item?.title ?? '',
+      slug: item?.slug ?? '',
+      description: item?.description ?? '',
+      permission_type: String(item?.permission_type ?? '').trim().toUpperCase(),
+      active: Boolean(item?.active),
+      api_path: item?.api_path ?? '',
+      api_method: String(item?.api_method ?? '').trim().toUpperCase(),
+      process: Number(item?.process ?? 0),
+    };
+  } catch {
+    return null;
+  }
+}
 
 export default function PermissionEditPage() {
   const params = useParams();
@@ -20,7 +47,7 @@ export default function PermissionEditPage() {
     let cancelled = false;
     const run = async () => {
       setStatus('loading');
-      const data = getPermission(rawId);
+      const data = await fetchPermissionById(rawId);
       if (cancelled) return;
       if (!data) {
         setRow(null);

@@ -33,11 +33,11 @@ import { Icon } from '@iconify/react';
 
 import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
+import axios from 'src/lib/axios';
 
 import {
   PERMISSION_TYPES,
   API_METHODS,
-  searchPermissions,
   deletePermission,
 } from 'src/app/dashboard/_lib/access-control-mock';
 
@@ -53,6 +53,7 @@ export default function PermissionSearchPage() {
   const router = useRouter();
   const [rows, setRows] = useState([]);
   const [rowCount, setRowCount] = useState(0);
+  const [loading, setLoading] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
   const [isSearchOpen, setIsSearchOpen] = useState(true);
@@ -76,10 +77,49 @@ export default function PermissionSearchPage() {
   }, [selectedPermissionType, setValue]);
 
   const fetchData = useCallback(async () => {
-    const filters = getValues();
-    const res = searchPermissions(filters, paginationModel.page, paginationModel.pageSize);
-    setRows(res.data.map((r) => ({ ...r })));
-    setRowCount(res.total);
+    setLoading(true);
+    try {
+      const filters = getValues();
+      const params = {};
+
+      if (filters.permission_type) params.permission_type = filters.permission_type;
+      if (filters.slug) params.slug = filters.slug;
+      if (filters.title) params.title = filters.title;
+      if (filters.api_method) params.api_method = filters.api_method;
+      if (filters.active !== '') params.active = filters.active;
+
+      const res = await axios.get('/api/membership/ac/permission', {
+        params,
+        headers: {
+          mode: 'company',
+          limit: String(paginationModel.pageSize),
+          offset: String(paginationModel.page * paginationModel.pageSize),
+        },
+      });
+
+      const payload = res?.data ?? {};
+      const rawRows = Array.isArray(payload?.data) ? payload.data : [];
+      const mappedRows = rawRows.map((item) => ({
+        id: item?.ID ?? item?.id,
+        title: item?.title ?? '',
+        slug: item?.slug ?? '',
+        description: item?.description ?? '',
+        permission_type: item?.permission_type ?? '',
+        active: Boolean(item?.active),
+        api_path: item?.api_path ?? '',
+        api_method: item?.api_method ?? '',
+        process: Number(item?.process ?? 0),
+      }));
+
+      setRows(mappedRows);
+      setRowCount(Number(payload?.total ?? payload?.count ?? mappedRows.length));
+    } catch (error) {
+      console.error('Failed to fetch permissions:', error);
+      setRows([]);
+      setRowCount(0);
+    } finally {
+      setLoading(false);
+    }
   }, [paginationModel, getValues]);
 
   useEffect(() => {
@@ -339,6 +379,7 @@ export default function PermissionSearchPage() {
             columns={columns}
             getRowId={(r) => r.id}
             rowCount={rowCount}
+            loading={loading}
             paginationMode="server"
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}

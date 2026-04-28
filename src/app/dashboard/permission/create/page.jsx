@@ -179,9 +179,9 @@ export default function CreatePermissionPage() {
                     </Box>
                   </>
                 )}
-                {selectedPermissionType === 'SERVICE' && (
+                {(selectedPermissionType === 'SERVICE' || selectedPermissionType === 'PROCESS') && (
                   <Box>
-                    <Field.Text name="process" label="Process" type="number" />
+                    <Field.Text name="process" label="شناسه خدمت (Process)" type="number" />
                   </Box>
                 )}
               </Box>

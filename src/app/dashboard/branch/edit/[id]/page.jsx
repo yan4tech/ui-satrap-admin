@@ -76,5 +76,5 @@ export default function BranchEditPage() {
     );
   }
 
-  return <EditBranchView branch={branch} readOnly={readOnly} />;
+  return <EditBranchView branchData={branch} readOnly={readOnly} />;
 }

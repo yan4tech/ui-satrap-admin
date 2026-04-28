@@ -17,27 +17,45 @@ import {
   Divider,
   Stack,
   TextField,
+  FormControl,
+  FormControlLabel,
+  Radio,
+  RadioGroup,
 } from '@mui/material';
 
 import Autocomplete from '@mui/material/Autocomplete';
 
 import { Form, Field } from 'src/components/hook-form';
+import axios from 'src/lib/axios';
 
 // --------------------------------------
 // ZOD SCHEMA
 // --------------------------------------
 export const BranchSchema = zod.object({
-  title: zod.string().min(1),
-  province: zod.string().min(1),
-  city: zod.string().min(1),
-  village: zod.string().optional(),
-  ip: zod.string().optional(),
-  phone: zod.string().optional(),
-  address: zod.string().optional(),
+  title: zod.string().trim().min(1, 'عنوان شعبه الزامی است'),
+  province: zod.string().trim().min(1, 'استان الزامی است'),
+  city: zod.string().trim().min(1, 'شهر الزامی است'),
+  ip: zod
+    .string()
+    .trim()
+    .min(1, 'IP الزامی است')
+    .regex(
+      /^(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)\.(25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)$/,
+      'فرمت IP معتبر نیست'
+    ),
+  phone: zod.string().trim().min(1, 'شماره تلفن الزامی است'),
+  address: zod.string().trim().min(1, 'نشانی شعبه الزامی است'),
   description: zod.string().optional(),
-  max_users: zod.string().min(1),
+  max_users: zod
+    .coerce
+    .number({
+      invalid_type_error: 'تعداد کاربران باید عدد باشد',
+      required_error: 'تعداد کاربران مجاز الزامی است',
+    })
+    .int('تعداد کاربران باید عدد صحیح باشد')
+    .min(1, 'تعداد کاربران باید حداقل 1 باشد'),
   is_active: zod.boolean(),
-  services: zod.array(zod.string()).optional(),
+  permissions: zod.array(zod.number()).min(1, 'حداقل یک خدمت باید انتخاب شود'),
 });
 
 // --------------------------------------
@@ -47,16 +65,7 @@ export default function EditBranch({ branchData }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [provinces, setProvinces] = useState([]);
   const [cities, setCities] = useState([]);
-  const [villages, setVillages] = useState([]);
-
-  const servicesList = [
-    { id: 1, name: 'خدمت شماره 1' },
-    { id: 2, name: 'خدمت شماره 2' },
-    { id: 3, name: 'خدمت شماره 3' },
-    { id: 4, name: 'خدمت شماره 4' },
-    { id: 5, name: 'پشتیبانی فنی' },
-    { id: 6, name: 'مشاوره' },
-  ];
+  const [permissionsList, setPermissionsList] = useState([]);
 
   // fake APIs
   const fetchProvinces = async () => [
@@ -78,34 +87,19 @@ export default function EditBranch({ branchData }) {
     return data[provinceId] || [];
   };
 
-  const fetchVillagesByCity = async (cityId) => {
-    const data = {
-      10: [
-        { id: 100, name: 'روستای A' },
-        { id: 101, name: 'روستای B' },
-      ],
-      20: [
-        { id: 200, name: 'روستای C' },
-        { id: 201, name: 'روستای D' },
-      ],
-    };
-    return data[cityId] || [];
-  };
-
   const methods = useForm({
     resolver: zodResolver(BranchSchema),
     defaultValues: {
       title: branchData?.title || '',
-      province: branchData?.province || '',
-      city: branchData?.city || '',
-      village: branchData?.village || '',
+      province: String(branchData?.province || ''),
+      city: String(branchData?.city || ''),
       ip: branchData?.ip || '',
       phone: branchData?.phone || '',
       address: branchData?.address || '',
       description: branchData?.description || '',
       max_users: branchData?.max_users || '',
       is_active: branchData?.is_active || false,
-      services: branchData?.services || [],
+      permissions: branchData?.permissions?.map((p) => p?.ID ?? p?.id).filter(Boolean) || [],
     },
   });
 
@@ -118,7 +112,6 @@ export default function EditBranch({ branchData }) {
   } = methods;
 
   const selectedProvince = watch('province');
-  const selectedCity = watch('city');
 
   // load provinces
   useEffect(() => {
@@ -128,7 +121,24 @@ export default function EditBranch({ branchData }) {
     })();
   }, []);
 
-  // load cities
+  // load permissions/services options
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await axios.get('/api/membership/ac/permission?permission_type=PROCESS', {
+          headers: { mode: 'company' },
+        });
+        const options = (res?.data?.data || []).map((item) => ({
+          id: item.ID,
+          title: item.title,
+        }));
+        setPermissionsList(options);
+      } catch {
+        setPermissionsList([]);
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     if (!selectedProvince) return;
 
@@ -136,28 +146,33 @@ export default function EditBranch({ branchData }) {
       const res = await fetchCitiesByProvince(selectedProvince);
       setCities(res);
       setValue('city', '');
-      setValue('village', '');
     })();
   }, [selectedProvince, setValue]);
 
-  // load villages
-  useEffect(() => {
-    if (!selectedCity) {
-      setVillages([]);
-      setValue('village', '');
-      return;
-    }
-
-    (async () => {
-      const res = await fetchVillagesByCity(selectedCity);
-      setVillages(res);
-      setValue('village', '');
-    })();
-  }, [selectedCity, setValue]);
-
   const onSubmit = handleSubmit(async (data) => {
     try {
-      console.log(data);
+      const branchId = Number(branchData?.ID ?? branchData?.id);
+
+      if (!branchId) {
+        setErrorMessage('شناسه شعبه معتبر نیست');
+        return;
+      }
+
+      const payload = {
+        title: data.title,
+        province: Number(data.province),
+        city: Number(data.city),
+        ip: data.ip,
+        phone: data.phone,
+        address: data.address,
+        description: data.description || '',
+        is_active: data.is_active,
+        max_users: Number(data.max_users),
+        permissions: data.permissions,
+      };
+
+      await axios.put(`/api/membership/branch/${branchId}`, payload);
+      setErrorMessage(null);
     } catch {
       setErrorMessage('خطا در ویرایش اطلاعات');
     }
@@ -185,10 +200,10 @@ export default function EditBranch({ branchData }) {
 
           <Form methods={methods} onSubmit={onSubmit}>
             <Stack spacing={4}>
-              {/* PERSONAL */}
+              {/* BASIC */}
               <Box>
                 <Typography fontWeight={600} sx={{ mb: 2 }}>
-                  اطلاعات شخصی
+                  اطلاعات پایه شعبه
                 </Typography>
 
                 <Box
@@ -200,15 +215,66 @@ export default function EditBranch({ branchData }) {
                   }}
                 >
                   <Box>
-                    <Field.Text name="title" label="نام" />
+                    <Field.Text name="title" label="عنوان شعبه" />
                   </Box>
 
                   <Box>
-                    <Field.Text name="ip" label="نام خانوادگی" />
+                    <Field.Text name="ip" label="IP" />
                   </Box>
 
                   <Box>
-                    <Field.Text name="max_users" label="کد ملی" />
+                    <Field.Text name="max_users" label="تعداد کاربران مجاز شعبه" type="number" />
+                  </Box>
+                  <Box>
+                    <Field.Text name="phone" label="شماره تلفن" />
+                  </Box>
+                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                    <Controller
+                      name="is_active"
+                      control={control}
+                      render={({ field }) => (
+                        <FormControl
+                          sx={{
+                            width: '100%',
+                            p: 2,
+                            border: '1px solid',
+                            borderColor: 'divider',
+                            borderRadius: 2,
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle1"
+                            fontWeight={700}
+                            sx={{ mb: 1.5, textAlign: 'right' }}
+                          >
+                            وضعیت شعبه
+                          </Typography>
+                          <RadioGroup
+                            row
+                            value={field.value ? 'true' : 'false'}
+                            onChange={(event) => field.onChange(event.target.value === 'true')}
+                            sx={{ direction: 'rtl', gap: 3 }}
+                          >
+                            <FormControlLabel
+                              value="true"
+                              control={<Radio size="medium" sx={{ transform: 'scale(1.2)' }} />}
+                              label="فعال"
+                              sx={{
+                                '.MuiFormControlLabel-label': { fontSize: 18, fontWeight: 600 },
+                              }}
+                            />
+                            <FormControlLabel
+                              value="false"
+                              control={<Radio size="medium" sx={{ transform: 'scale(1.2)' }} />}
+                              label="غیرفعال"
+                              sx={{
+                                '.MuiFormControlLabel-label': { fontSize: 18, fontWeight: 600 },
+                              }}
+                            />
+                          </RadioGroup>
+                        </FormControl>
+                      )}
+                    />
                   </Box>
                 </Box>
               </Box>
@@ -225,10 +291,6 @@ export default function EditBranch({ branchData }) {
                     rowGap: 2,
                   }}
                 >
-                  <Box>
-                    <Field.Text name="phone" label="شماره تلفن" />
-                  </Box>
-
                   <Box>
                     <Field.Select name="province" label="استان" placeholder="انتخاب استان">
                       {provinces.map((p) => (
@@ -253,21 +315,6 @@ export default function EditBranch({ branchData }) {
                       ))}
                     </Field.Select>
                   </Box>
-
-                  <Box>
-                    <Field.Select
-                      name="village"
-                      label="روستا"
-                      disabled={!selectedCity}
-                      placeholder="انتخاب روستاه/ده"
-                    >
-                      {villages.map((v) => (
-                        <MenuItem key={v.id} value={String(v.id)}>
-                          {v.name}
-                        </MenuItem>
-                      ))}
-                    </Field.Select>
-                  </Box>
                 </Box>
               </Box>
 
@@ -276,21 +323,22 @@ export default function EditBranch({ branchData }) {
               {/* SERVICES */}
               <Box>
                 <Typography fontWeight={600} sx={{ mb: 2 }}>
-                  خدمات قابل ارائه
+                  انتخاب خدمات
                 </Typography>
 
                 <Controller
-                  name="services"
+                  name="permissions"
                   control={control}
                   render={({ field }) => (
                     <Autocomplete
                       multiple
-                      options={servicesList}
-                      getOptionLabel={(o) => o.name}
-                      value={servicesList.filter((s) => field.value?.includes(String(s.id)))}
-                      onChange={(_, value) => field.onChange(value.map((v) => String(v.id)))}
+                      options={permissionsList}
+                      getOptionLabel={(o) => o.title}
+                      value={permissionsList.filter((s) => field.value?.includes(s.id))}
+                      onChange={(_, value) => field.onChange(value.map((v) => v.id))}
+                      filterSelectedOptions
                       renderInput={(params) => (
-                        <TextField {...params} label="جستجو خدمات" placeholder="خدمت..." />
+                        <TextField {...params} label="جستجو و انتخاب خدمات" placeholder="خدمت..." />
                       )}
                     />
                   )}
@@ -299,33 +347,22 @@ export default function EditBranch({ branchData }) {
 
               <Divider />
 
-              {/* BANK */}
-              <Box>
-                <Typography fontWeight={600} sx={{ mb: 2 }}>
-                  حساب بانکی
-                </Typography>
-                <Box
-                  sx={{
-                    display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                    columnGap: 3,
-                    rowGap: 2,
-                  }}
-                >
-                  <Box>
-                    <Field.Text name="address" label="شماره کارت" />
-                  </Box>
-
-                  <Box>
-                    <Field.Text name="description" label="شماره شبا" />
-                  </Box>
+              {/* ADDRESS */}
+              <Box
+                sx={{
+                  display: 'grid',
+                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                  columnGap: 3,
+                  rowGap: 2,
+                }}
+              >
+                <Box>
+                  <Field.Text name="address" label="نشانی شعبه" multiline rows={3} />
+                </Box>
+                <Box>
+                  <Field.Text name="description" label="توضیحات" multiline rows={3} />
                 </Box>
               </Box>
-
-              <Divider />
-
-              {/* ADDRESS */}
-              <Field.Text name="description" label="نشانی شعبه" multiline rows={4} />
 
               <Button
                 type="submit"

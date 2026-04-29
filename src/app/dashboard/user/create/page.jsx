@@ -18,14 +18,15 @@ import {
   Container,
   Divider,
   Stack,
+  Paper,
   Table,
   TableBody,
   TableCell,
   TableContainer,
   TableHead,
   TableRow,
-  Paper,
   TextField,
+  Chip,
 } from '@mui/material';
 
 import { Form, Field } from 'src/components/hook-form';
@@ -137,13 +138,53 @@ export default function CreateUserPage() {
     );
   };
 
+  const sectionSx = {
+    borderRadius: 2.5,
+    p: { xs: 2, md: 3 },
+    borderColor: 'divider',
+    backgroundColor: 'background.neutral',
+  };
+
   return (
     <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
-      <Card sx={{ borderRadius: 3 }}>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
-            کاربر جدید
-          </Typography>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: (theme) => `1px solid ${theme.palette.divider}`,
+          boxShadow: (theme) => theme.customShadows?.z8 || theme.shadows[8],
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+          <Box
+            sx={{
+              mb: 3,
+              px: { xs: 2, md: 3 },
+              py: 2.5,
+              borderRadius: 2.5,
+              color: 'primary.contrastText',
+              background: (theme) =>
+                `linear-gradient(135deg, ${theme.palette.primary.dark} 0%, ${theme.palette.primary.main} 60%, ${theme.palette.primary.light} 100%)`,
+            }}
+          >
+            <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+              <Box>
+                <Typography variant="h5" fontWeight={800}>
+                  کاربر جدید
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9, mt: 0.5 }}>
+                  اطلاعات کاربر را کامل کنید و در پایان ثبت را بزنید.
+                </Typography>
+              </Box>
+              <Chip
+                label="فرم ایجاد"
+                sx={{
+                  color: 'common.white',
+                  bgcolor: 'rgba(255,255,255,0.18)',
+                  border: '1px solid rgba(255,255,255,0.28)',
+                }}
+              />
+            </Stack>
+          </Box>
           <Divider sx={{ mb: 3 }} />
 
           {!!errorMessage && (
@@ -154,67 +195,76 @@ export default function CreateUserPage() {
 
           <Form methods={methods} onSubmit={onSubmit}>
             <Stack spacing={3}>
-              <Stack
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                  columnGap: 3,
-                  rowGap: 2,
-                }}
-              >
-                <Stack>
-                  <Field.Text name="name" label="نام" />
-                </Stack>
-                <Stack>
-                  <Field.Text name="family" label="نام خانوادگی" />
-                </Stack>
-                <Stack>
-                  <Field.Text name="mobile" label="موبایل" />
-                </Stack>
-                <Stack>
-                  <Field.Text name="email" label="ایمیل" />
-                </Stack>
-                <Stack>
-                  <Field.Select name="user_type" label="نوع کاربر">
-                    {USER_TYPE_OPTIONS.map((o) => (
-                      <MenuItem key={o.value} value={o.value}>
-                        {o.label}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Stack>
-                <Stack>
-                  <Field.Select name="role_id" label="نقش (Role)">
-                    {roles.map((r) => (
-                      <MenuItem key={r.id} value={r.id}>
-                        {r.title}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Stack>
-                {userType === 'branch' && (
+              <Paper variant="outlined" sx={sectionSx}>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
+                  اطلاعات پایه
+                </Typography>
+                <Stack
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    columnGap: 3,
+                    rowGap: 2,
+                  }}
+                >
                   <Stack>
-                    <Field.Select name="branch_id" label="شعبه">
-                      <MenuItem value={0}>بدون شعبه</MenuItem>
-                      {branches.map((b) => (
-                        <MenuItem key={b.id} value={b.id}>
-                          {b.title}
+                    <Field.Text name="name" label="نام" />
+                  </Stack>
+                  <Stack>
+                    <Field.Text name="family" label="نام خانوادگی" />
+                  </Stack>
+                  <Stack>
+                    <Field.Text name="mobile" label="موبایل" />
+                  </Stack>
+                  <Stack>
+                    <Field.Text name="email" label="ایمیل" />
+                  </Stack>
+                  <Stack>
+                    <Field.Select name="user_type" label="نوع کاربر">
+                      {USER_TYPE_OPTIONS.map((o) => (
+                        <MenuItem key={o.value} value={o.value}>
+                          {o.label}
                         </MenuItem>
                       ))}
                     </Field.Select>
                   </Stack>
-                )}
-                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                      columnGap: 3,
-                      rowGap: 2,
-                    }}
-                  >
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Typography variant="body2">وضعیت</Typography>
+                  <Stack>
+                    <Field.Select name="role_id" label="نقش (Role)">
+                      {roles.map((r) => (
+                        <MenuItem key={r.id} value={r.id}>
+                          {r.title}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Stack>
+                  {userType === 'branch' && (
+                    <Stack>
+                      <Field.Select name="branch_id" label="شعبه">
+                        <MenuItem value={0}>بدون شعبه</MenuItem>
+                        {branches.map((b) => (
+                          <MenuItem key={b.id} value={b.id}>
+                            {b.title}
+                          </MenuItem>
+                        ))}
+                      </Field.Select>
+                    </Stack>
+                  )}
+                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                    <Box
+                      sx={{
+                        mt: 0.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        p: 1.5,
+                        borderRadius: 2,
+                        bgcolor: 'background.paper',
+                        border: (theme) => `1px dashed ${theme.palette.divider}`,
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={600}>
+                        وضعیت کاربر
+                      </Typography>
                       <ButtonGroup>
                         <Button
                           color="success"
@@ -231,14 +281,21 @@ export default function CreateUserPage() {
                           غیرفعال
                         </Button>
                       </ButtonGroup>
-                    </Stack>
+                    </Box>
                   </Box>
-                </Box>
-              </Stack>
+                </Stack>
+              </Paper>
 
-              <Box>
+              <Paper variant="outlined" sx={sectionSx}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                  <Typography fontWeight={600}>مدارک جدید</Typography>
+                  <Box>
+                    <Typography variant="subtitle1" fontWeight={700}>
+                      مدارک جدید
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      برای هر مدرک یک عنوان و فایل انتخاب کنید.
+                    </Typography>
+                  </Box>
                   <Button type="button" variant="contained" color="success" onClick={addNewDocumentRow}>
                     + افزودن سطر
                   </Button>
@@ -294,9 +351,14 @@ export default function CreateUserPage() {
                     </TableBody>
                   </Table>
                 </TableContainer>
-              </Box>
+              </Paper>
 
-              <Stack direction="row" spacing={2} justifyContent="flex-end">
+              <Stack
+                direction="row"
+                spacing={2}
+                justifyContent="flex-end"
+                sx={{ pt: 1, borderTop: (theme) => `1px solid ${theme.palette.divider}` }}
+              >
                 <Button variant="outlined" onClick={() => router.back()}>
                   انصراف
                 </Button>

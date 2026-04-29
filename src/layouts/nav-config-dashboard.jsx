@@ -88,12 +88,12 @@ export const navData = [
         icon: ICONS.userMgmt,
         children: [
           {
-            title: 'دسترسی',
-            path: paths.dashboard.permission.create,
-            icon: ICONS.permission,
+            title: 'کاربر',
+            path: paths.dashboard.user.create,
+            icon: ICONS.userMgmt,
             children: [
-              { title: 'جدید', path: paths.dashboard.permission.create },
-              { title: 'لیست', path: paths.dashboard.permission.search },
+              { title: 'جدید', path: paths.dashboard.user.create },
+              { title: 'لیست', path: paths.dashboard.user.search },
             ],
           },
           {
@@ -106,12 +106,12 @@ export const navData = [
             ],
           },
           {
-            title: 'کاربر',
-            path: paths.dashboard.user.create,
-            icon: ICONS.userMgmt,
+            title: 'دسترسی',
+            path: paths.dashboard.permission.create,
+            icon: ICONS.permission,
             children: [
-              { title: 'جدید', path: paths.dashboard.user.create },
-              { title: 'لیست', path: paths.dashboard.user.search },
+              { title: 'جدید', path: paths.dashboard.permission.create },
+              { title: 'لیست', path: paths.dashboard.permission.search },
             ],
           },
         ],

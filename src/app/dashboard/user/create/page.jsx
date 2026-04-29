@@ -421,16 +421,104 @@ export default function CreateUserPage() {
                               />
                             </TableCell>
                             <TableCell>
-                              <Button variant="outlined" component="label" size="small">
-                                {row.file?.name || 'انتخاب فایل'}
-                                <input
-                                  type="file"
-                                  hidden
-                                  onChange={(event) =>
-                                    updateNewDocumentRow(row.rowId, 'file', event.target.files?.[0] ?? null)
+                            <Box
+                              component="label"
+                              sx={{
+                                position: 'relative',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                width: '100%',
+                                minHeight: 84,
+                                px: 2,
+                                border: '1px solid',
+                                borderColor: 'text.primary',
+                                borderRadius: 0.5,
+                                cursor: 'pointer',
+                                backgroundColor: 'background.paper',
+                                overflow: 'hidden',
+                              }}
+                            >
+                              <input
+                                type="file"
+                                accept="image/*"
+                                hidden
+                                onChange={(event) => {
+                                  const file = event.target.files?.[0] ?? null;
+
+                                  if (!file) {
+                                    updateNewDocumentRow(row.rowId, 'file', null);
+                                    updateNewDocumentRow(row.rowId, 'previewUrl', null);
+                                    return;
                                   }
+
+                                  const reader = new FileReader();
+                                  reader.onloadend = () => {
+                                    updateNewDocumentRow(row.rowId, 'file', file);
+                                    updateNewDocumentRow(
+                                      row.rowId,
+                                      'previewUrl',
+                                      typeof reader.result === 'string' ? reader.result : null
+                                    );
+                                  };
+                                  reader.readAsDataURL(file);
+                                }}
+                              />
+                              {row.previewUrl ? (
+                                <Box
+                                  component="img"
+                                  src={row.previewUrl}
+                                  alt={row.file?.name || 'پیش نمایش تصویر'}
+                                  sx={{
+                                    width: '100%',
+                                    maxHeight: 110,
+                                    objectFit: 'contain',
+                                    pointerEvents: 'none',
+                                  }}
                                 />
-                              </Button>
+                              ) : (
+                                <>
+                                  <Box
+                                    sx={{
+                                      position: 'absolute',
+                                      width: '75%',
+                                      borderTop: '1px solid',
+                                      borderColor: 'text.secondary',
+                                      transform: 'rotate(15deg)',
+                                      pointerEvents: 'none',
+                                    }}
+                                  >
+                                    &nbsp;
+                                  </Box>
+                                  <Box
+                                    sx={{
+                                      position: 'absolute',
+                                      width: '75%',
+                                      borderTop: '1px solid',
+                                      borderColor: 'text.secondary',
+                                      transform: 'rotate(-15deg)',
+                                      pointerEvents: 'none',
+                                    }}
+                                  >
+                                    &nbsp;
+                                  </Box>
+                                  <Typography
+                                    variant="body2"
+                                    sx={{
+                                      zIndex: 1,
+                                      px: 1,
+                                      backgroundColor: 'background.paper',
+                                      maxWidth: '100%',
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap',
+                                    }}
+                                  >
+                                    تصویر مدرک جدید
+                                  </Typography>
+                                </>
+                              )}
+                            </Box>
                             </TableCell>
                             <TableCell>
                               <Button

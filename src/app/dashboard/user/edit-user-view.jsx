@@ -67,7 +67,7 @@ export default function EditUserView({ user, readOnly, onSaved }) {
   const [selectedRoleInfo, setSelectedRoleInfo] = useState(null);
   const [roleInfoLoading, setRoleInfoLoading] = useState(false);
   const [newDocuments, setNewDocuments] = useState([
-    { rowId: Date.now(), title: '', file: null },
+    { rowId: Date.now(), title: '', file: null, previewUrl: null },
   ]);
 
   const methods = useForm({
@@ -113,7 +113,7 @@ export default function EditUserView({ user, readOnly, onSaved }) {
     });
     setDocuments(Array.isArray(user.documents) ? user.documents : []);
     setDeleteDocumentIds([]);
-    setNewDocuments([{ rowId: Date.now(), title: '', file: null }]);
+    setNewDocuments([{ rowId: Date.now(), title: '', file: null, previewUrl: null }]);
   }, [user, reset, roles]);
 
   useEffect(() => {
@@ -159,7 +159,10 @@ export default function EditUserView({ user, readOnly, onSaved }) {
   }, [selectedRoleId]);
 
   const addNewDocumentRow = () => {
-    setNewDocuments((prev) => [...prev, { rowId: Date.now() + Math.random(), title: '', file: null }]);
+    setNewDocuments((prev) => [
+      ...prev,
+      { rowId: Date.now() + Math.random(), title: '', file: null, previewUrl: null },
+    ]);
   };
 
   const removeNewDocumentRow = (rowId) => {
@@ -561,16 +564,104 @@ export default function EditUserView({ user, readOnly, onSaved }) {
                                 />
                               </TableCell>
                               <TableCell>
-                                <Button variant="outlined" component="label" size="small">
-                                  {row.file?.name || 'انتخاب فایل'}
+                                <Box
+                                  component="label"
+                                  sx={{
+                                    position: 'relative',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    width: '100%',
+                                    minHeight: 84,
+                                    px: 2,
+                                    border: '1px solid',
+                                    borderColor: 'text.primary',
+                                    borderRadius: 0.5,
+                                    cursor: 'pointer',
+                                    backgroundColor: 'background.paper',
+                                    overflow: 'hidden',
+                                  }}
+                                >
                                   <input
                                     type="file"
+                                    accept="image/*"
                                     hidden
-                                    onChange={(event) =>
-                                      updateNewDocumentRow(row.rowId, 'file', event.target.files?.[0] ?? null)
-                                    }
+                                    onChange={(event) => {
+                                      const file = event.target.files?.[0] ?? null;
+
+                                      if (!file) {
+                                        updateNewDocumentRow(row.rowId, 'file', null);
+                                        updateNewDocumentRow(row.rowId, 'previewUrl', null);
+                                        return;
+                                      }
+
+                                      const reader = new FileReader();
+                                      reader.onloadend = () => {
+                                        updateNewDocumentRow(row.rowId, 'file', file);
+                                        updateNewDocumentRow(
+                                          row.rowId,
+                                          'previewUrl',
+                                          typeof reader.result === 'string' ? reader.result : null
+                                        );
+                                      };
+                                      reader.readAsDataURL(file);
+                                    }}
                                   />
-                                </Button>
+                                  {row.previewUrl ? (
+                                    <Box
+                                      component="img"
+                                      src={row.previewUrl}
+                                      alt={row.file?.name || 'پیش نمایش تصویر'}
+                                      sx={{
+                                        width: '100%',
+                                        maxHeight: 110,
+                                        objectFit: 'contain',
+                                        pointerEvents: 'none',
+                                      }}
+                                    />
+                                  ) : (
+                                    <>
+                                      <Box
+                                        sx={{
+                                          position: 'absolute',
+                                          width: '75%',
+                                          borderTop: '1px solid',
+                                          borderColor: 'text.secondary',
+                                          transform: 'rotate(15deg)',
+                                          pointerEvents: 'none',
+                                        }}
+                                      >
+                                        &nbsp;
+                                      </Box>
+                                      <Box
+                                        sx={{
+                                          position: 'absolute',
+                                          width: '75%',
+                                          borderTop: '1px solid',
+                                          borderColor: 'text.secondary',
+                                          transform: 'rotate(-15deg)',
+                                          pointerEvents: 'none',
+                                        }}
+                                      >
+                                        &nbsp;
+                                      </Box>
+                                      <Typography
+                                        variant="body2"
+                                        sx={{
+                                          zIndex: 1,
+                                          px: 1,
+                                          backgroundColor: 'background.paper',
+                                          maxWidth: '100%',
+                                          overflow: 'hidden',
+                                          textOverflow: 'ellipsis',
+                                          whiteSpace: 'nowrap',
+                                        }}
+                                      >
+                                        تصویر مدرک جدید
+                                      </Typography>
+                                    </>
+                                  )}
+                                </Box>
                               </TableCell>
                               <TableCell>
                                 <Button

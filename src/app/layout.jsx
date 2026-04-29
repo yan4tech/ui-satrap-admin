@@ -1,10 +1,10 @@
 import 'src/global.css';
 
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
-import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 
 import { CONFIG } from 'src/global-config';
 import { themeConfig, ThemeProvider, primary as primaryColor } from 'src/theme';
+import { MuiCacheProvider } from 'src/components/mui/cache-provider';
 
 import { ProgressBar } from 'src/components/progress-bar';
 import { MotionLazy } from 'src/components/animate/motion-lazy';
@@ -65,7 +65,7 @@ export default async function RootLayout({ children }) {
             cookieSettings={appConfig.cookieSettings}
             defaultSettings={defaultSettings}
           >
-            <AppRouterCacheProvider options={{ key: 'css' }}>
+            <MuiCacheProvider>
               <ThemeProvider
                 modeStorageKey={themeConfig.modeStorageKey}
                 defaultMode={themeConfig.defaultMode}
@@ -76,7 +76,7 @@ export default async function RootLayout({ children }) {
                   {children}
                 </MotionLazy>
               </ThemeProvider>
-            </AppRouterCacheProvider>
+            </MuiCacheProvider>
           </SettingsProvider>
         </AuthProvider>
       </body>

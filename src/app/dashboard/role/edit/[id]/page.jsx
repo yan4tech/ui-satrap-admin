@@ -6,7 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
 import EditRoleView from '../../edit-role-view';
-import { getRole } from 'src/app/dashboard/_lib/access-control-mock';
+import axios from 'src/lib/axios';
 
 export default function RoleEditPage() {
   const params = useParams();
@@ -20,15 +20,37 @@ export default function RoleEditPage() {
     let cancelled = false;
     const run = async () => {
       setStatus('loading');
-      const data = getRole(rawId);
-      if (cancelled) return;
-      if (!data) {
+      try {
+        const res = await axios.get(`/api/membership/ac/role/${rawId}`, {
+          headers: { mode: 'company' },
+        });
+        if (cancelled) return;
+        const item = res?.data?.data;
+        if (!item) {
+          setRow(null);
+          setStatus('notfound');
+          return;
+        }
+        const mapped = {
+          id: item?.ID ?? item?.id,
+          title: item?.title ?? '',
+          slug: item?.slug ?? '',
+          description: item?.description ?? '',
+          active: Boolean(item?.active),
+          content: item?.content ?? '',
+          permission_ids: Array.isArray(item?.permission_ids)
+            ? item.permission_ids.map((id) => Number(id))
+            : Array.isArray(item?.permissions)
+              ? item.permissions.map((p) => Number(p?.ID ?? p?.id)).filter((id) => !Number.isNaN(id))
+              : [],
+        };
+        setRow(mapped);
+        setStatus('ready');
+      } catch {
+        if (cancelled) return;
         setRow(null);
         setStatus('notfound');
-        return;
       }
-      setRow(data);
-      setStatus('ready');
     };
     run();
     return () => {

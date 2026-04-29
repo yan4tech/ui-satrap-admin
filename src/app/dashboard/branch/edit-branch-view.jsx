@@ -571,8 +571,17 @@ export default function EditBranch({ branchData, onSaved }) {
                   مدیریت مدارک و مستندات
                 </Typography>
 
-                <Box sx={{ mb: 3 }}>
-                  <Typography fontWeight={600} sx={{ mb: 1.5 }}>
+                <Box
+                  sx={{
+                    mb: 3,
+                    p: 2,
+                    borderRadius: 2.5,
+                    border: (theme) => `1px solid ${theme.palette.info.main}`,
+                    boxShadow: (theme) => `0 8px 24px ${theme.palette.info.main}1A`,
+                    backgroundColor: 'background.paper',
+                  }}
+                >
+                  <Typography fontWeight={700} sx={{ mb: 1.5 }}>
                     مدارک قبلی
                   </Typography>
                   <TableContainer
@@ -651,9 +660,18 @@ export default function EditBranch({ branchData, onSaved }) {
                   </TableContainer>
                 </Box>
 
-                <Box sx={{ mt: 3 }}>
+                <Box
+                  sx={{
+                    mt: 3,
+                    p: 2,
+                    borderRadius: 2.5,
+                    border: (theme) => `1px solid ${theme.palette.success.main}`,
+                    boxShadow: (theme) => `0 8px 24px ${theme.palette.success.main}1A`,
+                    backgroundColor: 'background.paper',
+                  }}
+                >
                   <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                    <Typography fontWeight={600}>مدارک جدید</Typography>
+                    <Typography fontWeight={700}>مدارک جدید</Typography>
                     <Button type="button" variant="contained" onClick={addNewDocumentRow}>
                       + افزودن سطر
                     </Button>

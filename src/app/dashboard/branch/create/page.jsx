@@ -188,7 +188,15 @@ const CreateBranch = () => {
           <Form methods={methods} onSubmit={onSubmit}>
             <Stack spacing={4}>
               {/* ================= BASIC ================= */}
-              <Box>
+              <Box
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 2.5,
+                  border: (theme) => `1px solid ${theme.palette.primary.main}`,
+                  boxShadow: (theme) => `0 8px 24px ${theme.palette.primary.main}1A`,
+                  backgroundColor: 'background.paper',
+                }}
+              >
                 <Typography fontWeight={600} sx={{ mb: 2 }}>
                   اطلاعات پایه شعبه
                 </Typography>
@@ -273,7 +281,15 @@ const CreateBranch = () => {
               <Divider />
 
               {/* ================= LOCATION ================= */}
-              <Box>
+              <Box
+                sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 2.5,
+                  border: (theme) => `1px solid ${theme.palette.info.main}`,
+                  boxShadow: (theme) => `0 8px 24px ${theme.palette.info.main}1A`,
+                  backgroundColor: 'background.paper',
+                }}
+              >
                 <Box
                   sx={{
                     display: 'grid',
@@ -314,12 +330,20 @@ const CreateBranch = () => {
               {/* ================= ADDRESS ================= */}
               <Box
                 sx={{
+                  p: { xs: 2, md: 2.5 },
+                  borderRadius: 2.5,
+                  border: (theme) => `1px solid ${theme.palette.success.main}`,
+                  boxShadow: (theme) => `0 8px 24px ${theme.palette.success.main}1A`,
+                  backgroundColor: 'background.paper',
                   display: 'grid',
                   gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
                   columnGap: 3,
                   rowGap: 2,
                 }}
               >
+                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                  <Typography fontWeight={600}>آدرس و توضیحات</Typography>
+                </Box>
                 <Box>
                   <Field.Text name="address" label="نشانی شعبه" multiline rows={3} />
                 </Box>

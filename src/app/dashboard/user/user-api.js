@@ -41,6 +41,25 @@ export async function fetchRolesOptions() {
     .filter((item) => item.id > 0);
 }
 
+export async function fetchRoleById(roleId) {
+  const id = Number(roleId);
+  if (!Number.isFinite(id) || id < 1) return null;
+
+  const res = await axios.get(`/api/membership/ac/role/${id}`, {
+    headers: MODE_HEADERS,
+  });
+  const item = res?.data?.data;
+  if (!item) return null;
+
+  return {
+    id: normalizeId(item),
+    title: item?.title ?? '-',
+    slug: item?.slug ?? '-',
+    description: item?.description ?? '',
+    active: Boolean(item?.active),
+  };
+}
+
 export async function fetchBranchesOptions() {
   let offset = 0;
   let all = [];

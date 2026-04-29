@@ -3,6 +3,7 @@
 import { z as zod } from 'zod';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -34,6 +35,7 @@ import { paths } from 'src/routes/paths';
 import {
   createUser,
   fetchRolesOptions,
+  fetchRoleById,
   fetchBranchesOptions,
   USER_TYPE_OPTIONS,
 } from '../user-api';
@@ -53,6 +55,8 @@ export default function CreateUserPage() {
   const router = useRouter();
   const [roles, setRoles] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [selectedRoleInfo, setSelectedRoleInfo] = useState(null);
+  const [roleInfoLoading, setRoleInfoLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [newDocuments, setNewDocuments] = useState([
     { rowId: Date.now(), title: '', file: null, previewUrl: null },
@@ -79,6 +83,7 @@ export default function CreateUserPage() {
     formState: { isSubmitting },
   } = methods;
   const userType = watch('user_type');
+  const selectedRoleId = watch('role_id');
   const activeValue = watch('active');
 
   useEffect(() => {
@@ -99,6 +104,30 @@ export default function CreateUserPage() {
       setValue('branch_id', 0);
     }
   }, [userType, setValue]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadRole = async () => {
+      const roleId = Number(selectedRoleId ?? 0);
+      if (roleId < 1) {
+        setSelectedRoleInfo(null);
+        return;
+      }
+      setRoleInfoLoading(true);
+      try {
+        const role = await fetchRoleById(roleId);
+        if (!cancelled) setSelectedRoleInfo(role);
+      } catch {
+        if (!cancelled) setSelectedRoleInfo(null);
+      } finally {
+        if (!cancelled) setRoleInfoLoading(false);
+      }
+    };
+    loadRole();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedRoleId]);
 
   const validDocuments = newDocuments
     .filter((doc) => doc.title.trim() || doc.file)
@@ -287,70 +316,139 @@ export default function CreateUserPage() {
               </Paper>
 
               <Paper variant="outlined" sx={sectionSx}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
-                  <Box>
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      مدارک جدید
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary">
-                      برای هر مدرک یک عنوان و فایل انتخاب کنید.
-                    </Typography>
-                  </Box>
-                  <Button type="button" variant="contained" color="success" onClick={addNewDocumentRow}>
-                    + افزودن سطر
-                  </Button>
+                <Box
+                  sx={{
+                    mb: 2,
+                    p: 2,
+                    borderRadius: 2.5,
+                    bgcolor: 'background.paper',
+                    border: (theme) => `1px solid ${theme.palette.primary.main}`,
+                    boxShadow: (theme) => `0 8px 24px ${theme.palette.primary.main}1F`,
+                    position: 'relative',
+                    overflow: 'hidden',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      insetInlineStart: 0,
+                      top: 0,
+                      bottom: 0,
+                      width: 4,
+                      bgcolor: 'primary.main',
+                    },
+                  }}
+                >
+                  <Stack direction="row" alignItems="center" justifyContent="space-between" spacing={2}>
+                    <Box>
+                      <Typography variant="subtitle2" fontWeight={700}>
+                        اطلاعات نقش انتخاب‌شده
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {roleInfoLoading
+                          ? 'در حال دریافت اطلاعات نقش...'
+                          : selectedRoleInfo
+                            ? `${selectedRoleInfo.title} (${selectedRoleInfo.slug})`
+                            : 'نقشی انتخاب نشده است.'}
+                      </Typography>
+                    </Box>
+                    <Button
+                      size="small"
+                      variant="contained"
+                      component={Link}
+                      href={
+                        selectedRoleInfo?.id
+                          ? paths.dashboard.role.details(selectedRoleInfo.id)
+                          : paths.dashboard.role.search
+                      }
+                      disabled={!selectedRoleInfo?.id}
+                    >
+                      جزئیات
+                    </Button>
+                  </Stack>
+                  {selectedRoleInfo?.id && (
+                    <Stack direction="row" spacing={1} sx={{ mt: 1.25 }}>
+                      <Chip size="small" label={`شناسه: ${selectedRoleInfo.id}`} />
+                      <Chip
+                        size="small"
+                        color={selectedRoleInfo.active ? 'success' : 'default'}
+                        label={selectedRoleInfo.active ? 'فعال' : 'غیرفعال'}
+                      />
+                    </Stack>
+                  )}
                 </Box>
-                <TableContainer component={Paper} variant="outlined">
-                  <Table>
-                    <TableHead>
-                      <TableRow>
-                        <TableCell>برچسب مدرک</TableCell>
-                        <TableCell>فایل</TableCell>
-                        <TableCell width={120}>حذف</TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {newDocuments.map((row) => (
-                        <TableRow key={row.rowId}>
-                          <TableCell>
-                            <TextField
-                              fullWidth
-                              size="small"
-                              placeholder="مثل national_card"
-                              value={row.title}
-                              onChange={(event) =>
-                                updateNewDocumentRow(row.rowId, 'title', event.target.value)
-                              }
-                            />
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="outlined" component="label" size="small">
-                              {row.file?.name || 'انتخاب فایل'}
-                              <input
-                                type="file"
-                                hidden
+                <Box
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    border: (theme) => `1px solid ${theme.palette.success.main}`,
+                    boxShadow: (theme) => `0 8px 24px ${theme.palette.success.main}1F`,
+                    backgroundColor: 'background.paper',
+                  }}
+                >
+                  <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1.5 }}>
+                    <Box>
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        مدارک جدید
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        برای هر مدرک یک عنوان و فایل انتخاب کنید.
+                      </Typography>
+                    </Box>
+                    <Button type="button" variant="contained" color="success" onClick={addNewDocumentRow}>
+                      + افزودن سطر
+                    </Button>
+                  </Box>
+                  <TableContainer component={Paper} variant="outlined" sx={{ borderColor: 'success.light' }}>
+                    <Table>
+                      <TableHead>
+                        <TableRow sx={{ backgroundColor: 'success.lighter' }}>
+                          <TableCell>برچسب مدرک</TableCell>
+                          <TableCell>فایل</TableCell>
+                          <TableCell width={120}>حذف</TableCell>
+                        </TableRow>
+                      </TableHead>
+                      <TableBody>
+                        {newDocuments.map((row) => (
+                          <TableRow key={row.rowId}>
+                            <TableCell>
+                              <TextField
+                                fullWidth
+                                size="small"
+                                placeholder="مثل national_card"
+                                value={row.title}
                                 onChange={(event) =>
-                                  updateNewDocumentRow(row.rowId, 'file', event.target.files?.[0] ?? null)
+                                  updateNewDocumentRow(row.rowId, 'title', event.target.value)
                                 }
                               />
-                            </Button>
-                          </TableCell>
-                          <TableCell>
-                            <Button
-                              type="button"
-                              color="error"
-                              variant="outlined"
-                              size="small"
-                              onClick={() => removeNewDocumentRow(row.rowId)}
-                            >
-                              حذف
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </TableContainer>
+                            </TableCell>
+                            <TableCell>
+                              <Button variant="outlined" component="label" size="small">
+                                {row.file?.name || 'انتخاب فایل'}
+                                <input
+                                  type="file"
+                                  hidden
+                                  onChange={(event) =>
+                                    updateNewDocumentRow(row.rowId, 'file', event.target.files?.[0] ?? null)
+                                  }
+                                />
+                              </Button>
+                            </TableCell>
+                            <TableCell>
+                              <Button
+                                type="button"
+                                color="error"
+                                variant="outlined"
+                                size="small"
+                                onClick={() => removeNewDocumentRow(row.rowId)}
+                              >
+                                حذف
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </TableContainer>
+                </Box>
               </Paper>
 
               <Stack

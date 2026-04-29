@@ -56,7 +56,7 @@ export default function PermissionSearchPage() {
   const [loading, setLoading] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
-  const [isSearchOpen, setIsSearchOpen] = useState(true);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),

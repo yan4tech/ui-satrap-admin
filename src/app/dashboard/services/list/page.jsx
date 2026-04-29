@@ -147,7 +147,7 @@ function getStatusColor(status) {
 export default function ServicesListPage() {
   const router = useRouter();
   const [submittedFilters, setSubmittedFilters] = useState(defaultFilters);
-  const [isSearchOpen, setIsSearchOpen] = useState(true);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,

@@ -55,7 +55,7 @@ const BranchSearch = () => {
     page: 0,
     pageSize: 10,
   });
-  const [isSearchOpen, setIsSearchOpen] = useState(true);
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const provinces = [
     { id: 1, name: 'تهران' },

@@ -3,7 +3,6 @@
 import { z as zod } from 'zod';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -28,6 +27,10 @@ import {
   TableRow,
   TextField,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from '@mui/material';
 
 import { Form, Field } from 'src/components/hook-form';
@@ -57,6 +60,7 @@ export default function CreateUserPage() {
   const [branches, setBranches] = useState([]);
   const [selectedRoleInfo, setSelectedRoleInfo] = useState(null);
   const [roleInfoLoading, setRoleInfoLoading] = useState(false);
+  const [roleDetailsOpen, setRoleDetailsOpen] = useState(false);
   const [errorMessage, setErrorMessage] = useState(null);
   const [newDocuments, setNewDocuments] = useState([
     { rowId: Date.now(), title: '', file: null, previewUrl: null },
@@ -353,12 +357,7 @@ export default function CreateUserPage() {
                     <Button
                       size="small"
                       variant="contained"
-                      component={Link}
-                      href={
-                        selectedRoleInfo?.id
-                          ? paths.dashboard.role.details(selectedRoleInfo.id)
-                          : paths.dashboard.role.search
-                      }
+                      onClick={() => setRoleDetailsOpen(true)}
                       disabled={!selectedRoleInfo?.id}
                     >
                       جزئیات
@@ -538,6 +537,49 @@ export default function CreateUserPage() {
                   </TableContainer>
                 </Box>
               </Paper>
+
+              <Dialog
+                open={roleDetailsOpen}
+                onClose={() => setRoleDetailsOpen(false)}
+                fullWidth
+                maxWidth="lg"
+              >
+                <DialogTitle sx={{ pb: 1 }}>
+                  جزئیات نقش
+                </DialogTitle>
+                <DialogContent sx={{ pt: 1 }}>
+                  {!!selectedRoleInfo?.id && (
+                    <Box
+                      component="iframe"
+                      src={paths.dashboard.role.details(selectedRoleInfo.id)}
+                      sx={{
+                        width: '100%',
+                        height: '70vh',
+                        border: '1px solid',
+                        borderColor: 'divider',
+                        borderRadius: 1.5,
+                        backgroundColor: 'background.paper',
+                      }}
+                    />
+                  )}
+                </DialogContent>
+                <DialogActions sx={{ px: 3, pb: 2 }}>
+                  <Button onClick={() => setRoleDetailsOpen(false)} variant="outlined">
+                    بستن
+                  </Button>
+                  <Button
+                    variant="contained"
+                    disabled={!selectedRoleInfo?.id}
+                    onClick={() => {
+                      if (!selectedRoleInfo?.id) return;
+                      setRoleDetailsOpen(false);
+                      router.push(paths.dashboard.role.edit(selectedRoleInfo.id));
+                    }}
+                  >
+                    رفتن به ویرایش نقش
+                  </Button>
+                </DialogActions>
+              </Dialog>
 
               <Stack
                 direction="row"

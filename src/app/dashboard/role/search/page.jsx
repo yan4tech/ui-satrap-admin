@@ -3,7 +3,7 @@
 import { z as zod } from 'zod';
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
@@ -23,9 +23,11 @@ import {
   Stack,
   Divider,
   Chip,
+  TextField,
 } from '@mui/material';
 
 import { LoadingButton } from '@mui/lab';
+import Autocomplete from '@mui/material/Autocomplete';
 import { DataGrid } from '@mui/x-data-grid';
 import { Icon } from '@iconify/react';
 
@@ -38,6 +40,7 @@ const SearchSchema = zod.object({
   slug: zod.string().optional(),
   description: zod.string().optional(),
   active: zod.string().optional(),
+  permissions: zod.array(zod.number()).optional(),
 });
 
 export default function RoleSearchPage() {
@@ -53,10 +56,10 @@ export default function RoleSearchPage() {
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
-    defaultValues: { title: '', slug: '', description: '', active: '' },
+    defaultValues: { title: '', slug: '', description: '', active: '', permissions: [] },
   });
 
-  const { handleSubmit, watch, setValue, getValues, reset } = methods;
+  const { handleSubmit, watch, setValue, getValues, reset, control } = methods;
   const isActiveValue = watch('active');
 
   const fetchPermissions = useCallback(async () => {
@@ -113,6 +116,9 @@ export default function RoleSearchPage() {
       if (filters.slug) params.slug = filters.slug;
       if (filters.description) params.description = filters.description;
       if (filters.active !== '') params.active = filters.active;
+      if (Array.isArray(filters.permissions) && filters.permissions.length > 0) {
+        params.permissions = `[${filters.permissions.join(',')}]`;
+      }
 
       const res = await axios.get('/api/membership/ac/role', {
         params,
@@ -186,10 +192,16 @@ export default function RoleSearchPage() {
       renderCell: (params) => (
         <Box sx={{ py: 0.5, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
           {(params.value || []).slice(0, 4).map((permission) => (
-            <Chip key={permission?.ID ?? permission?.id ?? permission?.slug} label={permission?.title || permission?.slug || '—'} size="small" variant="outlined" />
+            <Chip
+              key={permission?.ID ?? permission?.id ?? permission?.slug}
+              label={permission?.title || permission?.slug || '—'}
+              size="small"
+              color="primary"
+              variant="outlined"
+            />
           ))}
           {(params.value || []).length > 4 && (
-            <Chip size="small" label={`+${params.value.length - 4}`} />
+            <Chip size="small" color="primary" label={`+${params.value.length - 4}`} />
           )}
         </Box>
       ),
@@ -201,7 +213,7 @@ export default function RoleSearchPage() {
       renderCell: (params) => (
         <Chip
           label={params.value ? 'فعال' : 'غیرفعال'}
-          color={params.value ? 'success' : 'default'}
+          color={params.value ? 'success' : 'error'}
           size="small"
         />
       ),
@@ -318,6 +330,24 @@ export default function RoleSearchPage() {
                     <Field.Text name="description" label="توضیحات" />
                   </Box>
                   <Box>
+                    <Controller
+                      name="permissions"
+                      control={control}
+                      render={({ field }) => (
+                        <Autocomplete
+                          multiple
+                          options={Object.values(permissionMap)}
+                          getOptionLabel={(o) => `${o.title} (${o.slug})`}
+                          isOptionEqualToValue={(option, value) => Number(option.id) === Number(value.id)}
+                          value={Object.values(permissionMap).filter((p) => field.value?.includes(p.id))}
+                          onChange={(_, value) => field.onChange(value.map((v) => Number(v.id)))}
+                          filterSelectedOptions
+                          renderInput={(params) => <TextField {...params} label="دسترسی ها" placeholder="انتخاب..." />}
+                        />
+                      )}
+                    />
+                  </Box>
+                  <Box>
                     <Box sx={{ pt: 1 }}>
                       <Typography sx={{ mb: 1 }} variant="body2">
                         وضعیت
@@ -340,6 +370,7 @@ export default function RoleSearchPage() {
                         </Button>
                         <Button
                           size="small"
+                          color="error"
                           variant={isActiveValue === 'false' ? 'contained' : 'outlined'}
                           onClick={() => setValue('active', 'false')}
                         >

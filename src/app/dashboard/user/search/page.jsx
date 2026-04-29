@@ -1,7 +1,7 @@
 'use client';
 
 import { z as zod } from 'zod';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -32,21 +32,22 @@ import { Icon } from '@iconify/react';
 
 import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
-
 import {
   searchUsers,
-  deleteUser,
-  listRoles,
-  roleTitleById,
-  branchTitleById,
+  deleteUserById,
+  fetchRolesOptions,
+  fetchBranchesOptions,
   USER_TYPE_OPTIONS,
-} from 'src/app/dashboard/_lib/access-control-mock';
+} from '../user-api';
 
 const SearchSchema = zod.object({
   name: zod.string().optional(),
+  family: zod.string().optional(),
+  email: zod.string().optional(),
   mobile: zod.string().optional(),
   role_id: zod.union([zod.string(), zod.number()]).optional(),
-  user_type: zod.union([zod.string(), zod.number()]).optional(),
+  branch_id: zod.union([zod.string(), zod.number()]).optional(),
+  user_type: zod.string().optional(),
   active: zod.string().optional(),
   verified: zod.string().optional(),
 });
@@ -57,9 +58,11 @@ function userTypeLabel(v) {
 
 export default function UserSearchPage() {
   const router = useRouter();
-  const roles = useMemo(() => listRoles(), []);
   const [rows, setRows] = useState([]);
   const [rowCount, setRowCount] = useState(0);
+  const [roles, setRoles] = useState([]);
+  const [branches, setBranches] = useState([]);
+  const [loading, setLoading] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
   const [isSearchOpen, setIsSearchOpen] = useState(true);
@@ -68,9 +71,12 @@ export default function UserSearchPage() {
     resolver: zodResolver(SearchSchema),
     defaultValues: {
       name: '',
+      family: '',
+      email: '',
       mobile: '',
       role_id: '',
-      user_type: '',
+      branch_id: '',
+      user_type: USER_TYPE_OPTIONS[0]?.value ?? 'mobile',
       active: '',
       verified: '',
     },
@@ -79,21 +85,50 @@ export default function UserSearchPage() {
   const { handleSubmit, watch, setValue, getValues, reset } = methods;
   const activeVal = watch('active');
   const verifiedVal = watch('verified');
+  const selectedUserType = watch('user_type');
+
+  useEffect(() => {
+    if (selectedUserType !== 'branch') {
+      setValue('branch_id', '');
+    }
+  }, [selectedUserType, setValue]);
 
   const fetchData = useCallback(async () => {
+    setLoading(true);
     const f = getValues();
     const filters = { ...f };
-    const res = searchUsers(filters, paginationModel.page, paginationModel.pageSize);
-    setRows(
-      res.data.map((u) => ({
+    try {
+      const res = await searchUsers(filters, paginationModel.page, paginationModel.pageSize);
+      setRows(
+        res.data.map((u) => ({
+        id: u.id ?? u.ID,
         ...u,
-        role_title: roleTitleById(u.role_id),
-        branch_title: branchTitleById(u.branch_id),
+        role_title: roles.find((r) => r.id === Number(u.role_id))?.title || '—',
+        branch_title: branches.find((b) => b.id === Number(u.branch_id))?.title || '—',
         user_type_label: userTypeLabel(u.user_type),
-      }))
-    );
-    setRowCount(res.total);
-  }, [paginationModel, getValues]);
+        }))
+      );
+      setRowCount(res.total);
+    } catch {
+      setRows([]);
+      setRowCount(0);
+    } finally {
+      setLoading(false);
+    }
+  }, [paginationModel, getValues, roles, branches]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const [roleRows, branchRows] = await Promise.all([fetchRolesOptions(), fetchBranchesOptions()]);
+        setRoles(roleRows);
+        setBranches(branchRows);
+      } catch {
+        setRoles([]);
+        setBranches([]);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     fetchData();
@@ -105,30 +140,36 @@ export default function UserSearchPage() {
   });
 
   const columns = [
+    { field: 'mobile', headerName: 'موبایل', width: 130 },
     {
       field: 'name',
       headerName: 'نام',
       flex: 1,
-      renderCell: (params) => `${params.row.name} ${params.row.family}`,
+      renderCell: (params) => `${params.row.name || ''} ${params.row.family || ''}`,
     },
-    { field: 'mobile', headerName: 'موبایل', width: 130 },
-    { field: 'role_title', headerName: 'نقش', flex: 1 },
-    { field: 'branch_title', headerName: 'شعبه', flex: 1 },
+    { field: 'email', headerName: 'ایمیل', flex: 1 },
+    {
+      field: 'role_title',
+      headerName: 'نقش',
+      flex: 1,
+      renderCell: (p) => <Chip size="small" label={p.value || '—'} color="primary" variant="outlined" />,
+    },
     { field: 'user_type_label', headerName: 'نوع کاربر', width: 120 },
+    { field: 'branch_title', headerName: 'شعبه', flex: 1 },
     {
       field: 'active',
-      headerName: 'فعال',
-      width: 80,
+      headerName: 'وضعیت',
+      width: 95,
       renderCell: (p) => (
-        <Chip size="small" label={p.value ? 'بله' : 'خیر'} color={p.value ? 'success' : 'default'} />
+        <Chip size="small" label={p.value ? 'فعال' : 'غیرفعال'} color={p.value ? 'success' : 'error'} />
       ),
     },
     {
       field: 'verified',
-      headerName: 'تأیید',
-      width: 80,
+      headerName: 'تایید شده',
+      width: 95,
       renderCell: (p) => (
-        <Chip size="small" label={p.value ? 'بله' : 'خیر'} color={p.value ? 'info' : 'default'} />
+        <Chip size="small" label={p.value ? 'بله' : 'خیر'} color={p.value ? 'success' : 'error'} />
       ),
     },
     {
@@ -138,11 +179,6 @@ export default function UserSearchPage() {
       sortable: false,
       renderCell: (params) => (
         <>
-          <Tooltip title="جزئیات">
-            <IconButton onClick={() => router.push(paths.dashboard.user.details(params.row.id))}>
-              <Icon icon="mdi:eye-outline" width="20" />
-            </IconButton>
-          </Tooltip>
           <Tooltip title="ویرایش">
             <IconButton onClick={() => router.push(paths.dashboard.user.edit(params.row.id))}>
               <Icon icon="mdi:pencil-outline" width="20" />
@@ -160,14 +196,30 @@ export default function UserSearchPage() {
 
   const confirmDelete = () => {
     if (deleteDialog.row) {
-      deleteUser(deleteDialog.row.id);
-      setDeleteDialog({ open: false, row: null });
-      fetchData();
+      deleteUserById(deleteDialog.row.id)
+        .then(() => {
+          setDeleteDialog({ open: false, row: null });
+          fetchData();
+        })
+        .catch(() => {
+          setDeleteDialog({ open: false, row: null });
+        });
     }
   };
 
   return (
     <>
+      <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+        <Button
+          variant="contained"
+          color="success"
+          startIcon={<Icon icon="mdi:plus" width="20" />}
+          onClick={() => router.push(paths.dashboard.user.create)}
+        >
+          کاربر جدید
+        </Button>
+      </Box>
+
       <Card
         sx={{
           mb: 3,
@@ -223,6 +275,12 @@ export default function UserSearchPage() {
                     <Field.Text name="name" label="نام / نام خانوادگی" />
                   </Box>
                   <Box>
+                    <Field.Text name="family" label="نام خانوادگی" />
+                  </Box>
+                  <Box>
+                    <Field.Text name="email" label="ایمیل" />
+                  </Box>
+                  <Box>
                     <Field.Text name="mobile" label="موبایل" />
                   </Box>
                   <Box>
@@ -237,14 +295,25 @@ export default function UserSearchPage() {
                   </Box>
                   <Box>
                     <Field.Select name="user_type" label="نوع کاربر" placeholder="همه">
-                      <MenuItem value="">همه</MenuItem>
                       {USER_TYPE_OPTIONS.map((o) => (
-                        <MenuItem key={o.value} value={String(o.value)}>
+                        <MenuItem key={o.value} value={o.value}>
                           {o.label}
                         </MenuItem>
                       ))}
                     </Field.Select>
                   </Box>
+                  {selectedUserType === 'branch' && (
+                    <Box>
+                      <Field.Select name="branch_id" label="شعبه" placeholder="همه">
+                        <MenuItem value="">همه</MenuItem>
+                        {branches.map((b) => (
+                          <MenuItem key={b.id} value={String(b.id)}>
+                            {b.title}
+                          </MenuItem>
+                        ))}
+                      </Field.Select>
+                    </Box>
+                  )}
                 </Box>
 
                 <Box
@@ -262,7 +331,7 @@ export default function UserSearchPage() {
                 >
                   <Box>
                     <Typography variant="body2" sx={{ mb: 1 }}>
-                      فعال
+                      وضعیت
                     </Typography>
                     <Stack direction="row" spacing={1}>
                       <Button
@@ -275,6 +344,7 @@ export default function UserSearchPage() {
                       <Button
                         size="small"
                         variant={activeVal === 'true' ? 'contained' : 'outlined'}
+                        color="success"
                         onClick={() => setValue('active', 'true')}
                       >
                         فعال
@@ -282,6 +352,7 @@ export default function UserSearchPage() {
                       <Button
                         size="small"
                         variant={activeVal === 'false' ? 'contained' : 'outlined'}
+                        color="error"
                         onClick={() => setValue('active', 'false')}
                       >
                         غیرفعال
@@ -303,6 +374,7 @@ export default function UserSearchPage() {
                       <Button
                         size="small"
                         variant={verifiedVal === 'true' ? 'contained' : 'outlined'}
+                        color="success"
                         onClick={() => setValue('verified', 'true')}
                       >
                         بله
@@ -310,6 +382,7 @@ export default function UserSearchPage() {
                       <Button
                         size="small"
                         variant={verifiedVal === 'false' ? 'contained' : 'outlined'}
+                        color="error"
                         onClick={() => setValue('verified', 'false')}
                       >
                         خیر
@@ -347,7 +420,8 @@ export default function UserSearchPage() {
           <DataGrid
             rows={rows}
             columns={columns}
-            getRowId={(r) => r.id}
+            loading={loading}
+            getRowId={(r) => r.id ?? r.ID}
             rowCount={rowCount}
             paginationMode="server"
             paginationModel={paginationModel}

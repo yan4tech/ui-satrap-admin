@@ -6,7 +6,7 @@ import { useParams, useSearchParams } from 'next/navigation';
 import { Box, CircularProgress, Typography } from '@mui/material';
 
 import EditUserView from '../../edit-user-view';
-import { getUser } from 'src/app/dashboard/_lib/access-control-mock';
+import { fetchUserById } from '../../user-api';
 
 export default function UserEditPage() {
   const params = useParams();
@@ -20,7 +20,7 @@ export default function UserEditPage() {
     let cancelled = false;
     const run = async () => {
       setStatus('loading');
-      const data = getUser(rawId);
+      const data = await fetchUserById(rawId);
       if (cancelled) return;
       if (!data) {
         setRow(null);
@@ -35,6 +35,18 @@ export default function UserEditPage() {
       cancelled = true;
     };
   }, [rawId]);
+
+  const reloadUser = async () => {
+    setStatus('loading');
+    const data = await fetchUserById(rawId);
+    if (!data) {
+      setRow(null);
+      setStatus('notfound');
+      return;
+    }
+    setRow(data);
+    setStatus('ready');
+  };
 
   if (status === 'loading') {
     return (
@@ -52,5 +64,5 @@ export default function UserEditPage() {
     );
   }
 
-  return <EditUserView user={row} readOnly={readOnly} />;
+  return <EditUserView user={row} readOnly={readOnly} onSaved={reloadUser} />;
 }

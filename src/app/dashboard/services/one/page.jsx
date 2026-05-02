@@ -25,9 +25,10 @@ import {
   fetchProcessTasks,
   getTaskVersionsForElement,
   mergeAllTasksByTaskId,
+  mergeApiTasksWithSnapshot,
   pickActiveUserFacingTask,
-  pickEarliestTaskFromIdMap,
   pickLatestTaskForElement,
+  pickPipelineEarliestTaskFromIdMap,
 } from './engine-api';
 import {
   getBpmnElementIdForStepperIndex,
@@ -101,7 +102,8 @@ export default function WorkflowWizard() {
     const m = {};
     Object.values(allTasksById).forEach((t) => {
       if (!t?.element_id) return;
-      (m[t.element_id] = m[t.element_id] || []).push(t);
+      const k = String(t.element_id).trim().toLowerCase();
+      (m[k] = m[k] || []).push(t);
     });
     Object.keys(m).forEach((el) => {
       m[el].sort((a, b) => new Date(a.CreatedAt || 0) - new Date(b.CreatedAt || 0));
@@ -130,9 +132,10 @@ export default function WorkflowWizard() {
       setLoadError(null);
       try {
         const t = await fetchProcessTasks(pid);
-        setTasks(t);
-        syncFromTasks(t);
-        return t;
+        const merged = mergeApiTasksWithSnapshot(pid, {}, t);
+        setTasks(merged);
+        syncFromTasks(merged);
+        return merged;
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : 'خطا در دریافت وظایف.');
         setTasks({});
@@ -241,8 +244,9 @@ export default function WorkflowWizard() {
       await advanceTaskNext(processInstanceId, currentTask.ID, { approved: true });
       setFormPhaseComplete(false);
       const nextTasks = await fetchProcessTasks(processInstanceId);
-      setTasks(nextTasks);
-      syncFromTasks(nextTasks);
+      const merged = mergeApiTasksWithSnapshot(processInstanceId, allTasksByIdRef.current, nextTasks);
+      setTasks(merged);
+      syncFromTasks(merged);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'خطا در رفتن به مرحله بعد.');
     } finally {
@@ -275,7 +279,7 @@ export default function WorkflowWizard() {
         });
         try {
           const taskMap = await fetchProcessTasks(processInstanceId);
-          const merged = mergeAllTasksByTaskId(allTasksByIdRef.current, taskMap);
+          const merged = mergeApiTasksWithSnapshot(processInstanceId, allTasksByIdRef.current, taskMap);
           setAllTasksById(merged);
           const startVersions = getTaskVersionsForElement(merged, 'start');
           const startTask = pickLatestTaskForElement(merged, 'start');
@@ -290,7 +294,7 @@ export default function WorkflowWizard() {
             });
             return;
           }
-          const inferred = pickEarliestTaskFromIdMap(merged);
+          const inferred = pickPipelineEarliestTaskFromIdMap(merged);
           if (inferred) {
             setDetailDialog({
               open: true,
@@ -343,7 +347,7 @@ export default function WorkflowWizard() {
 
       try {
         const taskMap = await fetchProcessTasks(processInstanceId);
-        const merged = mergeAllTasksByTaskId(allTasksByIdRef.current, taskMap);
+        const merged = mergeApiTasksWithSnapshot(processInstanceId, allTasksByIdRef.current, taskMap);
         setAllTasksById(merged);
         const versions = getTaskVersionsForElement(merged, el);
         const resolved = pickLatestTaskForElement(merged, el);
@@ -490,11 +494,15 @@ export default function WorkflowWizard() {
           >
             {SERVICE1_STEPPER_LABELS.map((label, si) => {
               const elementId = getBpmnElementIdForStepperIndex(si);
-              const hasData =
+              /* API گاهی تسک‌های DONE را در map برنمی‌گرداند؛ آنگاه tasksByElement خالی است ولی مرحله از نظر استپر گذشته */
+              const hasMergedTasksForStep =
+                si > 0 && Boolean(elementId && tasksByElement[elementId]?.length);
+              const passedThisStepOnStepper = resolvedStepForHistory > si;
+              const canView =
                 si === 0
                   ? Boolean(processInstanceId)
-                  : Boolean(elementId && tasksByElement[elementId]?.length);
-              const canView = hasData && resolvedStepForHistory >= si;
+                  : resolvedStepForHistory >= si &&
+                    (hasMergedTasksForStep || passedThisStepOnStepper);
               return (
                 <Box key={label} sx={{ flex: '1 1 72px', minWidth: 64, textAlign: 'center' }}>
                   <Button

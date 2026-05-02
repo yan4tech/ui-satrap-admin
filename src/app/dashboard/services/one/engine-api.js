@@ -1,4 +1,5 @@
 import { HARDCODED_USER_HEADER } from './start-service-api';
+import { getService1WorkflowRank } from './service1-step-config';
 
 /** TODO: env */
 export const ENGINE_BASE_URL = 'http://localhost:3503';
@@ -40,6 +41,40 @@ const USER_FACING_TYPES = new Set([
 
 const OPEN_STATUSES = new Set(['CREATED', 'Created', 'ACTIVE', 'Active', 'READY', 'Ready']);
 
+/** tasks از API گاهی آرایه و گاهی map به‌کلید ID است */
+export function normalizeTasksInput(tasks) {
+  if (tasks == null) return [];
+  if (Array.isArray(tasks)) return tasks.filter(Boolean);
+  if (typeof tasks === 'object') return Object.values(tasks).filter(Boolean);
+  return [];
+}
+
+export function tasksInputToIdMap(tasks) {
+  const map = {};
+  normalizeTasksInput(tasks).forEach((t) => {
+    if (t?.ID != null) map[String(t.ID)] = t;
+  });
+  return map;
+}
+
+/** وقتی تسک بازی نیست: آخرین تغییر (برای ردیف لیست / فرایند تمام‌شده) */
+export function pickFallbackLatestTouchTask(tasks) {
+  const list = normalizeTasksInput(tasks);
+  if (!list.length) return null;
+  return [...list].sort(
+    (a, b) =>
+      new Date(b.UpdatedAt || b.CreatedAt || 0).getTime() -
+      new Date(a.UpdatedAt || a.CreatedAt || 0).getTime(),
+  )[0];
+}
+
+/** تسک «جاری» برای نمایش در لیست فرایندها — اول بازِ مواجه با کاربر به‌ترتیب BPMN، بعد fallback زمانی */
+export function pickRepresentativeTaskForProcessRow(tasks) {
+  const active = pickActiveUserFacingTask(tasksInputToIdMap(tasks));
+  if (active) return active;
+  return pickFallbackLatestTouchTask(tasks);
+}
+
 export async function fetchProcesses(params = {}) {
   const q = new URLSearchParams();
   if (params.limit != null) q.set('limit', String(params.limit));
@@ -77,8 +112,20 @@ export function pickActiveUserFacingTask(tasksMap) {
       USER_FACING_TYPES.has(t.type) &&
       (t.status == null || OPEN_STATUSES.has(String(t.status))),
   );
-  eligible.sort((a, b) => (a.ID ?? 0) - (b.ID ?? 0));
+  /* جلوترین مرحلهٔ باز در pipeline (رتبهٔ بزرگ‌تر)، نه کوچک‌ترین ID — تا با «شروع»/فرم قاطی نشود */
+  eligible.sort((a, b) => {
+    const ra = getService1WorkflowRank(a.element_id);
+    const rb = getService1WorkflowRank(b.element_id);
+    if (rb !== ra) return rb - ra;
+    return (a.ID ?? 0) - (b.ID ?? 0);
+  });
   return eligible[0] ?? null;
+}
+
+function normEl(elementId) {
+  return String(elementId ?? '')
+    .trim()
+    .toLowerCase();
 }
 
 export async function fetchProcessTasks(processInstanceId) {
@@ -93,7 +140,8 @@ export async function fetchProcessTasks(processInstanceId) {
 /** آخرین نسخهٔ تسک برای یک element_id از نقشهٔ tasks پاسخ API */
 export function pickLatestTaskForElement(tasksMap, elementId) {
   if (!tasksMap || !elementId) return null;
-  const list = Object.values(tasksMap).filter((t) => t && t.element_id === elementId);
+  const want = normEl(elementId);
+  const list = Object.values(tasksMap).filter((t) => t && normEl(t.element_id) === want);
   if (list.length === 0) return null;
   return list.sort(
     (a, b) =>
@@ -121,16 +169,58 @@ export function mergeAllTasksByTaskId(prevIdMap, taskMap) {
 /** همهٔ نسخه‌های تسک یک element_id مرتب‌شده از قدیم به جدید */
 export function getTaskVersionsForElement(idMap, elementId) {
   if (!elementId || !idMap) return [];
+  const want = normEl(elementId);
   return Object.values(idMap)
-    .filter((t) => t && t.element_id === elementId)
+    .filter((t) => t && normEl(t.element_id) === want)
     .sort((a, b) => new Date(a.CreatedAt || 0) - new Date(b.CreatedAt || 0));
 }
 
-/** قدیمی‌ترین تسک در map (برای نمایش مرحلهٔ «شروع» وقتی تسک start در API نیست) */
+/** قدیمی‌ترین تسک در map (زمان) — فقط اگر نیاز به fallback زمانی باشد */
 export function pickEarliestTaskFromIdMap(idMap) {
   const list = Object.values(idMap || {}).filter(Boolean);
   if (!list.length) return null;
   return list.sort((a, b) => new Date(a.CreatedAt || 0) - new Date(b.CreatedAt || 0))[0];
+}
+
+/** نزدیک‌ترین مرحله به ابتدای pipeline (برای «شروع» وقتی تسک start در API نیست) — نه صرفاً قدیمی‌ترین زمان */
+export function pickPipelineEarliestTaskFromIdMap(idMap) {
+  const list = Object.values(idMap || {}).filter(Boolean);
+  if (!list.length) return null;
+  return list.sort((a, b) => {
+    const ra = getService1WorkflowRank(a.element_id);
+    const rb = getService1WorkflowRank(b.element_id);
+    if (ra !== rb) return ra - rb;
+    return new Date(a.CreatedAt || 0) - new Date(b.CreatedAt || 0);
+  })[0];
+}
+
+const SNAPSHOT_PREFIX = 'service1.tasksSnapshot.';
+
+export function readService1TasksSnapshotMap(processInstanceId) {
+  if (processInstanceId == null || typeof window === 'undefined') return {};
+  try {
+    const raw = sessionStorage.getItem(`${SNAPSHOT_PREFIX}${processInstanceId}`);
+    if (!raw) return {};
+    return tasksInputToIdMap(JSON.parse(raw));
+  } catch {
+    return {};
+  }
+}
+
+export function writeService1TasksSnapshot(processInstanceId, tasksInput) {
+  if (processInstanceId == null || typeof window === 'undefined') return;
+  try {
+    sessionStorage.setItem(`${SNAPSHOT_PREFIX}${processInstanceId}`, JSON.stringify(tasksInput ?? {}));
+  } catch {
+    /* ignore quota */
+  }
+}
+
+/** ادغام: حافظهٔ قبلی + snapshot لیست + پاسخ تازهٔ API (بازهٔ زمانی/حذف DONE در API جبران می‌شود) */
+export function mergeApiTasksWithSnapshot(processInstanceId, prevIdMap, apiTasksInput) {
+  const snap = readService1TasksSnapshotMap(processInstanceId);
+  const apiMap = tasksInputToIdMap(apiTasksInput);
+  return mergeAllTasksByTaskId(mergeAllTasksByTaskId(prevIdMap || {}, snap), apiMap);
 }
 
 export async function completeTaskForm(processInstanceId, taskId, body) {

@@ -33,7 +33,12 @@ import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
 import { Field, Form } from 'src/components/hook-form';
 
-import { deleteProcessInstance, fetchProcesses } from '../one/engine-api';
+import {
+  deleteProcessInstance,
+  fetchProcesses,
+  pickRepresentativeTaskForProcessRow,
+  writeService1TasksSnapshot,
+} from '../one/engine-api';
 
 const DEFINITION_LABELS = {
   service1: 'خدمت شماره یک',
@@ -72,17 +77,10 @@ const SearchSchema = zod.object({
   currentElementId: zod.string().optional(),
 });
 
-function pickLatestTask(tasks) {
-  if (!Array.isArray(tasks) || tasks.length === 0) return null;
-  return [...tasks].sort(
-    (a, b) => new Date(b.CreatedAt || 0).getTime() - new Date(a.CreatedAt || 0).getTime(),
-  )[0];
-}
-
 function mapItemsToRows(items) {
   return (items || []).map((item) => {
     const p = item.process;
-    const latest = pickLatestTask(item.tasks);
+    const latest = pickRepresentativeTaskForProcessRow(item.tasks);
     const key = p?.definition_key ?? '';
     return {
       id: p.ID,
@@ -96,6 +94,8 @@ function mapItemsToRows(items) {
       currentElementId: latest?.element_id ?? '—',
       currentTaskStatus: latest?.status ?? '—',
       currentTaskType: latest?.type ?? '—',
+      /** برای صفحهٔ خدمت۱: ادغام با API وقتی تسک‌های DONE در tasks/فرایند نیستند */
+      tasksSnapshot: item.tasks,
     };
   });
 }
@@ -211,6 +211,9 @@ export default function ServicesListPage() {
       if (key === 'service2') {
         router.push(`${paths.dashboard.services.two}${qs}`);
         return;
+      }
+      if (row.tasksSnapshot != null) {
+        writeService1TasksSnapshot(row.processInstanceId, row.tasksSnapshot);
       }
       router.push(`${paths.dashboard.services.one}${qs}`);
     },

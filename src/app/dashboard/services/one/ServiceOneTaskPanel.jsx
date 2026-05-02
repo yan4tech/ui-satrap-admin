@@ -61,6 +61,7 @@ function ReviewTaskFooter({ submitting, submitError, onSubmit }) {
  */
 export default function ServiceOneTaskPanel({ task, onSubmitStepForm, submitting, submitError }) {
   const el = task?.element_id;
+  const elKey = el == null ? '' : String(el).trim().toLowerCase();
 
   const formMethods = useForm({
     defaultValues: {
@@ -73,10 +74,10 @@ export default function ServiceOneTaskPanel({ task, onSubmitStepForm, submitting
     return <Alert severity="info">تسک فعالی برای نمایش نیست.</Alert>;
   }
 
-  const isReview = isReviewElementId(el);
+  const isReview = isReviewElementId(elKey);
 
   let inner = null;
-  switch (el) {
+  switch (elKey) {
     case 'payment':
       inner = <StaticPayment />;
       break;
@@ -98,7 +99,7 @@ export default function ServiceOneTaskPanel({ task, onSubmitStepForm, submitting
     default:
       inner = (
         <Alert severity="warning">
-          مرحلهٔ BPMN شناخته‌شده نیست: <strong>{el}</strong>
+          مرحلهٔ BPMN شناخته‌شده نیست: <strong>{elKey || el}</strong>
         </Alert>
       );
   }

@@ -18,23 +18,40 @@ export const SERVICE1_STEPPER_LABELS = [
   ...SERVICE1_BPMN_USER_STEPS.map((s) => s.label),
 ];
 
+/** ترتیب مراحل در pipeline خدمت۱ — برای مرتب‌سازی تسک‌های باز و نگاشت به استپر */
+export const SERVICE1_ELEMENT_ORDER = [
+  'start',
+  ...SERVICE1_BPMN_USER_STEPS.map((s) => s.elementId),
+];
+
+/** عدد کوچکتر = زودتر در فرایند؛ ناشناس آخر */
+export function getService1WorkflowRank(elementId) {
+  if (elementId == null || elementId === '') return 999;
+  const key = String(elementId).trim().toLowerCase();
+  const i = SERVICE1_ELEMENT_ORDER.map((e) => String(e).toLowerCase()).indexOf(key);
+  return i === -1 ? 999 : i;
+}
+
 const ELEMENT_TO_INDEX = Object.fromEntries(
-  SERVICE1_BPMN_USER_STEPS.map((s, i) => [s.elementId, i + 1]),
+  SERVICE1_BPMN_USER_STEPS.map((s, i) => [String(s.elementId).toLowerCase(), i + 1]),
 );
 
 export function getStepperIndexForElementId(elementId) {
   if (!elementId) return 0;
-  if (elementId === 'start') return 0;
-  const idx = ELEMENT_TO_INDEX[elementId];
+  const key = String(elementId).trim().toLowerCase();
+  if (key === 'start') return 0;
+  const idx = ELEMENT_TO_INDEX[key];
   return idx ?? 1;
 }
 
 export function isReviewElementId(elementId) {
-  return Boolean(SERVICE1_BPMN_USER_STEPS.find((s) => s.elementId === elementId && s.isReview));
+  const key = elementId == null ? '' : String(elementId).trim().toLowerCase();
+  return Boolean(SERVICE1_BPMN_USER_STEPS.find((s) => String(s.elementId).toLowerCase() === key && s.isReview));
 }
 
 /** اندیس ۰ = شروع؛ از ۱ به بعد مطابق SERVICE1_BPMN_USER_STEPS */
 export function getBpmnElementIdForStepperIndex(stepIndex) {
   if (stepIndex <= 0) return null;
-  return SERVICE1_BPMN_USER_STEPS[stepIndex - 1]?.elementId ?? null;
+  const id = SERVICE1_BPMN_USER_STEPS[stepIndex - 1]?.elementId ?? null;
+  return id == null ? null : String(id).toLowerCase();
 }

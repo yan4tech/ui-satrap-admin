@@ -1,16 +1,23 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { z as zod } from 'zod';
-import { Controller, useForm } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import {
+  Alert,
   Box,
   Button,
   Card,
   CardContent,
   Chip,
+  CircularProgress,
   Collapse,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
   Grid,
   IconButton,
   MenuItem,
@@ -21,137 +28,107 @@ import {
 } from '@mui/material';
 import { Icon } from '@iconify/react';
 import { DataGrid } from '@mui/x-data-grid';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import dayjs from 'dayjs';
-import jalaliday from 'jalaliday';
 import { useRouter } from 'src/routes/hooks';
 import { paths } from 'src/routes/paths';
 import { Field, Form } from 'src/components/hook-form';
 
-dayjs.extend(jalaliday);
-dayjs.calendar('jalali');
+import { deleteProcessInstance, fetchProcesses } from '../one/engine-api';
 
-const REQUEST_TYPES = ['خدمت شماره یک', 'خدمت شماره دو', 'خدمت شماره سه'];
-const REQUEST_STATUS = [
-  'در انتظار تایید مرحله اطلاعات اولیه',
-  'در انتظار تایید مرحله نقشه برداری',
-  'تایید شده مرحله اطلاعات اولیه',
-  'تایید شده مرحله نقشه برداری',
+const DEFINITION_LABELS = {
+  service1: 'خدمت شماره یک',
+  service2: 'خدمت شماره دو',
+  service3: 'خدمت شماره سه',
+};
+
+const DEFINITION_OPTIONS = [
+  { value: '', label: 'همه' },
+  { value: 'service1', label: DEFINITION_LABELS.service1 },
+  { value: 'service2', label: DEFINITION_LABELS.service2 },
+  { value: 'service3', label: DEFINITION_LABELS.service3 },
 ];
-const BRANCHES = ['شعبه 1', 'شعبه 2', 'شعبه 3'];
-const PROVINCES = ['تهران', 'اصفهان', 'شیراز'];
-const CITIES = ['تهران', 'اسلامشهر', 'پردیس'];
-const TOWNS = ['روستا 1', 'روستا 2'];
 
-const MOCK_ROWS = [
-  {
-    id: 1,
-    requestNumber: '252142544',
-    requester: 'شعبه 1',
-    requestType: 'خدمت شماره یک',
-    requestStatus: 'در انتظار تایید مرحله اطلاعات اولیه',
-    nationalId: '1234567890',
-  },
-  {
-    id: 2,
-    requestNumber: '5644545455',
-    requester: 'شعبه 2',
-    requestType: 'خدمت شماره سه',
-    requestStatus: 'تایید شده مرحله اطلاعات اولیه',
-    nationalId: '2234567890',
-  },
-  {
-    id: 3,
-    requestNumber: '5454212555',
-    requester: 'شعبه 3',
-    requestType: 'خدمت شماره دو',
-    requestStatus: 'در انتظار تایید مرحله نقشه برداری',
-    nationalId: '3234567890',
-  },
-  {
-    id: 4,
-    requestNumber: '6562102122',
-    requester: 'شعبه 1',
-    requestType: 'خدمت شماره سه',
-    requestStatus: 'تایید شده مرحله نقشه برداری',
-    nationalId: '4234567890',
-  },
-  ...Array.from({ length: 20 }).map((_, index) => {
-    const id = index + 5;
-    const statuses = [
-      'در انتظار تایید مرحله اطلاعات اولیه',
-      'در انتظار تایید مرحله نقشه برداری',
-      'تایید شده مرحله اطلاعات اولیه',
-      'تایید شده مرحله نقشه برداری',
-    ];
-    const requestTypes = ['خدمت شماره یک', 'خدمت شماره دو', 'خدمت شماره سه'];
-
-    return {
-      id,
-      requestNumber: `70000${id}${id + 11}`,
-      requester: BRANCHES[index % BRANCHES.length],
-      requestType: requestTypes[index % requestTypes.length],
-      requestStatus: statuses[index % statuses.length],
-      nationalId: `99${String(id).padStart(8, '0')}`,
-    };
-  }),
+const PROCESS_STATUS_OPTIONS = [
+  { value: '', label: 'همه' },
+  { value: 'RUNNING', label: 'در حال اجرا' },
+  { value: 'COMPLETED', label: 'تکمیل‌شده' },
+  { value: 'CANCELLED', label: 'لغوشده' },
+  { value: 'SUSPENDED', label: 'معلق' },
 ];
 
 const defaultFilters = {
-  requestNumber: '',
-  nationalId: '',
-  requestType: '',
-  requestStatus: '',
-  province: '',
-  county: '',
-  cityOrVillage: '',
-  requester: '',
-  fromDate: null,
-  toDate: null,
+  processId: '',
+  definitionKey: '',
+  processStatus: '',
+  applicantName: '',
+  currentElementId: '',
 };
 
-const SearchSchema = zod
-  .object({
-    requestNumber: zod.string().optional(),
-    nationalId: zod.string().optional(),
-    requestType: zod.string().optional(),
-    requestStatus: zod.string().optional(),
-    province: zod.string().optional(),
-    county: zod.string().optional(),
-    cityOrVillage: zod.string().optional(),
-    requester: zod.string().optional(),
-    fromDate: zod.any().nullable().optional(),
-    toDate: zod.any().nullable().optional(),
-  })
-  .superRefine((value, ctx) => {
-    if (
-      value.fromDate &&
-      value.toDate &&
-      dayjs(value.fromDate).isAfter(dayjs(value.toDate), 'day')
-    ) {
-      ctx.addIssue({
-        code: zod.ZodIssueCode.custom,
-        path: ['toDate'],
-        message: 'تاریخ پایان باید بزرگتر یا مساوی تاریخ شروع باشد.',
-      });
-    }
-  });
+const SearchSchema = zod.object({
+  processId: zod.string().optional(),
+  definitionKey: zod.string().optional(),
+  processStatus: zod.string().optional(),
+  applicantName: zod.string().optional(),
+  currentElementId: zod.string().optional(),
+});
 
-function getStatusColor(status) {
-  if (status.includes('در انتظار')) return 'warning';
-  return 'success';
+function pickLatestTask(tasks) {
+  if (!Array.isArray(tasks) || tasks.length === 0) return null;
+  return [...tasks].sort(
+    (a, b) => new Date(b.CreatedAt || 0).getTime() - new Date(a.CreatedAt || 0).getTime(),
+  )[0];
+}
+
+function mapItemsToRows(items) {
+  return (items || []).map((item) => {
+    const p = item.process;
+    const latest = pickLatestTask(item.tasks);
+    const key = p?.definition_key ?? '';
+    return {
+      id: p.ID,
+      processInstanceId: p.ID,
+      definitionKey: key,
+      serviceLabel: DEFINITION_LABELS[key] || key || '—',
+      processStatus: p.status ?? '—',
+      applicantName: p.variables?.applicant_name ?? '—',
+      startedAt: p.started_at ?? null,
+      currentTaskName: latest?.name ?? '—',
+      currentElementId: latest?.element_id ?? '—',
+      currentTaskStatus: latest?.status ?? '—',
+      currentTaskType: latest?.type ?? '—',
+    };
+  });
+}
+
+function processStatusColor(status) {
+  const s = String(status || '').toUpperCase();
+  if (s === 'RUNNING') return 'info';
+  if (s === 'COMPLETED') return 'success';
+  if (s === 'CANCELLED') return 'error';
+  if (s === 'SUSPENDED') return 'warning';
+  return 'default';
+}
+
+function taskStatusColor(status) {
+  const s = String(status || '').toUpperCase();
+  if (s === 'CREATED' || s === 'READY') return 'warning';
+  if (s === 'COMPLETED' || s === 'DONE') return 'success';
+  return 'default';
 }
 
 export default function ServicesListPage() {
   const router = useRouter();
+  const [allRows, setAllRows] = useState([]);
   const [submittedFilters, setSubmittedFilters] = useState(defaultFilters);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
   });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteSubmitting, setDeleteSubmitting] = useState(false);
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
@@ -160,121 +137,204 @@ export default function ServicesListPage() {
 
   const { handleSubmit, getValues, reset } = methods;
 
+  const loadProcesses = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await fetchProcesses();
+      setAllRows(mapItemsToRows(data.items));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'خطا در دریافت لیست فرایندها.');
+      setAllRows([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void loadProcesses();
+  }, [loadProcesses]);
+
   const filteredRows = useMemo(() => {
-    return MOCK_ROWS.filter((row) => {
-      if (
-        submittedFilters.requestNumber &&
-        !row.requestNumber.toLowerCase().includes(submittedFilters.requestNumber.toLowerCase())
-      ) {
+    return allRows.filter((row) => {
+      if (submittedFilters.processId) {
+        const q = submittedFilters.processId.trim();
+        if (!String(row.processInstanceId).includes(q)) return false;
+      }
+      if (submittedFilters.definitionKey && row.definitionKey !== submittedFilters.definitionKey) {
         return false;
       }
       if (
-        submittedFilters.nationalId &&
-        !row.nationalId.toLowerCase().includes(submittedFilters.nationalId.toLowerCase())
+        submittedFilters.processStatus &&
+        String(row.processStatus).toUpperCase() !==
+          String(submittedFilters.processStatus).toUpperCase()
       ) {
         return false;
       }
-      if (submittedFilters.requester && row.requester !== submittedFilters.requester) return false;
-      if (submittedFilters.requestType && row.requestType !== submittedFilters.requestType)
-        return false;
-      if (submittedFilters.requestStatus && row.requestStatus !== submittedFilters.requestStatus)
-        return false;
-      if (
-        submittedFilters.fromDate &&
-        dayjs(
-          row.id === 1
-            ? '2026-01-10'
-            : row.id === 2
-              ? '2026-01-12'
-              : row.id === 3
-                ? '2026-01-14'
-                : '2026-01-15'
-        ).isBefore(dayjs(submittedFilters.fromDate), 'day')
-      ) {
-        return false;
+      if (submittedFilters.applicantName) {
+        const q = submittedFilters.applicantName.trim().toLowerCase();
+        if (!String(row.applicantName).toLowerCase().includes(q)) return false;
       }
-      if (
-        submittedFilters.toDate &&
-        dayjs(
-          row.id === 1
-            ? '2026-01-10'
-            : row.id === 2
-              ? '2026-01-12'
-              : row.id === 3
-                ? '2026-01-14'
-                : '2026-01-15'
-        ).isAfter(dayjs(submittedFilters.toDate), 'day')
-      ) {
-        return false;
+      if (submittedFilters.currentElementId) {
+        const q = submittedFilters.currentElementId.trim().toLowerCase();
+        if (!String(row.currentElementId).toLowerCase().includes(q)) return false;
       }
       return true;
     });
-  }, [submittedFilters]);
-
-  const rows = useMemo(() => {
-    const start = paginationModel.page * paginationModel.pageSize;
-    const end = start + paginationModel.pageSize;
-    return filteredRows.slice(start, end);
-  }, [filteredRows, paginationModel]);
+  }, [allRows, submittedFilters]);
 
   const handleSearch = handleSubmit(() => {
     setSubmittedFilters(getValues());
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    void loadProcesses();
   });
 
   const handleResetFilters = () => {
     reset(defaultFilters);
     setSubmittedFilters(defaultFilters);
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
+    void loadProcesses();
   };
 
-  const handleViewDetails = (row) => {
-    console.log('view details for request', row.requestNumber);
-    if (row.requestType === 'خدمت شماره سه') {
-      router.push(paths.dashboard.services.three);
-      return;
-    }
-    if (row.requestType === 'خدمت شماره دو') {
-      router.push(paths.dashboard.services.two);
-      return;
-    }
-    router.push(paths.dashboard.services.one);
-  };
+  const handleViewDetails = useCallback(
+    (row) => {
+      const key = row.definitionKey;
+      const q = new URLSearchParams();
+      q.set('processId', String(row.processInstanceId));
+      q.set('definitionKey', String(key || 'service1'));
+      const qs = `?${q.toString()}`;
 
-  const columns = [
-    { field: 'requestNumber', headerName: 'شماره درخواست', flex: 1 },
-    { field: 'requester', headerName: 'درخواست‌دهنده', flex: 1 },
-    { field: 'nationalId', headerName: 'شماره ملی', flex: 1 },
+      if (key === 'service3') {
+        router.push(`${paths.dashboard.services.three}${qs}`);
+        return;
+      }
+      if (key === 'service2') {
+        router.push(`${paths.dashboard.services.two}${qs}`);
+        return;
+      }
+      router.push(`${paths.dashboard.services.one}${qs}`);
+    },
+    [router],
+  );
+
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget) return;
+    setDeleteSubmitting(true);
+    setError(null);
+    try {
+      await deleteProcessInstance(deleteTarget.processInstanceId);
+      setDeleteTarget(null);
+      await loadProcesses();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'حذف فرایند ناموفق بود.');
+    } finally {
+      setDeleteSubmitting(false);
+    }
+  }, [deleteTarget, loadProcesses]);
+
+  const columns = useMemo(
+    () => [
     {
-      field: 'requestStatus',
-      headerName: 'وضعیت درخواست',
-      flex: 1.4,
+      field: 'processInstanceId',
+      headerName: 'شماره فرایند',
+      flex: 0.9,
+      minWidth: 120,
+    },
+    {
+      field: 'serviceLabel',
+      headerName: 'نوع خدمت',
+      flex: 1,
+      minWidth: 130,
+    },
+    {
+      field: 'applicantName',
+      headerName: 'نام متقاضی',
+      flex: 1,
+      minWidth: 110,
+    },
+    {
+      field: 'processStatus',
+      headerName: 'وضعیت فرایند',
+      flex: 0.85,
+      minWidth: 110,
       renderCell: (params) => (
         <Chip
           label={params.value}
           size="small"
-          color={getStatusColor(params.value)}
+          color={processStatusColor(params.value)}
           variant="outlined"
         />
       ),
     },
-    { field: 'requestType', headerName: 'نوع درخواست', flex: 1 },
     {
-      field: 'actions',
-      headerName: 'اکشن',
-      align: 'center',
-      headerAlign: 'center',
-      flex: 0.6,
-      sortable: false,
+      field: 'startedAt',
+      headerName: 'تاریخ شروع',
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) =>
+        params.value ? dayjs(params.value).format('YYYY/MM/DD HH:mm') : '—',
+    },
+    {
+      field: 'currentTaskName',
+      headerName: 'مرحله جاری (آخرین تسک)',
+      flex: 1.2,
+      minWidth: 160,
+    },
+    {
+      field: 'currentElementId',
+      headerName: 'شناسه مرحله',
+      flex: 0.8,
+      minWidth: 100,
       renderCell: (params) => (
-        <Tooltip title="دیدن جزییات">
-          <IconButton color="primary" onClick={() => handleViewDetails(params.row)}>
-            <Icon icon="solar:eye-bold" width={18} />
-          </IconButton>
-        </Tooltip>
+        <Chip label={params.value} size="small" variant="outlined" color="primary" />
       ),
     },
-  ];
+    {
+      field: 'currentTaskStatus',
+      headerName: 'وضعیت تسک',
+      flex: 0.85,
+      minWidth: 100,
+      renderCell: (params) => (
+        <Chip
+          label={params.value}
+          size="small"
+          color={taskStatusColor(params.value)}
+          variant="outlined"
+        />
+      ),
+    },
+    {
+      field: 'currentTaskType',
+      headerName: 'نوع تسک',
+      flex: 0.9,
+      minWidth: 110,
+    },
+    {
+      field: 'actions',
+      headerName: 'عملیات',
+      align: 'center',
+      headerAlign: 'center',
+      flex: 0.7,
+      minWidth: 112,
+      sortable: false,
+      renderCell: (params) => (
+        <Stack direction="row" spacing={0} alignItems="center" justifyContent="center">
+          <Tooltip title="جزییات فرایند">
+            <IconButton color="primary" size="small" onClick={() => handleViewDetails(params.row)}>
+              <Icon icon="solar:eye-bold" width={18} />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="حذف فرایند">
+            <IconButton color="error" size="small" onClick={() => setDeleteTarget(params.row)}>
+              <Icon icon="solar:trash-bin-trash-bold" width={18} />
+            </IconButton>
+          </Tooltip>
+        </Stack>
+      ),
+    },
+    ],
+    [handleViewDetails, setDeleteTarget],
+  );
 
   return (
     <Stack spacing={3}>
@@ -325,131 +385,38 @@ export default function ServicesListPage() {
                   borderColor: 'divider',
                 }}
               >
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-                  <Field.Text name="requestNumber" label="شماره درخواست" />
-                </Box>
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-                  <Field.Text name="nationalId" label="شماره ملی" />
-                </Box>
-
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-                  <Field.Select name="requester" label="درخواست‌دهنده">
-                    {BRANCHES.map((item) => (
-                      <MenuItem key={item} value={item}>
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Box>
-
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-                  <Field.Select name="requestType" label="نوع خدمت">
-                    {REQUEST_TYPES.map((item) => (
-                      <MenuItem key={item} value={item}>
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Box>
-
-                <Box sx={{ width: { xs: '50%', md: '20%' } }}></Box>
-
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-                  <Field.Select name="province" label="استان">
-                    {PROVINCES.map((item) => (
-                      <MenuItem key={item} value={item}>
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Box>
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-                  <Field.Select name="county" label="شهرستان">
-                    {CITIES.map((item) => (
-                      <MenuItem key={item} value={item}>
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Box>
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-                  <Field.Select name="cityOrVillage" label="شهر/روستا">
-                    {TOWNS.map((item) => (
-                      <MenuItem key={item} value={item}>
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Box>
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}></Box>
-
-                <Box sx={{ width: { xs: '100%', md: '35%' } }}>
-                  <Field.Select name="requestStatus" label="وضعیت">
-                    {REQUEST_STATUS.map((item) => (
-                      <MenuItem key={item} value={item}>
-                        {item}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Box>
-              </Grid>
-
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <Grid
-                  container
-                  spacing={2}
-                  sx={{
-                    mt: 2,
-                    p: { xs: 1, md: 2 },
-                    borderRadius: 2,
-                    border: '1px dashed',
-                    borderColor: 'divider',
-                  }}
-                >
-                  <Grid item xs={12} md={3}>
-                    <Controller
-                      name="fromDate"
-                      control={methods.control}
-                      render={({ field, fieldState: { error } }) => (
-                        <DatePicker
-                          label="از تاریخ"
-                          value={field.value}
-                          onChange={field.onChange}
-                          format="YYYY/MM/DD"
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              error: !!error,
-                              helperText: error?.message,
-                            },
-                          }}
-                        />
-                      )}
-                    />
-                  </Grid>
-                  <Grid item xs={12} md={3}>
-                    <Controller
-                      name="toDate"
-                      control={methods.control}
-                      render={({ field, fieldState: { error } }) => (
-                        <DatePicker
-                          label="تا تاریخ"
-                          value={field.value}
-                          onChange={field.onChange}
-                          format="YYYY/MM/DD"
-                          slotProps={{
-                            textField: {
-                              fullWidth: true,
-                              error: !!error,
-                              helperText: error?.message,
-                            },
-                          }}
-                        />
-                      )}
-                    />
-                  </Grid>
+                <Grid item xs={12} md={4}>
+                  <Field.Text name="processId" label="شماره فرایند" placeholder="مثلاً 1749882971" />
                 </Grid>
-              </LocalizationProvider>
+                <Grid item xs={12} md={4}>
+                  <Field.Select name="definitionKey" label="نوع خدمت">
+                    {DEFINITION_OPTIONS.map((item) => (
+                      <MenuItem key={item.value || 'all'} value={item.value}>
+                        {item.label}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Field.Select name="processStatus" label="وضعیت فرایند">
+                    {PROCESS_STATUS_OPTIONS.map((item) => (
+                      <MenuItem key={item.value || 'all'} value={item.value}>
+                        {item.label}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Field.Text name="applicantName" label="نام متقاضی" />
+                </Grid>
+                <Grid item xs={12} md={4}>
+                  <Field.Text
+                    name="currentElementId"
+                    label="شناسه مرحله (element)"
+                    placeholder="مثلاً payment"
+                  />
+                </Grid>
+              </Grid>
 
               <Box
                 sx={{
@@ -476,25 +443,69 @@ export default function ServicesListPage() {
 
       <Card>
         <CardContent>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            نتیجه جستجو
-          </Typography>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+            <Typography variant="h6">نتیجه جستجو</Typography>
+            <Button
+              variant="outlined"
+              size="small"
+              startIcon={<Icon icon="solar:refresh-linear" width={18} />}
+              onClick={() => void loadProcesses()}
+              disabled={loading}
+            >
+              بروزرسانی
+            </Button>
+          </Stack>
 
-          <NoSsr>
-            <DataGrid
-              rows={rows}
-              columns={columns}
-              rowCount={filteredRows.length}
-              paginationMode="server"
-              paginationModel={paginationModel}
-              onPaginationModelChange={setPaginationModel}
-              pageSizeOptions={[10, 20]}
-              autoHeight
-              disableRowSelectionOnClick
-            />
-          </NoSsr>
+          {error ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          ) : null}
+
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 6 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <NoSsr>
+              <DataGrid
+                rows={filteredRows}
+                columns={columns}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                pageSizeOptions={[10, 20]}
+                autoHeight
+                disableRowSelectionOnClick
+              />
+            </NoSsr>
+          )}
         </CardContent>
       </Card>
+
+      <Dialog open={Boolean(deleteTarget)} onClose={() => !deleteSubmitting && setDeleteTarget(null)}>
+        <DialogTitle>حذف فرایند</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            آیا مطمئن هستید که می‌خواهید فرایند با شماره{' '}
+            <strong>{deleteTarget?.processInstanceId}</strong>
+            {deleteTarget?.serviceLabel ? (
+              <>
+                {' '}
+                (<strong>{deleteTarget.serviceLabel}</strong>)
+              </>
+            ) : null}{' '}
+            حذف شود؟ این عمل قابل بازگشت نیست.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteTarget(null)} disabled={deleteSubmitting}>
+            انصراف
+          </Button>
+          <Button color="error" variant="contained" onClick={handleConfirmDelete} disabled={deleteSubmitting}>
+            {deleteSubmitting ? 'در حال حذف…' : 'حذف'}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Stack>
   );
 }

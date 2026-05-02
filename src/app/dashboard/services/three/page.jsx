@@ -1,7 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import {
+  Alert,
   Box,
   Button,
   Card,
@@ -11,6 +14,8 @@ import {
   Step,
   StepLabel,
 } from '@mui/material';
+
+import { paths } from 'src/routes/paths';
 
 import { useForm, FormProvider } from 'react-hook-form';
 import { z } from 'zod';
@@ -34,6 +39,13 @@ const stepSchemas = [
 ];
 
 export default function WorkflowWizard() {
+  const searchParams = useSearchParams();
+  const processId = searchParams.get('processId');
+  const definitionKey = searchParams.get('definitionKey');
+  const resumeFromList = Boolean(processId && String(processId).trim() !== '');
+  const wrongService1Resume =
+    resumeFromList && definitionKey != null && String(definitionKey).trim() === 'service1';
+
   const [activeStep, setActiveStep] = useState(0);
   const [approvalState, setApprovalState] = useState({});
   const approvalSteps = [2];
@@ -109,6 +121,16 @@ export default function WorkflowWizard() {
         <Typography variant="h5" sx={{ mb: 3 }}>
           خدمت شماره سه
         </Typography>
+
+        {wrongService1Resume ? (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            این فرایند از نوع خدمت شماره یک است. برای ادامه با موتور BPMN به{' '}
+            <Link href={`${paths.dashboard.services.one}?processId=${encodeURIComponent(processId)}&definitionKey=service1`}>
+              صفحهٔ خدمت شماره یک
+            </Link>{' '}
+            بروید.
+          </Alert>
+        ) : null}
 
         <Stepper activeStep={activeStep} alternativeLabel sx={{ mb: 4 }}>
           {steps.map((label) => (

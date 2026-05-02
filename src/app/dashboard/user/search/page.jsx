@@ -38,6 +38,7 @@ import {
   fetchRolesOptions,
   fetchBranchesOptions,
   USER_TYPE_OPTIONS,
+  USER_TYPE_FILTER_ALL,
 } from '../user-api';
 
 const SearchSchema = zod.object({
@@ -76,7 +77,7 @@ export default function UserSearchPage() {
       mobile: '',
       role_id: '',
       branch_id: '',
-      user_type: USER_TYPE_OPTIONS[0]?.value ?? 'mobile',
+      user_type: USER_TYPE_FILTER_ALL,
       active: '',
       verified: '',
     },
@@ -295,6 +296,7 @@ export default function UserSearchPage() {
                   </Box>
                   <Box>
                     <Field.Select name="user_type" label="نوع کاربر" placeholder="همه">
+                      <MenuItem value={USER_TYPE_FILTER_ALL}>همه</MenuItem>
                       {USER_TYPE_OPTIONS.map((o) => (
                         <MenuItem key={o.value} value={o.value}>
                           {o.label}

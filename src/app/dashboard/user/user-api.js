@@ -9,6 +9,9 @@ export const USER_TYPE_OPTIONS = [
   { value: 'company', label: 'شرکت' },
 ];
 
+/** MUI Select cannot use '' as a stable value; use this for «همه» and never send it to the API. */
+export const USER_TYPE_FILTER_ALL = '__all__';
+
 function normalizeId(value) {
   return Number(value?.ID ?? value?.id ?? 0) || 0;
 }
@@ -156,10 +159,18 @@ export async function deleteUserById(userId) {
 
 export async function searchUsers(filters, page, pageSize) {
   const params = new URLSearchParams();
-  const branchId = filters.branch_id === '' ? '0' : String(filters.branch_id ?? 0);
-  const userType = filters.user_type || 'mobile';
-  params.set('branch_id', branchId);
-  params.set('user_type', userType);
+
+  const branchIdRaw = filters.branch_id;
+  const branchIdNum =
+    branchIdRaw === '' || branchIdRaw == null ? NaN : Number(branchIdRaw);
+  if (Number.isFinite(branchIdNum) && branchIdNum > 0) {
+    params.set('branch_id', String(branchIdNum));
+  }
+
+  const userType = String(filters.user_type ?? '').trim();
+  if (userType && userType !== USER_TYPE_FILTER_ALL) {
+    params.set('user_type', userType);
+  }
 
   if (filters.name) params.set('name', filters.name);
   if (filters.family) params.set('family', filters.family);
@@ -169,7 +180,10 @@ export async function searchUsers(filters, page, pageSize) {
   if (filters.active !== '') params.set('active', String(filters.active));
   if (filters.verified !== '') params.set('verified', String(filters.verified));
 
-  const res = await axios.post(`/api/membership/admin/users?${params.toString()}`, {}, {
+  const qs = params.toString();
+  const url = qs ? `/api/membership/admin/users?${qs}` : '/api/membership/admin/users';
+
+  const res = await axios.post(url, {}, {
     headers: {
       ...MODE_HEADERS,
       limit: String(pageSize),

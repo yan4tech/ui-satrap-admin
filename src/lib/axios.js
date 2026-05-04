@@ -2,6 +2,9 @@ import axios from 'axios';
 
 import { CONFIG } from 'src/global-config';
 
+import { getApiMode } from './api-mode';
+import { getBranchRequestHeaderValue } from './api-branch-header';
+
 // ----------------------------------------------------------------------
 
 const axiosInstance = axios.create({
@@ -11,18 +14,30 @@ const axiosInstance = axios.create({
   },
 });
 
-/**
- * Optional: Add token (if using auth)
- *
- axiosInstance.interceptors.request.use((config) => {
-  const token = localStorage.getItem('accessToken');
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
+function applyHeader(config, key, value) {
+  const h = config.headers;
+  if (!h) {
+    config.headers = { [key]: value };
+    return;
+  }
+  if (typeof h.set === 'function') {
+    h.set(key, value);
+    return;
+  }
+  config.headers = { ...h, [key]: value };
+}
+
+axiosInstance.interceptors.request.use((config) => {
+  const mode = getApiMode();
+  if (mode) {
+    applyHeader(config, 'mode', mode);
+  }
+  const branch = getBranchRequestHeaderValue();
+  if (branch != null) {
+    applyHeader(config, 'branch', branch);
   }
   return config;
 });
-*
-*/
 
 axiosInstance.interceptors.response.use(
   (response) => response,

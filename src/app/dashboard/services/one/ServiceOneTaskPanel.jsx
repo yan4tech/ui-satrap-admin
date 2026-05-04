@@ -1,16 +1,19 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 
+import {
+  buildForm1ReviewStateFromTasksMap,
+  buildForm2ReviewStateFromTasksMap,
+} from './engine-api';
 import { isReviewElementId } from './service1-step-config';
 
 import StaticPayment from './payment/WorkflowWizard';
 import Page1Wizard from './page1/WorkflowWizard';
 import Page2Wizard from './page2/WorkflowWizard';
 import SurveyPaymentPage from './payment-survey/WorkflowWizard';
-import RegistrationTrackingPage from './registration-tracking/WorkflowWizard';
 import SurveyRegistrationTrackingPage from './survey-registration-tracking/WorkflowWizard';
 
 function UserTaskFooter({ submitting, submitError, onSubmit }) {
@@ -59,14 +62,74 @@ function ReviewTaskFooter({ submitting, submitError, onSubmit }) {
 /**
  * همان UI فرم‌های ثابت پروژه؛ فقط داخل قالب تسک BPMN و با دکمهٔ ثبت جدا برای موتور.
  */
-export default function ServiceOneTaskPanel({ task, onSubmitStepForm, submitting, submitError }) {
+const initialFormReview = () => ({ status: 'pending', comment: '' });
+
+export default function ServiceOneTaskPanel({
+  task,
+  tasksIdMap,
+  reviewHydrationKey,
+  onSubmitStepForm,
+  submitting,
+  submitError,
+  interactionLocked = false,
+}) {
   const el = task?.element_id;
   const elKey = el == null ? '' : String(el).trim().toLowerCase();
+
+  const [form1Review, setForm1Review] = useState(initialFormReview);
+  const [form2Review, setForm2Review] = useState(initialFormReview);
+  const lastHydratedReview1TaskId = useRef(null);
+  const lastHydratedCentral2TaskId = useRef(null);
+
+  useEffect(() => {
+    lastHydratedReview1TaskId.current = null;
+    lastHydratedCentral2TaskId.current = null;
+  }, [reviewHydrationKey]);
+
+  useEffect(() => {
+    const map = tasksIdMap && typeof tasksIdMap === 'object' ? tasksIdMap : null;
+    if (!map) return;
+
+    if (elKey === 'form1') {
+      setForm1Review(buildForm1ReviewStateFromTasksMap(map));
+      return;
+    }
+    if (elKey === 'review1' && task?.ID != null) {
+      if (lastHydratedReview1TaskId.current !== task.ID) {
+        lastHydratedReview1TaskId.current = task.ID;
+        setForm1Review(buildForm1ReviewStateFromTasksMap(map));
+      }
+    }
+  }, [elKey, task?.ID, tasksIdMap]);
+
+  useEffect(() => {
+    const map = tasksIdMap && typeof tasksIdMap === 'object' ? tasksIdMap : null;
+    if (!map) return;
+
+    if (elKey === 'form2') {
+      setForm2Review(buildForm2ReviewStateFromTasksMap(map));
+      return;
+    }
+    if (elKey === 'centralreviewform2' && task?.ID != null) {
+      if (lastHydratedCentral2TaskId.current !== task.ID) {
+        lastHydratedCentral2TaskId.current = task.ID;
+        setForm2Review(buildForm2ReviewStateFromTasksMap(map));
+      }
+    }
+  }, [elKey, task?.ID, tasksIdMap]);
 
   const formMethods = useForm({
     defaultValues: {
       registrationTracking: { sentTrackingCode: '' },
       surveyRegistrationTracking: { sentTrackingCode: '' },
+      survey: {
+        image_1: null,
+        image_2: null,
+        image_3: null,
+        image_4: null,
+        map_file: null,
+        description: '',
+      },
     },
   });
 
@@ -75,6 +138,14 @@ export default function ServiceOneTaskPanel({ task, onSubmitStepForm, submitting
   }
 
   const isReview = isReviewElementId(elKey);
+  /** فوتر دکمه‌های «تایید بررسی / رد» فقط برای مراحلی غیر از بررسی مرکزی فرم ۱ و ۲ */
+  const showOuterReviewFooter = isReview && elKey !== 'review1' && elKey !== 'centralreviewform2';
+
+  const engineReviewProps = {
+    onEngineStepSubmit: onSubmitStepForm,
+    engineSubmitting: submitting,
+    engineSubmitError: submitError,
+  };
 
   let inner = null;
   switch (elKey) {
@@ -82,16 +153,37 @@ export default function ServiceOneTaskPanel({ task, onSubmitStepForm, submitting
       inner = <StaticPayment />;
       break;
     case 'form1':
-      inner = <Page1Wizard />;
+      inner = (
+        <Page1Wizard taskKind="form1" review={form1Review} setReview={setForm1Review} />
+      );
       break;
     case 'review1':
-      inner = <RegistrationTrackingPage />;
+      inner = (
+        <Page1Wizard
+          taskKind="review1"
+          review={form1Review}
+          setReview={setForm1Review}
+          {...engineReviewProps}
+        />
+      );
       break;
     case 'enterCode':
       inner = <SurveyPaymentPage />;
       break;
     case 'form2':
-      inner = <Page2Wizard />;
+      inner = (
+        <Page2Wizard taskKind="form2" review={form2Review} setReview={setForm2Review} />
+      );
+      break;
+    case 'centralreviewform2':
+      inner = (
+        <Page2Wizard
+          taskKind="centralReviewForm2"
+          review={form2Review}
+          setReview={setForm2Review}
+          {...engineReviewProps}
+        />
+      );
       break;
     case 'review2':
       inner = <SurveyRegistrationTrackingPage />;
@@ -106,13 +198,14 @@ export default function ServiceOneTaskPanel({ task, onSubmitStepForm, submitting
 
   return (
     <FormProvider {...formMethods}>
-      <Box>
+      <Box sx={interactionLocked ? { pointerEvents: 'none', opacity: 0.72 } : undefined}>
         {inner}
-        {isReview ? (
-          <ReviewTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
-        ) : (
-          <UserTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
-        )}
+        {!interactionLocked &&
+          (showOuterReviewFooter ? (
+            <ReviewTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
+          ) : isReview ? null : (
+            <UserTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
+          ))}
       </Box>
     </FormProvider>
   );

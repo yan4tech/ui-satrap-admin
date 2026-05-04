@@ -4,6 +4,8 @@ import { useSetState } from 'minimal-shared/hooks';
 import { useMemo, useEffect, useCallback } from 'react';
 
 import axios, { endpoints } from 'src/lib/axios';
+import { clearMembershipUserHeader, setMembershipUserJsonFromObject } from 'src/lib/api-user-header';
+import { normalizeMembershipUser } from 'src/auth/utils';
 
 import { JWT_STORAGE_KEY } from './constant';
 import { AuthContext } from '../auth-context';
@@ -27,25 +29,26 @@ export function AuthProvider({ children }) {
       if (accessToken && isValidToken(accessToken)) {
         setSession(accessToken);
 
-        const res = await axios.get(endpoints.auth.me, {
-          headers: {
-            mode: 'company',
-          },
-        });
+        const res = await axios.get(endpoints.auth.me);
 
-        const user = res?.data?.data?.user ?? res?.data?.user;
+        const rawUser = res?.data?.data?.user ?? res?.data?.user;
+        const normalized = normalizeMembershipUser(rawUser);
 
-        if (!user) {
+        if (!normalized) {
+          clearMembershipUserHeader();
           setState({ user: null, loading: false });
           return;
         }
 
-        setState({ user: { ...user, accessToken }, loading: false });
+        setMembershipUserJsonFromObject(rawUser);
+        setState({ user: { ...normalized, accessToken }, loading: false });
       } else {
+        clearMembershipUserHeader();
         setState({ user: null, loading: false });
       }
     } catch (error) {
       console.error(error);
+      clearMembershipUserHeader();
       setState({ user: null, loading: false });
     }
   }, [setState]);
@@ -63,7 +66,7 @@ export function AuthProvider({ children }) {
 
   const memoizedValue = useMemo(
     () => ({
-      user: state.user ? { ...state.user, role: state.user?.role ?? 'admin' } : null,
+      user: state.user,
       checkUserSession,
       loading: status === 'loading',
       authenticated: status === 'authenticated',

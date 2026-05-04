@@ -12,12 +12,16 @@ import { CONFIG } from 'src/global-config';
 
 import { Label } from 'src/components/label';
 
-import { useMockedUser } from 'src/auth/hooks';
+import { useAuthContext } from 'src/auth/hooks';
+import { pickUserMobile } from 'src/auth/utils';
 
 // ----------------------------------------------------------------------
 
 export function NavUpgrade({ sx, ...other }) {
-  const { user } = useMockedUser();
+  const { user, loading } = useAuthContext();
+  const userMobile = pickUserMobile(user);
+  const displayName = loading && !user ? '…' : user?.displayName || 'کاربر';
+  const emailLabel = (user?.email || '').trim() || '—';
 
   return (
     <Box
@@ -26,8 +30,8 @@ export function NavUpgrade({ sx, ...other }) {
     >
       <Box sx={{ display: 'flex', alignItems: 'center', flexDirection: 'column' }}>
         <Box sx={{ position: 'relative' }}>
-          <Avatar src={user?.photoURL} alt={user?.displayName} sx={{ width: 48, height: 48 }}>
-            {user?.displayName?.charAt(0).toUpperCase()}
+          <Avatar src={user?.photoURL} alt={displayName} sx={{ width: 48, height: 48 }}>
+            {displayName?.charAt(0).toUpperCase()}
           </Avatar>
 
           <Label
@@ -52,7 +56,7 @@ export function NavUpgrade({ sx, ...other }) {
             noWrap
             sx={{ mb: 1, color: 'var(--layout-nav-text-primary-color)' }}
           >
-            {user?.displayName}
+            {displayName}
           </Typography>
 
           <Typography
@@ -60,8 +64,18 @@ export function NavUpgrade({ sx, ...other }) {
             noWrap
             sx={{ color: 'var(--layout-nav-text-disabled-color)' }}
           >
-            {user?.email}
+            {emailLabel}
           </Typography>
+
+          {userMobile ? (
+            <Typography
+              variant="body2"
+              noWrap
+              sx={{ mt: 0.25, color: 'var(--layout-nav-text-disabled-color)' }}
+            >
+              {userMobile}
+            </Typography>
+          ) : null}
         </Box>
 
         <Button

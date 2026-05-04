@@ -1,8 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { Alert, Box, Button, Chip, Stack, TextField, Typography } from '@mui/material';
+import React, { useMemo, useState, useCallback } from 'react';
+
+import { Box, Chip, Alert, Stack, Button, TextField, Typography } from '@mui/material';
+
+import { sanitizeValuesForEngineJson } from '../engine-api';
 
 const REVIEW_STATUS = {
   PENDING: 'pending',
@@ -106,13 +109,67 @@ function UploadBox({ name, label, helperText, accept }) {
   );
 }
 
-export default function WorkflowWizardPage2() {
-  const [activeRole, setActiveRole] = useState('applicant');
-  const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
-  const isReviewer = activeRole === 'company_reviewer';
+const defaultReview = () => ({ status: REVIEW_STATUS.PENDING, comment: '' });
+
+/** taskKind: form2 = فقط متقاضی؛ centralReviewForm2 = بررسی مرکزی فرم ۲ */
+export default function WorkflowWizardPage2({
+  taskKind = 'form2',
+  review: reviewProp,
+  setReview: setReviewProp,
+  onEngineStepSubmit,
+  engineSubmitting = false,
+  engineSubmitError,
+} = {}) {
+  const { getValues } = useFormContext();
+  const [internalReview, setInternalReview] = useState(defaultReview);
+  const review = reviewProp !== undefined ? reviewProp : internalReview;
+  const setReview = setReviewProp ?? setInternalReview;
+
+  const patchReview = useCallback(
+    (partial) => {
+      setReview((prev) => ({ ...prev, ...partial }));
+    },
+    [setReview],
+  );
+
+  const isReviewer = taskKind === 'centralReviewForm2';
   const isCommentRequired =
-    review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION;
+    review.status === REVIEW_STATUS.NEEDS_CORRECTION || review.status === REVIEW_STATUS.REJECTED;
   const currentMeta = REVIEW_STATUS_META[review.status];
+
+  const canFinalizeReview = useMemo(() => {
+    if (!isReviewer) return false;
+    if (review.status === REVIEW_STATUS.NEEDS_CORRECTION) {
+      return Boolean((review.comment || '').trim());
+    }
+    if (review.status === REVIEW_STATUS.REJECTED) {
+      return Boolean((review.comment || '').trim());
+    }
+    return review.status === REVIEW_STATUS.APPROVED;
+  }, [isReviewer, review.status, review.comment]);
+
+  const handleFinalizeReview = useCallback(async () => {
+    if (!canFinalizeReview || typeof onEngineStepSubmit !== 'function') return;
+    const comment = (review.comment || '').trim();
+    if (review.status === REVIEW_STATUS.APPROVED) {
+      const taskFormPayload = sanitizeValuesForEngineJson(getValues());
+      await onEngineStepSubmit({
+        engineReviewDecision: 'approved',
+        review_comment: comment || 'ok',
+        taskFormPayload,
+      });
+    } else if (review.status === REVIEW_STATUS.NEEDS_CORRECTION) {
+      await onEngineStepSubmit({
+        engineReviewDecision: 'correction',
+        comment,
+      });
+    } else if (review.status === REVIEW_STATUS.REJECTED) {
+      await onEngineStepSubmit({
+        engineReviewDecision: 'rejected',
+        comment,
+      });
+    }
+  }, [canFinalizeReview, review.status, review.comment, onEngineStepSubmit, getValues]);
 
   return (
     <Box
@@ -124,24 +181,12 @@ export default function WorkflowWizardPage2() {
         gap: 2,
       }}
     >
+      {engineSubmitError && taskKind === 'centralReviewForm2' ? (
+        <Alert severity="error">{engineSubmitError}</Alert>
+      ) : null}
       <Typography variant="subtitle1" fontWeight={700}>
         نقشه برداری
       </Typography>
-
-      <Stack direction="row" spacing={1}>
-        <Button
-          variant={activeRole === 'applicant' ? 'contained' : 'outlined'}
-          onClick={() => setActiveRole('applicant')}
-        >
-          حالت متقاضی
-        </Button>
-        <Button
-          variant={activeRole === 'company_reviewer' ? 'contained' : 'outlined'}
-          onClick={() => setActiveRole('company_reviewer')}
-        >
-          حالت شرکت
-        </Button>
-      </Stack>
 
       <Box sx={{ position: 'relative' }}>
         <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
@@ -273,23 +318,21 @@ export default function WorkflowWizardPage2() {
             <Button
               variant={review.status === REVIEW_STATUS.APPROVED ? 'contained' : 'outlined'}
               color="success"
-              onClick={() => setReview((prev) => ({ ...prev, status: REVIEW_STATUS.APPROVED }))}
+              onClick={() => patchReview({ status: REVIEW_STATUS.APPROVED })}
             >
               تایید
             </Button>
             <Button
               variant={review.status === REVIEW_STATUS.NEEDS_CORRECTION ? 'contained' : 'outlined'}
               color="info"
-              onClick={() =>
-                setReview((prev) => ({ ...prev, status: REVIEW_STATUS.NEEDS_CORRECTION }))
-              }
+              onClick={() => patchReview({ status: REVIEW_STATUS.NEEDS_CORRECTION })}
             >
               نیاز به اصلاح
             </Button>
             <Button
               variant={review.status === REVIEW_STATUS.REJECTED ? 'contained' : 'outlined'}
               color="error"
-              onClick={() => setReview((prev) => ({ ...prev, status: REVIEW_STATUS.REJECTED }))}
+              onClick={() => patchReview({ status: REVIEW_STATUS.REJECTED })}
             >
               رد
             </Button>
@@ -300,14 +343,31 @@ export default function WorkflowWizardPage2() {
             rows={2}
             label="توضیح کارشناس"
             value={review.comment}
-            onChange={(event) => setReview((prev) => ({ ...prev, comment: event.target.value }))}
+            onChange={(event) => patchReview({ comment: event.target.value })}
             error={isCommentRequired && !review.comment.trim()}
             helperText={
               isCommentRequired && !review.comment.trim()
-                ? 'برای رد یا نیاز به اصلاح، ثبت توضیح الزامی است.'
-                : 'در صورت نیاز توضیحات بررسی را ثبت کنید.'
+                ? review.status === REVIEW_STATUS.REJECTED
+                  ? 'برای رد فرایند، ثبت دلیل / توضیح الزامی است.'
+                  : 'برای نیاز به اصلاح، ثبت توضیح الزامی است.'
+                : review.status === REVIEW_STATUS.REJECTED
+                  ? 'این متن به‌عنوان پیام رد در موتور ثبت می‌شود.'
+                  : 'در صورت نیاز توضیحات بررسی را ثبت کنید.'
             }
           />
+          {typeof onEngineStepSubmit === 'function' ? (
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+              <Button
+                type="button"
+                variant="contained"
+                color="primary"
+                disabled={!canFinalizeReview || engineSubmitting}
+                onClick={() => void handleFinalizeReview()}
+              >
+                {engineSubmitting ? 'در حال ثبت…' : 'ثبت نتیجه نهایی بررسی در موتور'}
+              </Button>
+            </Box>
+          ) : null}
         </Box>
       ) : (
         <Box sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 2, p: 2 }}>

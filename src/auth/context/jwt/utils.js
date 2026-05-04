@@ -1,6 +1,8 @@
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/lib/axios';
+import { clearBranchIdForApi } from 'src/lib/api-branch-header';
+import { clearMembershipUserHeader } from 'src/lib/api-user-header';
 
 import { JWT_STORAGE_KEY } from './constant';
 
@@ -59,6 +61,8 @@ export function tokenExpired(exp) {
     try {
       alert('Token expired!');
       sessionStorage.removeItem(JWT_STORAGE_KEY);
+      clearMembershipUserHeader();
+      clearBranchIdForApi();
       window.location.href = paths.auth.jwt.signIn;
     } catch (error) {
       console.error('Error during token expiration:', error);
@@ -86,6 +90,8 @@ export async function setSession(accessToken) {
     } else {
       sessionStorage.removeItem(JWT_STORAGE_KEY);
       delete axios.defaults.headers.common.Authorization;
+      clearMembershipUserHeader();
+      clearBranchIdForApi();
     }
   } catch (error) {
     console.error('Error during set session:', error);

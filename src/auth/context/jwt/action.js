@@ -33,15 +33,7 @@ export const signInWithPassword = async ({ email, password }) => {
  * Sign in (mobile step 1)
  *************************************** */
 export const submitMobile = async ({ mobile }) => {
-  const res = await axios.post(
-    endpoints.auth.submitMobile,
-    { mobile },
-    {
-      headers: {
-        mode: 'mobile',
-      },
-    }
-  );
+  const res = await axios.post(endpoints.auth.submitMobile, { mobile });
 
   if (res?.data?.status !== 'success') {
     throw new Error('ارسال کد تایید ناموفق بود.');
@@ -54,15 +46,10 @@ export const submitMobile = async ({ mobile }) => {
  * Sign in (mobile step 2)
  *************************************** */
 export const submitMobileCode = async ({ mobile, code }) => {
-  const res = await axios.post(
-    endpoints.auth.submitCode,
-    { mobile, code: Number(code) },
-    {
-      headers: {
-        mode: 'mobile',
-      },
-    }
-  );
+  const res = await axios.post(endpoints.auth.submitCode, {
+    mobile,
+    code: Number(code),
+  });
 
   const accessToken = res?.data?.access_token;
   const refreshToken = res?.data?.refresh_token;
@@ -113,11 +100,7 @@ export const signUp = async ({ email, password, firstName, lastName }) => {
  *************************************** */
 export const signOut = async () => {
   try {
-    const res = await axios.get(endpoints.auth.logout, {
-      headers: {
-        mode: 'company',
-      },
-    });
+    const res = await axios.get(endpoints.auth.logout);
 
     if (res?.data?.status !== 'success') {
       throw new Error('خروج از حساب کاربری ناموفق بود.');

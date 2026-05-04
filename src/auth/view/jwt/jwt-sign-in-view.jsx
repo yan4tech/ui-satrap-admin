@@ -1,7 +1,7 @@
 'use client';
 
 import { z as zod } from 'zod';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -10,12 +10,23 @@ import Link from '@mui/material/Link';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import TextField from '@mui/material/TextField';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { Form, Field } from 'src/components/hook-form';
+
+import {
+  clearBranchIdForApi,
+  getBranchIdStored,
+  setBranchIdForApi,
+} from 'src/lib/api-branch-header';
+import { API_MODE_VALUES, getApiMode, setApiMode } from 'src/lib/api-mode';
 
 import { useAuthContext } from '../../hooks';
 import { getErrorMessage } from '../../utils';
@@ -37,6 +48,12 @@ export const SignInSchema = zod.object({
     }),
 });
 
+const MODE_LABELS = {
+  mobile: 'موبایل',
+  company: 'شرکت',
+  branch: 'شعبه',
+};
+
 // ----------------------------------------------------------------------
 
 export function JwtSignInView() {
@@ -47,6 +64,28 @@ export function JwtSignInView() {
   const [step, setStep] = useState('mobile');
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [apiMode, setApiModeState] = useState('mobile');
+  const [branchIdInput, setBranchIdInput] = useState('');
+
+  useEffect(() => {
+    const m = getApiMode();
+    setApiModeState(m);
+    if (m === 'branch') {
+      setBranchIdInput(getBranchIdStored());
+    }
+  }, []);
+
+  const handleApiModeChange = (_event, value) => {
+    if (value == null) return;
+    setApiMode(value);
+    setApiModeState(value);
+    if (value !== 'branch') {
+      clearBranchIdForApi();
+      setBranchIdInput('');
+    } else {
+      setBranchIdInput(getBranchIdStored());
+    }
+  };
 
   const defaultValues = {
     mobile: '',
@@ -76,6 +115,11 @@ export function JwtSignInView() {
     try {
       setErrorMessage(null);
 
+      if (getApiMode() === 'branch' && !getBranchIdStored()) {
+        setErrorMessage('برای ورود از حالت شعبه، شناسه شعبه را وارد کنید.');
+        return;
+      }
+
       if (step === 'mobile') {
         await submitMobile({ mobile: data.mobile.trim() });
         setSuccessMessage('کد تایید برای شماره شما ارسال شد.');
@@ -103,6 +147,55 @@ export function JwtSignInView() {
 
   const renderForm = () => (
     <Box sx={{ gap: 3, display: 'flex', flexDirection: 'column' }}>
+      <Box>
+        <Typography variant="subtitle2" sx={{ mb: 1.25 }}>
+          نوع ورود (mode)
+        </Typography>
+        <ToggleButtonGroup
+          exclusive
+          fullWidth
+          value={apiMode}
+          onChange={handleApiModeChange}
+          disabled={step === 'code'}
+          color="primary"
+          sx={{
+            '& .MuiToggleButton-root': {
+              py: 1.1,
+              typography: 'body2',
+              fontWeight: 600,
+            },
+          }}
+        >
+          {API_MODE_VALUES.map((m) => (
+            <ToggleButton key={m} value={m}>
+              {MODE_LABELS[m]}
+            </ToggleButton>
+          ))}
+        </ToggleButtonGroup>
+        <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, lineHeight: 1.5 }}>
+          قبل از وارد کردن شماره، حالت دسترسی را انتخاب کنید؛ هدر <strong>mode</strong> برای تمام درخواست‌های
+          axios و API موتور روی همین مقدار تنظیم می‌شود. با انتخاب «شعبه»، هدر <strong>branch</strong> هم با
+          شناسهٔ زیر ارسال می‌شود.
+        </Typography>
+      </Box>
+
+      {apiMode === 'branch' ? (
+        <TextField
+          fullWidth
+          label="شناسه شعبه"
+          placeholder="مثلاً ۱۲"
+          value={branchIdInput}
+          onChange={(e) => {
+            const v = e.target.value;
+            setBranchIdInput(v);
+            setBranchIdForApi(v);
+          }}
+          disabled={step === 'code'}
+          slotProps={{ inputLabel: { shrink: true } }}
+          helperText="این مقدار در هدر branch برای همهٔ درخواست‌ها به سرور و موتور فرستاده می‌شود."
+        />
+      ) : null}
+
       <Field.Text
         name="mobile"
         label="شماره موبایل"
@@ -129,6 +222,10 @@ export function JwtSignInView() {
               onClick={async () => {
                 try {
                   setErrorMessage(null);
+                  if (getApiMode() === 'branch' && !getBranchIdStored()) {
+                    setErrorMessage('شناسه شعبه را وارد کنید.');
+                    return;
+                  }
                   await submitMobile({ mobile: mobileValue.trim() });
                   setSuccessMessage('کد تایید مجددا ارسال شد.');
                 } catch (error) {

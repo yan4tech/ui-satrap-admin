@@ -1,43 +1,47 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import dayjs from 'dayjs';
 import { z as zod } from 'zod';
+import { Icon } from '@iconify/react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
+
+import { DataGrid } from '@mui/x-data-grid';
 import {
-  Alert,
   Box,
-  Button,
   Card,
-  CardContent,
   Chip,
-  CircularProgress,
-  Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Grid,
-  IconButton,
-  MenuItem,
+  Alert,
   NoSsr,
   Stack,
-  Typography,
+  Button,
+  Dialog,
   Tooltip,
+  Collapse,
+  MenuItem,
+  IconButton,
+  Typography,
+  CardContent,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  CircularProgress,
+  DialogContentText,
 } from '@mui/material';
-import { Icon } from '@iconify/react';
-import { DataGrid } from '@mui/x-data-grid';
-import dayjs from 'dayjs';
-import { useRouter } from 'src/routes/hooks';
+
 import { paths } from 'src/routes/paths';
-import { Field, Form } from 'src/components/hook-form';
+import { useRouter } from 'src/routes/hooks';
+
+import { Form, Field } from 'src/components/hook-form';
 
 import {
-  deleteProcessInstance,
   fetchProcesses,
-  pickRepresentativeTaskForProcessRow,
+  deleteProcessInstance,
   writeService1TasksSnapshot,
+  parseEngineProcessRejectState,
+  pickRepresentativeTaskForProcessRow,
 } from '../one/engine-api';
 
 const DEFINITION_LABELS = {
@@ -59,6 +63,7 @@ const PROCESS_STATUS_OPTIONS = [
   { value: 'COMPLETED', label: 'تکمیل‌شده' },
   { value: 'CANCELLED', label: 'لغوشده' },
   { value: 'SUSPENDED', label: 'معلق' },
+  { value: 'REJECTED', label: 'رد شده' },
 ];
 
 const defaultFilters = {
@@ -77,19 +82,42 @@ const SearchSchema = zod.object({
   currentElementId: zod.string().optional(),
 });
 
+/** پاسخ API / مدل DB ممکن است snake_case یا PascalCase باشد */
+function pickProcessUpdatedAt(p) {
+  if (!p || typeof p !== 'object') return null;
+  return (
+    p.UpdatedAt ??
+    p.updated_at ??
+    p.updatedAt ??
+    p.last_updated_at ??
+    p.LastUpdatedAt ??
+    null
+  );
+}
+
+function pickProcessInstanceId(p) {
+  if (!p || typeof p !== 'object') return null;
+  const v = p.ID ?? p.id ?? p.process_instance_id ?? p.ProcessInstanceID ?? p.ProcessInstanceId;
+  return v != null ? v : null;
+}
+
 function mapItemsToRows(items) {
   return (items || []).map((item) => {
     const p = item.process;
+    const pid = pickProcessInstanceId(p);
     const latest = pickRepresentativeTaskForProcessRow(item.tasks);
-    const key = p?.definition_key ?? '';
+    const key = p?.definition_key ?? p?.DefinitionKey ?? '';
+    const rejectState = p ? parseEngineProcessRejectState(p) : null;
+    const processStatus = rejectState?.rejected ? 'REJECTED' : (p?.status ?? p?.Status ?? '—');
     return {
-      id: p.ID,
-      processInstanceId: p.ID,
+      id: pid,
+      processInstanceId: pid,
       definitionKey: key,
       serviceLabel: DEFINITION_LABELS[key] || key || '—',
-      processStatus: p.status ?? '—',
+      processStatus,
       applicantName: p.variables?.applicant_name ?? '—',
-      startedAt: p.started_at ?? null,
+      startedAt: p.started_at ?? p.StartedAt ?? null,
+      updatedAt: pickProcessUpdatedAt(p),
       currentTaskName: latest?.name ?? '—',
       currentElementId: latest?.element_id ?? '—',
       currentTaskStatus: latest?.status ?? '—',
@@ -97,14 +125,15 @@ function mapItemsToRows(items) {
       /** برای صفحهٔ خدمت۱: ادغام با API وقتی تسک‌های DONE در tasks/فرایند نیستند */
       tasksSnapshot: item.tasks,
     };
-  });
+  })
+    .filter((row) => row.processInstanceId != null && String(row.processInstanceId) !== '');
 }
 
 function processStatusColor(status) {
   const s = String(status || '').toUpperCase();
   if (s === 'RUNNING') return 'info';
   if (s === 'COMPLETED') return 'success';
-  if (s === 'CANCELLED') return 'error';
+  if (s === 'CANCELLED' || s === 'REJECTED') return 'error';
   if (s === 'SUSPENDED') return 'warning';
   return 'default';
 }
@@ -155,8 +184,7 @@ export default function ServicesListPage() {
     void loadProcesses();
   }, [loadProcesses]);
 
-  const filteredRows = useMemo(() => {
-    return allRows.filter((row) => {
+  const filteredRows = useMemo(() => allRows.filter((row) => {
       if (submittedFilters.processId) {
         const q = submittedFilters.processId.trim();
         if (!String(row.processInstanceId).includes(q)) return false;
@@ -180,8 +208,7 @@ export default function ServicesListPage() {
         if (!String(row.currentElementId).toLowerCase().includes(q)) return false;
       }
       return true;
-    });
-  }, [allRows, submittedFilters]);
+    }), [allRows, submittedFilters]);
 
   const handleSearch = handleSubmit(() => {
     setSubmittedFilters(getValues());
@@ -260,22 +287,50 @@ export default function ServicesListPage() {
       headerName: 'وضعیت فرایند',
       flex: 0.85,
       minWidth: 110,
-      renderCell: (params) => (
-        <Chip
-          label={params.value}
-          size="small"
-          color={processStatusColor(params.value)}
-          variant="outlined"
-        />
-      ),
+      renderCell: (params) => {
+        const isRejected = String(params.value || '').toUpperCase() === 'REJECTED';
+        return (
+          <Chip
+            label={params.value}
+            size="small"
+            color={processStatusColor(params.value)}
+            variant={isRejected ? 'filled' : 'outlined'}
+            sx={
+              isRejected
+                ? {
+                    fontWeight: 700,
+                    borderColor: 'error.dark',
+                  }
+                : undefined
+            }
+          />
+        );
+      },
     },
     {
       field: 'startedAt',
-      headerName: 'تاریخ شروع',
-      flex: 1,
-      minWidth: 150,
-      renderCell: (params) =>
-        params.value ? dayjs(params.value).format('YYYY/MM/DD HH:mm') : '—',
+      headerName: 'تاریخ شروع / آخرین بروزرسانی',
+      flex: 1.15,
+      minWidth: 178,
+      renderCell: (params) => {
+        const row = params.row;
+        const start = row.startedAt;
+        const updated = row.updatedAt;
+        if (!start && !updated) {
+          return '—';
+        }
+        const fmt = (v) => (v ? dayjs(v).format('YYYY/MM/DD HH:mm') : '—');
+        return (
+          <Stack component="span" spacing={0.35} sx={{ py: 0.5, lineHeight: 1.35 }}>
+            <Typography variant="caption" component="span" display="block" color="text.secondary">
+              شروع: {fmt(start)}
+            </Typography>
+            <Typography variant="caption" component="span" display="block" fontWeight={600}>
+              بروزرسانی: {fmt(updated)}
+            </Typography>
+          </Stack>
+        );
+      },
     },
     {
       field: 'currentTaskName',

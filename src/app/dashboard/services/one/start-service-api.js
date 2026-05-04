@@ -1,17 +1,38 @@
-/** TODO: replace with real auth / env base URL */
-export const SERVICE_START_URL =
-  'http://localhost:3503/api/engine/service/start/service1';
+import { getApiMode } from 'src/lib/api-mode';
+import { getBranchIdStored, getBranchRequestHeaderValue } from 'src/lib/api-branch-header';
+import { getMembershipUserHeaderString } from 'src/lib/api-user-header';
+import { getSessionBearerAuthorization } from 'src/lib/session-bearer-header';
 
-export const HARDCODED_USER_HEADER =
-  '{"ID":4,"CreatedAt":"2026-05-02T10:21:22.932045+03:30","UpdatedAt":"2026-05-02T10:21:22.932045+03:30","DeletedAt":null,"name":"","family":"","email":"","mobile":"09133333333","role_id":0,"branch_id":0,"user_type":"mobile","active":true,"verified":true,"last_login_at":"2026-05-02T10:21:22.931482+03:30"}';
+import { ENGINE_BASE_URL } from './engine-api';
+
+export const SERVICE_START_URL = `${ENGINE_BASE_URL}/api/engine/service/start/service1`;
 
 export async function startService() {
+  const userHeader = getMembershipUserHeaderString();
+  if (!userHeader) {
+    throw new Error('اطلاعات کاربر برای موتور موجود نیست؛ لطفاً دوباره وارد شوید.');
+  }
+  if (getApiMode() === 'branch' && !getBranchIdStored()) {
+    throw new Error('در حالت شعبه، شناسه شعبه (هدر branch) الزامی است.');
+  }
+
+  const headers = {
+    'Content-Type': 'application/json',
+    user: userHeader,
+    mode: getApiMode(),
+  };
+  const auth = getSessionBearerAuthorization();
+  if (auth) {
+    headers.Authorization = auth;
+  }
+  const branch = getBranchRequestHeaderValue();
+  if (branch != null) {
+    headers.branch = branch;
+  }
+
   const res = await fetch(SERVICE_START_URL, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      user: HARDCODED_USER_HEADER,
-    },
+    headers,
     body: JSON.stringify({
       request_type: 1,
       service_type: 1,

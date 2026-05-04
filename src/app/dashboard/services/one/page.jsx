@@ -1,42 +1,55 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
+import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
+
 import {
-  Alert,
   Box,
-  Button,
   Card,
-  CardContent,
   Chip,
-  CircularProgress,
-  Stack,
   Step,
-  StepLabel,
+  Alert,
+  Stack,
+  Button,
   Stepper,
+  StepLabel,
   Typography,
+  CardContent,
+  CircularProgress,
+  Dialog,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
 } from '@mui/material';
 
 import StartServiceStep from './StartServiceStep';
 import { startService } from './start-service-api';
+import ServiceOneTaskPanel from './ServiceOneTaskPanel';
+import ServiceOneStepTaskDetailDialog from './ServiceOneStepTaskDetailDialog';
 import {
+  SERVICE1_STEPPER_LABELS,
+  getStepperIndexForElementId,
+  getBpmnElementIdForStepperIndex,
+} from './service1-step-config';
+import {
+  rejectProcess,
   advanceTaskNext,
   completeTaskForm,
+  rejectServiceStep,
   fetchProcessTasks,
-  getTaskVersionsForElement,
+  fetchProcessInstance,
   mergeAllTasksByTaskId,
-  mergeApiTasksWithSnapshot,
+  readService1ProcessMeta,
+  writeService1ProcessMeta,
   pickActiveUserFacingTask,
   pickLatestTaskForElement,
+  getTaskVersionsForElement,
+  mergeApiTasksWithSnapshot,
+  pickFallbackLatestTouchTask,
+  parseEngineProcessRejectState,
   pickPipelineEarliestTaskFromIdMap,
 } from './engine-api';
-import {
-  getBpmnElementIdForStepperIndex,
-  getStepperIndexForElementId,
-  SERVICE1_STEPPER_LABELS,
-} from './service1-step-config';
-import ServiceOneStepTaskDetailDialog from './ServiceOneStepTaskDetailDialog';
-import ServiceOneTaskPanel from './ServiceOneTaskPanel';
 
 export default function WorkflowWizard() {
   const searchParams = useSearchParams();
@@ -66,6 +79,14 @@ export default function WorkflowWizard() {
   const [submitError, setSubmitError] = useState(null);
   const [formPhaseComplete, setFormPhaseComplete] = useState(false);
   const [processFinished, setProcessFinished] = useState(false);
+  const [processRejected, setProcessRejected] = useState(false);
+  const [processRejectComment, setProcessRejectComment] = useState('');
+  const [rejectedViewTask, setRejectedViewTask] = useState(null);
+  const [processRejectDialogOpen, setProcessRejectDialogOpen] = useState(false);
+  const [processRejectDialogComment, setProcessRejectDialogComment] = useState('');
+  const [processRejectDialogError, setProcessRejectDialogError] = useState('');
+  const [rejectProcessSubmitting, setRejectProcessSubmitting] = useState(false);
+  const pendingRejectAnchorTaskRef = useRef(null);
   const [loadError, setLoadError] = useState(null);
   const [urlResumeDone, setUrlResumeDone] = useState(() => !hasResumeQuery);
   const hadResumeQueryRef = useRef(false);
@@ -82,7 +103,20 @@ export default function WorkflowWizard() {
     taskVersionsForElement: null,
   });
 
-  const currentTask = useMemo(() => pickActiveUserFacingTask(tasks), [tasks]);
+  const currentTask = useMemo(() => {
+    if (processRejected && rejectedViewTask) return rejectedViewTask;
+    return pickActiveUserFacingTask(tasks);
+  }, [tasks, processRejected, rejectedViewTask]);
+
+  useEffect(() => {
+    setProcessRejected(false);
+    setRejectedViewTask(null);
+    setProcessRejectComment('');
+    setProcessRejectDialogOpen(false);
+    setProcessRejectDialogComment('');
+    setProcessRejectDialogError('');
+    pendingRejectAnchorTaskRef.current = null;
+  }, [processInstanceId]);
 
   useEffect(() => {
     if (currentTask) {
@@ -130,25 +164,62 @@ export default function WorkflowWizard() {
     async (pid) => {
       setTasksLoading(true);
       setLoadError(null);
+      let mergedOut;
       try {
         const t = await fetchProcessTasks(pid);
         const merged = mergeApiTasksWithSnapshot(pid, {}, t);
-        setTasks(merged);
-        syncFromTasks(merged);
-        return merged;
+        const inst = await fetchProcessInstance(pid);
+        const rejectFromApi = inst ? parseEngineProcessRejectState(inst) : null;
+        const storedMeta = readService1ProcessMeta(pid);
+        const rejectFromMeta =
+          !rejectFromApi && storedMeta?.rejected === true
+            ? { rejected: true, comment: String(storedMeta.comment ?? '').trim() }
+            : null;
+        const rejectState = rejectFromApi ?? rejectFromMeta;
+        if (rejectState?.rejected) {
+          setProcessRejected(true);
+          setProcessRejectComment(rejectState.comment || '');
+          const anchor =
+            pickActiveUserFacingTask(merged) ||
+            pickFallbackLatestTouchTask(merged) ||
+            ({
+              ID: 0,
+              element_id: 'centralReviewForm2',
+              type: 'SERVICE_REVIEW',
+              status: 'READY',
+              process_instance_id: pid,
+              __syntheticRejectedAnchor: true,
+            });
+          setRejectedViewTask({ ...anchor });
+          setTasks(merged);
+          setProcessFinished(false);
+          setUiStep(getStepperIndexForElementId(anchor.element_id));
+          mergedOut = merged;
+        } else {
+          setProcessRejected(false);
+          setProcessRejectComment('');
+          setRejectedViewTask(null);
+          setTasks(merged);
+          syncFromTasks(merged);
+          mergedOut = merged;
+        }
       } catch (e) {
         setLoadError(e instanceof Error ? e.message : 'خطا در دریافت وظایف.');
         setTasks({});
         setUiStep(1);
         setProcessFinished(false);
+        mergedOut = undefined;
       } finally {
         setTasksLoading(false);
       }
+      return mergedOut;
     },
     [syncFromTasks],
   );
 
   useEffect(() => {
+    /* useEffect: خروج زودهنگام یا تابع cleanup — هر دو برای React معتبرند */
+    /* eslint-disable consistent-return */
     if (resumeWrongService) {
       setUrlResumeDone(true);
       return;
@@ -163,6 +234,9 @@ export default function WorkflowWizard() {
         setLoadError(null);
         setFormPhaseComplete(false);
         setSubmitError(null);
+        setProcessRejected(false);
+        setRejectedViewTask(null);
+        setProcessRejectComment('');
         setAllTasksById({});
         setDetailDialog({
           open: false,
@@ -196,6 +270,7 @@ export default function WorkflowWizard() {
     return () => {
       cancelled = true;
     };
+    /* eslint-enable consistent-return */
   }, [hasResumeQuery, resumeWrongService, parsedResumePid, loadTasks]);
 
   useEffect(() => {
@@ -203,15 +278,113 @@ export default function WorkflowWizard() {
     setSubmitError(null);
   }, [currentTask?.ID]);
 
+  const closeProcessRejectDialog = useCallback(() => {
+    if (rejectProcessSubmitting) return;
+    setProcessRejectDialogOpen(false);
+    setProcessRejectDialogComment('');
+    setProcessRejectDialogError('');
+    pendingRejectAnchorTaskRef.current = null;
+  }, [rejectProcessSubmitting]);
+
+  const confirmProcessReject = useCallback(async () => {
+    const comment = processRejectDialogComment.trim();
+    const anchor = pendingRejectAnchorTaskRef.current;
+    if (!processInstanceId || !comment || !anchor) {
+      closeProcessRejectDialog();
+      return;
+    }
+    setSubmitError(null);
+    setProcessRejectDialogError('');
+    setRejectProcessSubmitting(true);
+    try {
+      await rejectProcess(processInstanceId, { comment });
+      writeService1ProcessMeta(processInstanceId, { rejected: true, comment });
+      setProcessRejectComment(comment);
+      setRejectedViewTask({ ...anchor });
+      setProcessRejected(true);
+      setTasks({});
+      setFormPhaseComplete(false);
+      setProcessRejectDialogOpen(false);
+      setProcessRejectDialogComment('');
+      setProcessRejectDialogError('');
+      pendingRejectAnchorTaskRef.current = null;
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'خطا در رد فرایند.';
+      setSubmitError(msg);
+      setProcessRejectDialogError(msg);
+    } finally {
+      setRejectProcessSubmitting(false);
+    }
+  }, [
+    processInstanceId,
+    processRejectDialogComment,
+    closeProcessRejectDialog,
+  ]);
+
+  /** @returns {Promise<boolean>} موفقیت ثبت در موتور */
   const handleSubmitStepForm = async (body) => {
-    if (!processInstanceId || !currentTask) return;
+    if (!processInstanceId || !currentTask) return false;
     setSubmitError(null);
     setStepSubmitting(true);
     try {
-      await completeTaskForm(processInstanceId, currentTask.ID, body);
+      if (body?.engineReviewDecision === 'rejected') {
+        const comment =
+          typeof body.comment === 'string' ? body.comment.trim() : '';
+        if (!comment) {
+          setSubmitError('برای رد فرایند، وارد کردن توضیح / دلیل رد الزامی است.');
+          return false;
+        }
+        pendingRejectAnchorTaskRef.current = currentTask;
+        setProcessRejectDialogComment(comment);
+        setProcessRejectDialogError('');
+        setProcessRejectDialogOpen(true);
+        return false;
+      }
+      if (body?.engineReviewDecision === 'correction') {
+        await rejectServiceStep(processInstanceId, currentTask.ID, {
+          comment: typeof body.comment === 'string' ? body.comment : '',
+        });
+        setFormPhaseComplete(false);
+        await loadTasks(processInstanceId);
+        return true;
+      }
+      if (body?.engineReviewDecision === 'approved') {
+        const review_comment =
+          typeof body.review_comment === 'string' && body.review_comment.trim() !== ''
+            ? body.review_comment.trim()
+            : 'ok';
+        const formPayload =
+          body.taskFormPayload && typeof body.taskFormPayload === 'object' ? body.taskFormPayload : {};
+        await completeTaskForm(processInstanceId, currentTask.ID, {
+          review_status: 'approved',
+          review_comment,
+          ...formPayload,
+        });
+        setFormPhaseComplete(true);
+        return true;
+      }
+      if (body && body.rejectToEngine) {
+        await rejectServiceStep(processInstanceId, currentTask.ID, {
+          comment: typeof body.comment === 'string' ? body.comment : '',
+        });
+        setFormPhaseComplete(false);
+        await loadTasks(processInstanceId);
+        return true;
+      }
+      const {
+        rejectToEngine: _r,
+        engineReviewDecision: _ed,
+        taskFormPayload: _tf,
+        review_comment: _rc,
+        ...rest
+      } = body || {};
+      await completeTaskForm(processInstanceId, currentTask.ID, rest);
       setFormPhaseComplete(true);
+      return true;
     } catch (e) {
-      setSubmitError(e instanceof Error ? e.message : 'خطا در ثبت مرحله.');
+      const msg = e instanceof Error ? e.message : 'خطا در ثبت مرحله.';
+      setSubmitError(msg);
+      return false;
     } finally {
       setStepSubmitting(false);
     }
@@ -235,7 +408,7 @@ export default function WorkflowWizard() {
       return;
     }
 
-    if (processFinished || !currentTask || !formPhaseComplete) return;
+    if (processFinished || processRejected || !currentTask || !formPhaseComplete) return;
 
     setNavSubmitting(true);
     setSubmitError(null);
@@ -402,9 +575,12 @@ export default function WorkflowWizard() {
       <ServiceOneTaskPanel
         key={currentTask?.ID ?? 'no-task'}
         task={currentTask}
+        tasksIdMap={allTasksById}
+        reviewHydrationKey={processInstanceId}
         onSubmitStepForm={handleSubmitStepForm}
         submitting={stepSubmitting}
         submitError={submitError}
+        interactionLocked={processRejected}
       />
     );
   };
@@ -414,6 +590,7 @@ export default function WorkflowWizard() {
       ? startSubmitting
       : tasksLoading ||
         processFinished ||
+        processRejected ||
         !formPhaseComplete ||
         navSubmitting ||
         !currentTask;
@@ -455,6 +632,41 @@ export default function WorkflowWizard() {
   return (
     <Card>
       <CardContent>
+        {processRejected ? (
+          <Stack spacing={1.5} sx={{ mb: 2 }}>
+            <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap">
+              <Chip label="فرایند رد شده" color="error" size="small" />
+              <Typography variant="body2" color="text.secondary">
+                ادامهٔ فرایند در موتور متوقف است؛ فقط مشاهدهٔ مراحل و جزئیات ممکن است.
+              </Typography>
+            </Stack>
+            {processRejectComment ? (
+              <Alert
+                severity="error"
+                variant="outlined"
+                sx={{
+                  borderRadius: 2,
+                  borderWidth: 2,
+                  '& .MuiAlert-message': { width: '100%' },
+                }}
+              >
+                <Typography variant="subtitle2" fontWeight={800} sx={{ mb: 0.75 }}>
+                  پیام رد (ثبت‌شده در موتور)
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', lineHeight: 1.65 }}
+                >
+                  {processRejectComment}
+                </Typography>
+              </Alert>
+            ) : (
+              <Alert severity="warning" sx={{ borderRadius: 2 }}>
+                این فرایند به‌عنوان ردشده علامت‌گذاری شده است؛ متن دلیل در پاسخ سرور خالی بوده است.
+              </Alert>
+            )}
+          </Stack>
+        ) : null}
         <Typography variant="h5" sx={{ mb: 3 }} component="div">
           <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" useFlexGap>
             <span>خدمت شماره یک</span>
@@ -562,7 +774,63 @@ export default function WorkflowWizard() {
           loading={detailDialog.loading}
           error={detailDialog.error}
           taskVersionsForElement={detailDialog.taskVersionsForElement}
+          rejectBannerComment={processRejected ? processRejectComment : ''}
         />
+
+        <Dialog
+          open={processRejectDialogOpen}
+          onClose={closeProcessRejectDialog}
+          maxWidth="sm"
+          fullWidth
+        >
+          <DialogTitle>تایید رد فرایند</DialogTitle>
+          <DialogContent>
+            <DialogContentText component="div">
+              <Typography variant="body2" color="text.primary" sx={{ mb: 1.5 }}>
+                با تایید، کل فرایند در موتور رد می‌شود و ادامهٔ آن متوقف می‌گردد. این کار جدی است؛ آیا
+                مطمئن هستید؟
+              </Typography>
+              {processInstanceId != null ? (
+                <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>
+                  شماره فرایند: <strong>{processInstanceId}</strong>
+                </Typography>
+              ) : null}
+              {processRejectDialogComment ? (
+                <Typography
+                  variant="body2"
+                  sx={{
+                    mt: 0.5,
+                    p: 1.25,
+                    borderRadius: 1,
+                    bgcolor: 'action.hover',
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                  }}
+                >
+                  {processRejectDialogComment}
+                </Typography>
+              ) : null}
+              {processRejectDialogError ? (
+                <Alert severity="error" sx={{ mt: 2 }}>
+                  {processRejectDialogError}
+                </Alert>
+              ) : null}
+            </DialogContentText>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeProcessRejectDialog} disabled={rejectProcessSubmitting}>
+              انصراف
+            </Button>
+            <Button
+              color="error"
+              variant="contained"
+              onClick={() => void confirmProcessReject()}
+              disabled={rejectProcessSubmitting}
+            >
+              {rejectProcessSubmitting ? 'در حال ثبت رد…' : 'بله، فرایند رد شود'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </CardContent>
     </Card>
   );

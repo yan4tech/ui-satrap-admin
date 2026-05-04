@@ -1,27 +1,28 @@
 'use client';
 
 import React from 'react';
+
+import { alpha, useTheme } from '@mui/material/styles';
 import {
-  Alert,
   Box,
-  Button,
   Chip,
-  CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogTitle,
+  Alert,
   Paper,
   Stack,
   Table,
+  Button,
+  Dialog,
+  TableRow,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
-  TableRow,
   Typography,
+  DialogTitle,
+  DialogActions,
+  DialogContent,
+  TableContainer,
+  CircularProgress,
 } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
 
 function statusChipColor(status) {
   const s = String(status || '').toUpperCase();
@@ -242,6 +243,8 @@ export default function ServiceOneStepTaskDetailDialog({
   loading = false,
   error = null,
   taskVersionsForElement = null,
+  /** اگر فرایند در موتور reject شده باشد، متن دلیل (مثلاً central_reject_payload.comment) */
+  rejectBannerComment = '',
 }) {
   const theme = useTheme();
   const isSyntheticStart = Boolean(task && task.__syntheticStart);
@@ -280,6 +283,40 @@ export default function ServiceOneStepTaskDetailDialog({
         </Stack>
       </DialogTitle>
       <DialogContent sx={{ px: 3, py: 2.5 }}>
+        {!loading && rejectBannerComment ? (
+          <Paper
+            elevation={0}
+            sx={{
+              mb: 2.5,
+              p: 2,
+              borderRadius: 2,
+              border: '2px solid',
+              borderColor: 'error.main',
+              bgcolor: alpha(theme.palette.error.main, 0.06),
+              backgroundImage: `linear-gradient(135deg, ${alpha(theme.palette.error.main, 0.12)} 0%, ${alpha(theme.palette.error.main, 0.02)} 100%)`,
+            }}
+          >
+            <Stack direction="row" alignItems="flex-start" gap={1.25}>
+              <Chip label="رد فرایند" color="error" size="small" sx={{ fontWeight: 800, flexShrink: 0 }} />
+              <Box sx={{ minWidth: 0 }}>
+                <Typography variant="caption" color="error.dark" fontWeight={700} display="block" sx={{ mb: 0.5 }}>
+                  متن دلیل رد ثبت‌شده در موتور
+                </Typography>
+                <Typography
+                  variant="body2"
+                  sx={{
+                    whiteSpace: 'pre-wrap',
+                    wordBreak: 'break-word',
+                    lineHeight: 1.7,
+                    fontWeight: 500,
+                  }}
+                >
+                  {rejectBannerComment}
+                </Typography>
+              </Box>
+            </Stack>
+          </Paper>
+        ) : null}
         {loading ? (
           <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', py: 6, gap: 2 }}>
             <CircularProgress size={36} thickness={4} />

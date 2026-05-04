@@ -10,6 +10,7 @@ export const SERVICE1_BPMN_USER_STEPS = [
   { elementId: 'review1', label: 'بررسی مرکزی فرم ۱', isReview: true },
   { elementId: 'enterCode', label: 'ورود کد پیامک' },
   { elementId: 'form2', label: 'پر کردن فرم ۲' },
+  { elementId: 'centralReviewForm2', label: 'بررسی مرکزی فرم ۲', isReview: true },
   { elementId: 'review2', label: 'بررسی نهایی', isReview: true },
 ];
 

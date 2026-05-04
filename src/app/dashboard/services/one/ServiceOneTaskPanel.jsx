@@ -152,6 +152,8 @@ export default function ServiceOneTaskPanel({
   let inner = null;
   switch (elKey) {
     case 'payment':
+    case 'payment1':
+    case 'paymentsurvey':
       inner = <StaticPayment />;
       break;
     case 'form1':

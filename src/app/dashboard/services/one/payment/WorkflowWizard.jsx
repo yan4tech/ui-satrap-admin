@@ -26,7 +26,7 @@ export default function PaymentStepPage() {
       }}
     >
       <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-        پرداخت خدمت
+        پرداخت
       </Typography>
 
       <Stack spacing={1.5} sx={{ mb: 3 }}>

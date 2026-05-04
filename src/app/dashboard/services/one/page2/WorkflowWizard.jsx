@@ -111,7 +111,7 @@ function UploadBox({ name, label, helperText, accept }) {
 
 const defaultReview = () => ({ status: REVIEW_STATUS.PENDING, comment: '' });
 
-/** taskKind: form2 = فقط متقاضی؛ centralReviewForm2 = بررسی مرکزی فرم ۲ */
+/** taskKind: form2 = فقط متقاضی؛ centralReviewForm2 = تایید نقشه برداری */
 export default function WorkflowWizardPage2({
   taskKind = 'form2',
   review: reviewProp,
@@ -185,7 +185,7 @@ export default function WorkflowWizardPage2({
         <Alert severity="error">{engineSubmitError}</Alert>
       ) : null}
       <Typography variant="subtitle1" fontWeight={700}>
-        نقشه برداری
+        {isReviewer ? 'تایید نقشه برداری' : 'نقشه برداری'}
       </Typography>
 
       <Box sx={{ position: 'relative' }}>

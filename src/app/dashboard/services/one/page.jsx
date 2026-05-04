@@ -739,7 +739,19 @@ export default function WorkflowWizard() {
           </Box>
         ) : null}
 
-        <Box sx={{ minHeight: 120 }}>{renderBody()}</Box>
+        <Box
+          sx={{
+            minHeight: uiStep === 0 ? 300 : 120,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: uiStep === 0 ? 'center' : 'stretch',
+            justifyContent: uiStep === 0 ? 'center' : 'flex-start',
+            py: uiStep === 0 ? 2 : 0,
+            px: uiStep === 0 ? { xs: 1, sm: 2 } : 0,
+          }}
+        >
+          {renderBody()}
+        </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
           <Button variant="outlined" disabled={uiStep === 0 || Boolean(processInstanceId)} onClick={handleBack}>

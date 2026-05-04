@@ -137,7 +137,7 @@ export default function ServiceOneTaskPanel({
   }
 
   const isReview = isReviewElementId(elKey);
-  /** فوتر دکمه‌های «تایید بررسی / رد» فقط برای مراحلی غیر از بررسی مرکزی فرم ۱ و ۲ */
+  /** فوتر دکمه‌های «تایید بررسی / رد» فقط برای مراحلی غیر از تایید اطلاعات اولیه و تایید نقشه برداری */
   const showOuterReviewFooter =
     isReview && elKey !== 'review1' && elKey !== 'centralreviewform2' && elKey !== 'review2';
   /** ورود کد پیامک فوتر اختصاصی داخل همان کامپوننت دارد */

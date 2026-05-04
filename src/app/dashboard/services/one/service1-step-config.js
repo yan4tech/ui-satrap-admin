@@ -6,12 +6,12 @@ export const SERVICE1_ENTRY_LABEL = 'شروع';
 
 export const SERVICE1_BPMN_USER_STEPS = [
   { elementId: 'payment', label: 'دریافت پرداخت' },
-  { elementId: 'form1', label: 'پر کردن فرم ۱' },
-  { elementId: 'review1', label: 'بررسی مرکزی فرم ۱', isReview: true },
+  { elementId: 'form1', label: 'اطلاعات اولیه' },
+  { elementId: 'review1', label: 'تایید اطلاعات اولیه', isReview: true },
   { elementId: 'enterCode', label: 'ورود کد پیامک' },
-  { elementId: 'form2', label: 'پر کردن فرم ۲' },
+  { elementId: 'form2', label: 'نقشه برداری' },
   /** در BPMN موتور همین node با element_id برابر review2 و نام «Central Review Form 2» است */
-  { elementId: 'review2', label: 'بررسی مرکزی فرم ۲', isReview: true },
+  { elementId: 'review2', label: 'تایید نقشه برداری', isReview: true },
 ];
 
 export const SERVICE1_STEPPER_LABELS = [

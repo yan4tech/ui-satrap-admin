@@ -303,9 +303,7 @@ export default function WorkflowWizard({
             </Alert>
           ) : null}
           <Typography variant="h5" textAlign="center" mb={3}>
-            {isReviewer
-              ? 'بررسی و تایید اطلاعات متقاضی توسط شرکت'
-              : 'تکمیل فرم درخواست اولیه توسط متقاضی'}
+            {isReviewer ? 'تایید اطلاعات اولیه' : 'اطلاعات اولیه'}
           </Typography>
 
           <Chip

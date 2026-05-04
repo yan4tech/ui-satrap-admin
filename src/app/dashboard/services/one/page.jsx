@@ -1,8 +1,10 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import React, { useRef, useMemo, useState, useEffect, useCallback } from 'react';
 
+import { alpha } from '@mui/material/styles';
+import StepIcon from '@mui/material/StepIcon';
 import {
   Box,
   Card,
@@ -11,15 +13,15 @@ import {
   Alert,
   Stack,
   Button,
+  Dialog,
   Stepper,
   StepLabel,
   Typography,
   CardContent,
-  CircularProgress,
-  Dialog,
   DialogTitle,
   DialogActions,
   DialogContent,
+  CircularProgress,
   DialogContentText,
 } from '@mui/material';
 
@@ -36,22 +38,58 @@ import {
   rejectProcess,
   advanceTaskNext,
   completeTaskForm,
-  rejectServiceStep,
   fetchProcessTasks,
+  rejectServiceStep,
   fetchProcessInstance,
   mergeAllTasksByTaskId,
   readService1ProcessMeta,
-  writeService1ProcessMeta,
   pickActiveUserFacingTask,
   pickLatestTaskForElement,
+  writeService1ProcessMeta,
   getTaskVersionsForElement,
   mergeApiTasksWithSnapshot,
   pickFallbackLatestTouchTask,
+  canCurrentClientCompleteTask,
   parseEngineProcessRejectState,
   pickPipelineEarliestTaskFromIdMap,
 } from './engine-api';
 
+const SERVICE1_DEFINITION_KEY = 'service1';
+
+function createService1StepIcon(stepIndex, uiStep, processFinished, waitingOnOtherParty) {
+  return function Service1QueuedStepIcon(props) {
+    const showWait =
+      !processFinished && waitingOnOtherParty && stepIndex === uiStep && stepIndex > 0;
+    if (showWait) {
+      return (
+        <Box
+          role="img"
+          aria-label="در انتظار کاربر دیگر"
+          sx={(theme) => ({
+            width: 24,
+            height: 24,
+            borderRadius: '50%',
+            border: '2px solid',
+            borderColor: 'warning.main',
+            bgcolor: alpha(theme.palette.warning.main, 0.14),
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 13,
+            lineHeight: 1,
+          })}
+        >
+          ⏳
+        </Box>
+      );
+    }
+    return <StepIcon {...props} />;
+  };
+}
+
 export default function WorkflowWizard() {
+  const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const processIdFromUrl = searchParams.get('processId');
   const definitionKeyFromUrl = searchParams.get('definitionKey');
@@ -66,7 +104,7 @@ export default function WorkflowWizard() {
     hasResumeQuery &&
     definitionKeyFromUrl != null &&
     String(definitionKeyFromUrl).trim() !== '' &&
-    definitionKeyFromUrl !== 'service1';
+    definitionKeyFromUrl !== SERVICE1_DEFINITION_KEY;
 
   const [processInstanceId, setProcessInstanceId] = useState(null);
   const [tasks, setTasks] = useState({});
@@ -90,6 +128,8 @@ export default function WorkflowWizard() {
   const [loadError, setLoadError] = useState(null);
   const [urlResumeDone, setUrlResumeDone] = useState(() => !hasResumeQuery);
   const hadResumeQueryRef = useRef(false);
+  const skipResumeLoadAfterStartRef = useRef(false);
+  const lastClientStartedProcessIdRef = useRef(null);
   const lastCurrentTaskRef = useRef(null);
   const allTasksByIdRef = useRef({});
 
@@ -107,6 +147,18 @@ export default function WorkflowWizard() {
     if (processRejected && rejectedViewTask) return rejectedViewTask;
     return pickActiveUserFacingTask(tasks);
   }, [tasks, processRejected, rejectedViewTask]);
+
+  const waitingOnOtherParty = useMemo(
+    () =>
+      processInstanceId != null &&
+      !tasksLoading &&
+      !processFinished &&
+      !processRejected &&
+      uiStep > 0 &&
+      Boolean(currentTask) &&
+      !canCurrentClientCompleteTask(currentTask),
+    [processInstanceId, tasksLoading, processFinished, processRejected, uiStep, currentTask]
+  );
 
   useEffect(() => {
     setProcessRejected(false);
@@ -179,17 +231,15 @@ export default function WorkflowWizard() {
         if (rejectState?.rejected) {
           setProcessRejected(true);
           setProcessRejectComment(rejectState.comment || '');
-          const anchor =
-            pickActiveUserFacingTask(merged) ||
-            pickFallbackLatestTouchTask(merged) ||
-            ({
+          const anchor = pickActiveUserFacingTask(merged) ||
+            pickFallbackLatestTouchTask(merged) || {
               ID: 0,
               element_id: 'review2',
               type: 'SERVICE_REVIEW',
               status: 'READY',
               process_instance_id: pid,
               __syntheticRejectedAnchor: true,
-            });
+            };
           setRejectedViewTask({ ...anchor });
           setTasks(merged);
           setProcessFinished(false);
@@ -214,7 +264,7 @@ export default function WorkflowWizard() {
       }
       return mergedOut;
     },
-    [syncFromTasks],
+    [syncFromTasks]
   );
 
   useEffect(() => {
@@ -253,6 +303,17 @@ export default function WorkflowWizard() {
     }
 
     hadResumeQueryRef.current = true;
+
+    if (
+      skipResumeLoadAfterStartRef.current &&
+      lastClientStartedProcessIdRef.current != null &&
+      Number(lastClientStartedProcessIdRef.current) === parsedResumePid
+    ) {
+      skipResumeLoadAfterStartRef.current = false;
+      setUrlResumeDone(true);
+      return undefined;
+    }
+
     let cancelled = false;
     setUrlResumeDone(false);
     setProcessInstanceId(parsedResumePid);
@@ -315,21 +376,20 @@ export default function WorkflowWizard() {
     } finally {
       setRejectProcessSubmitting(false);
     }
-  }, [
-    processInstanceId,
-    processRejectDialogComment,
-    closeProcessRejectDialog,
-  ]);
+  }, [processInstanceId, processRejectDialogComment, closeProcessRejectDialog]);
 
   /** @returns {Promise<boolean>} موفقیت ثبت در موتور */
   const handleSubmitStepForm = async (body) => {
     if (!processInstanceId || !currentTask) return false;
+    if (!canCurrentClientCompleteTask(currentTask)) {
+      setSubmitError('این مرحله برای نقش فعلی شما نیست؛ کاربر مجاز باید آن را در موتور تکمیل کند.');
+      return false;
+    }
     setSubmitError(null);
     setStepSubmitting(true);
     try {
       if (body?.engineReviewDecision === 'rejected') {
-        const comment =
-          typeof body.comment === 'string' ? body.comment.trim() : '';
+        const comment = typeof body.comment === 'string' ? body.comment.trim() : '';
         if (!comment) {
           setSubmitError('برای رد فرایند، وارد کردن توضیح / دلیل رد الزامی است.');
           return false;
@@ -354,7 +414,9 @@ export default function WorkflowWizard() {
             ? body.review_comment.trim()
             : 'ok';
         const formPayload =
-          body.taskFormPayload && typeof body.taskFormPayload === 'object' ? body.taskFormPayload : {};
+          body.taskFormPayload && typeof body.taskFormPayload === 'object'
+            ? body.taskFormPayload
+            : {};
         await completeTaskForm(processInstanceId, currentTask.ID, {
           review_status: 'approved',
           review_comment,
@@ -400,6 +462,13 @@ export default function WorkflowWizard() {
         setProcessInstanceId(id);
         setFormPhaseComplete(false);
         await loadTasks(id);
+        lastClientStartedProcessIdRef.current = id;
+        skipResumeLoadAfterStartRef.current = true;
+        const qs = new URLSearchParams({
+          processId: String(id),
+          definitionKey: SERVICE1_DEFINITION_KEY,
+        });
+        router.replace(`${pathname}?${qs.toString()}`);
       } catch (e) {
         setStartError(e instanceof Error ? e.message : 'خطا در شروع خدمت.');
       } finally {
@@ -409,6 +478,7 @@ export default function WorkflowWizard() {
     }
 
     if (processFinished || processRejected || !currentTask || !formPhaseComplete) return;
+    if (!canCurrentClientCompleteTask(currentTask)) return;
 
     setNavSubmitting(true);
     setSubmitError(null);
@@ -417,7 +487,11 @@ export default function WorkflowWizard() {
       await advanceTaskNext(processInstanceId, currentTask.ID, { approved: true });
       setFormPhaseComplete(false);
       const nextTasks = await fetchProcessTasks(processInstanceId);
-      const merged = mergeApiTasksWithSnapshot(processInstanceId, allTasksByIdRef.current, nextTasks);
+      const merged = mergeApiTasksWithSnapshot(
+        processInstanceId,
+        allTasksByIdRef.current,
+        nextTasks
+      );
       setTasks(merged);
       syncFromTasks(merged);
     } catch (e) {
@@ -452,7 +526,11 @@ export default function WorkflowWizard() {
         });
         try {
           const taskMap = await fetchProcessTasks(processInstanceId);
-          const merged = mergeApiTasksWithSnapshot(processInstanceId, allTasksByIdRef.current, taskMap);
+          const merged = mergeApiTasksWithSnapshot(
+            processInstanceId,
+            allTasksByIdRef.current,
+            taskMap
+          );
           setAllTasksById(merged);
           const startVersions = getTaskVersionsForElement(merged, 'start');
           const startTask = pickLatestTaskForElement(merged, 'start');
@@ -520,7 +598,11 @@ export default function WorkflowWizard() {
 
       try {
         const taskMap = await fetchProcessTasks(processInstanceId);
-        const merged = mergeApiTasksWithSnapshot(processInstanceId, allTasksByIdRef.current, taskMap);
+        const merged = mergeApiTasksWithSnapshot(
+          processInstanceId,
+          allTasksByIdRef.current,
+          taskMap
+        );
         setAllTasksById(merged);
         const versions = getTaskVersionsForElement(merged, el);
         const resolved = pickLatestTaskForElement(merged, el);
@@ -551,7 +633,7 @@ export default function WorkflowWizard() {
         });
       }
     },
-    [processInstanceId],
+    [processInstanceId]
   );
 
   const renderBody = () => {
@@ -581,6 +663,7 @@ export default function WorkflowWizard() {
         submitting={stepSubmitting}
         submitError={submitError}
         interactionLocked={processRejected}
+        waitForOtherUser={waitingOnOtherParty}
       />
     );
   };
@@ -593,21 +676,25 @@ export default function WorkflowWizard() {
         processRejected ||
         !formPhaseComplete ||
         navSubmitting ||
-        !currentTask;
+        !currentTask ||
+        waitingOnOtherParty;
 
   const nextLabel =
     uiStep === 0 && startSubmitting
       ? 'در حال ارسال…'
       : navSubmitting
         ? 'در حال ارسال…'
-        : 'بعدی';
+        : waitingOnOtherParty && uiStep > 0
+          ? 'در انتظار طرف دیگر'
+          : 'بعدی';
 
   if (resumeWrongService) {
     return (
       <Card>
         <CardContent>
           <Alert severity="warning">
-            این فرایند متعلق به خدمت دیگری است. از صفحهٔ لیست خدمات، برای همان نوع خدمت دکمهٔ جزییات را بزنید.
+            این فرایند متعلق به خدمت دیگری است. از صفحهٔ لیست خدمات، برای همان نوع خدمت دکمهٔ جزییات
+            را بزنید.
           </Alert>
         </CardContent>
       </Card>
@@ -681,16 +768,58 @@ export default function WorkflowWizard() {
           </Stack>
         </Typography>
 
+        {waitingOnOtherParty ? (
+          <Alert severity="warning" sx={{ mb: 2 }} variant="outlined">
+            <Typography variant="body2">
+              این مرحله برای نقش فعلی شما در سامانه نیست (مثلاً بررسی خدمت برای شرکت، یا تکمیل فرم
+              برای شعبه/موبایل). تا وقتی کاربر مجاز آن را در موتور انجام ندهد، دکمهٔ «بعدی» غیرفعال
+              می‌ماند.
+            </Typography>
+          </Alert>
+        ) : null}
+
         <Stepper
           activeStep={processFinished ? SERVICE1_STEPPER_LABELS.length : uiStep}
           alternativeLabel
           sx={{ mb: 1 }}
         >
-          {SERVICE1_STEPPER_LABELS.map((label) => (
-            <Step key={label}>
-              <StepLabel>{label}</StepLabel>
-            </Step>
-          ))}
+          {SERVICE1_STEPPER_LABELS.map((label, index) => {
+            const showStepWait =
+              !processFinished && waitingOnOtherParty && index === uiStep && index > 0;
+            return (
+              <Step key={label}>
+                <StepLabel
+                  StepIconComponent={createService1StepIcon(
+                    index,
+                    uiStep,
+                    processFinished,
+                    waitingOnOtherParty
+                  )}
+                  optional={
+                    showStepWait ? (
+                      <Typography
+                        variant="caption"
+                        color="warning.main"
+                        display="block"
+                        sx={{
+                          mt: 0.35,
+                          maxWidth: 160,
+                          mx: 'auto',
+                          lineHeight: 1.25,
+                          textAlign: 'center',
+                          fontWeight: 600,
+                        }}
+                      >
+                        در انتظار انجام
+                      </Typography>
+                    ) : null
+                  }
+                >
+                  {label}
+                </StepLabel>
+              </Step>
+            );
+          })}
         </Stepper>
 
         {processInstanceId != null ? (
@@ -754,7 +883,11 @@ export default function WorkflowWizard() {
         </Box>
 
         <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-          <Button variant="outlined" disabled={uiStep === 0 || Boolean(processInstanceId)} onClick={handleBack}>
+          <Button
+            variant="outlined"
+            disabled={uiStep === 0 || Boolean(processInstanceId)}
+            onClick={handleBack}
+          >
             قبلی
           </Button>
 
@@ -799,8 +932,8 @@ export default function WorkflowWizard() {
           <DialogContent>
             <DialogContentText component="div">
               <Typography variant="body2" color="text.primary" sx={{ mb: 1.5 }}>
-                با تایید، کل فرایند در موتور رد می‌شود و ادامهٔ آن متوقف می‌گردد. این کار جدی است؛ آیا
-                مطمئن هستید؟
+                با تایید، کل فرایند در موتور رد می‌شود و ادامهٔ آن متوقف می‌گردد. این کار جدی است؛
+                آیا مطمئن هستید؟
               </Typography>
               {processInstanceId != null ? (
                 <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 1 }}>

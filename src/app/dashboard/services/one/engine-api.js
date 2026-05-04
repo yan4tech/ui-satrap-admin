@@ -3,7 +3,7 @@ import { getBranchRequestHeaderValue } from 'src/lib/api-branch-header';
 import { getMembershipUserHeaderString } from 'src/lib/api-user-header';
 import { getSessionBearerAuthorization } from 'src/lib/session-bearer-header';
 
-import { getService1WorkflowRank } from './service1-step-config';
+import { isReviewElementId, getService1WorkflowRank } from './service1-step-config';
 
 const ENGINE_BASE_RAW =
   (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ENGINE_URL?.trim()) || 'http://localhost:3503';
@@ -232,6 +232,41 @@ export function pickActiveUserFacingTask(tasksMap) {
     return (a.ID ?? 0) - (b.ID ?? 0);
   });
   return eligible[0] ?? null;
+}
+
+/**
+ * آیا تسک جاری با حالت درخواست فعلی (`mode` هدر / sessionStorage) قابل تکمیل است؟
+ * — مراحل SERVICE_REVIEW معمولاً شرکت؛ USER_TASK غیربررسی معمولاً شعبه/موبایل.
+ * — در صورت وجود `attached_data.ui_actionable_by` یا `engine.actionable_by` با مقادیر branch|company|mobile همان اعمال می‌شود.
+ */
+export function canCurrentClientCompleteTask(task) {
+  if (!task || typeof task !== 'object') return true;
+  if (task.__syntheticRejectedAnchor || task.__syntheticStart || task.__inferredForStartStep) {
+    return true;
+  }
+
+  const mode = getApiMode();
+  const ad = task.attached_data && typeof task.attached_data === 'object' ? task.attached_data : {};
+  const engine = ad.engine && typeof ad.engine === 'object' ? ad.engine : {};
+  const hint = ad.ui_actionable_by ?? ad.actionable_by ?? engine.actionable_by ?? engine.ui_actionable_by;
+  if (hint === 'branch' || hint === 'company' || hint === 'mobile') {
+    return hint === mode;
+  }
+
+  const typeNorm = String(task.type ?? '')
+    .trim()
+    .replace(/\s+/g, '');
+  const isReviewType = typeNorm === 'SERVICE_REVIEW' || typeNorm === 'ServiceReview';
+  const isReviewStep = isReviewElementId(task.element_id) || isReviewType;
+
+  if (isReviewStep) {
+    return mode === 'company';
+  }
+
+  if (mode === 'company') {
+    return false;
+  }
+  return mode === 'branch' || mode === 'mobile';
 }
 
 function normEl(elementId) {

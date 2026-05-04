@@ -71,6 +71,7 @@ export default function ServiceOneTaskPanel({
   submitting,
   submitError,
   interactionLocked = false,
+  waitForOtherUser = false,
 }) {
   const el = task?.element_id;
   const elKey = el == null ? '' : String(el).trim().toLowerCase();
@@ -213,11 +214,21 @@ export default function ServiceOneTaskPanel({
       );
   }
 
+  const bodyLocked = interactionLocked || waitForOtherUser;
+
   return (
     <FormProvider {...formMethods}>
-      <Box sx={interactionLocked ? { pointerEvents: 'none', opacity: 0.72 } : undefined}>
+      <Box sx={bodyLocked ? { pointerEvents: 'none', opacity: 0.72 } : undefined}>
+        {waitForOtherUser && !interactionLocked ? (
+          <Alert severity="warning" sx={{ mb: 2 }} variant="outlined">
+            <Typography variant="body2">
+              این مرحله را کاربر دیگری (مثلاً شعبه یا شرکت) در سامانه انجام می‌دهد؛ تا آن زمان فرم
+              و دکمهٔ ثبت غیرفعال است.
+            </Typography>
+          </Alert>
+        ) : null}
         {inner}
-        {!interactionLocked &&
+        {!bodyLocked &&
           (showOuterReviewFooter ? (
             <ReviewTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
           ) : isReview || hideOuterUserFooter ? null : (

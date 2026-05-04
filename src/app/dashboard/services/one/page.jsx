@@ -213,13 +213,21 @@ export default function WorkflowWizard() {
   }, []);
 
   const loadTasks = useCallback(
-    async (pid) => {
-      setTasksLoading(true);
-      setLoadError(null);
+    async (pid, options = {}) => {
+      const { silent = false } = options;
+      if (!silent) {
+        setTasksLoading(true);
+        setLoadError(null);
+      }
       let mergedOut;
       try {
         const t = await fetchProcessTasks(pid);
-        const merged = mergeApiTasksWithSnapshot(pid, {}, t);
+        setLoadError(null);
+        const merged = mergeApiTasksWithSnapshot(
+          pid,
+          silent ? allTasksByIdRef.current : {},
+          t
+        );
         const inst = await fetchProcessInstance(pid);
         const rejectFromApi = inst ? parseEngineProcessRejectState(inst) : null;
         const storedMeta = readService1ProcessMeta(pid);
@@ -254,18 +262,32 @@ export default function WorkflowWizard() {
           mergedOut = merged;
         }
       } catch (e) {
-        setLoadError(e instanceof Error ? e.message : 'خطا در دریافت وظایف.');
-        setTasks({});
-        setUiStep(1);
-        setProcessFinished(false);
+        if (!silent) {
+          setLoadError(e instanceof Error ? e.message : 'خطا در دریافت وظایف.');
+          setTasks({});
+          setUiStep(1);
+          setProcessFinished(false);
+        }
         mergedOut = undefined;
       } finally {
-        setTasksLoading(false);
+        if (!silent) {
+          setTasksLoading(false);
+        }
       }
       return mergedOut;
     },
     [syncFromTasks]
   );
+
+  useEffect(() => {
+    if (!waitingOnOtherParty || processInstanceId == null) return undefined;
+    const pid = processInstanceId;
+    void loadTasks(pid, { silent: true });
+    const intervalId = window.setInterval(() => {
+      void loadTasks(pid, { silent: true });
+    }, 10_000);
+    return () => window.clearInterval(intervalId);
+  }, [waitingOnOtherParty, processInstanceId, loadTasks]);
 
   useEffect(() => {
     /* useEffect: خروج زودهنگام یا تابع cleanup — هر دو برای React معتبرند */

@@ -1,5 +1,7 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 import { varAlpha } from 'minimal-shared/utils';
 import { useBoolean } from 'minimal-shared/hooks';
 
@@ -26,10 +28,24 @@ import { AnimateBorder } from 'src/components/animate';
 
 import { useAuthContext } from 'src/auth/hooks';
 import { pickUserMobile } from 'src/auth/utils';
+import { getBranchIdStored } from 'src/lib/api-branch-header';
+import { getApiMode, getApiModeLabelFa } from 'src/lib/api-mode';
 
 import { UpgradeBlock } from './nav-upgrade';
 import { AccountButton } from './account-button';
 import { SignOutButton } from './sign-out-button';
+
+// ----------------------------------------------------------------------
+
+function getAccountModeBadgeText() {
+  const mode = getApiMode();
+  const label = getApiModeLabelFa(mode);
+  if (mode !== 'branch') {
+    return label;
+  }
+  const branchId = getBranchIdStored();
+  return `${label} · شناسه شعبه: ${branchId || '—'}`;
+}
 
 // ----------------------------------------------------------------------
 
@@ -42,6 +58,13 @@ export function AccountDrawer({ data = [], sx, ...other }) {
   const emailLabel = (user?.email || '').trim() || '—';
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
+
+  const [modeBadgeText, setModeBadgeText] = useState(getAccountModeBadgeText);
+
+  useEffect(() => {
+    if (!open) return;
+    setModeBadgeText(getAccountModeBadgeText());
+  }, [open]);
 
   const renderAvatar = () => (
     <AnimateBorder
@@ -152,7 +175,16 @@ export function AccountDrawer({ data = [], sx, ...other }) {
           >
             {renderAvatar()}
 
-            <Typography variant="subtitle1" noWrap sx={{ mt: 2 }}>
+            <Label color="info" variant="soft" sx={{ mt: 1.5, maxWidth: 1, px: 1.25 }}>
+              <Box
+                component="span"
+                sx={{ typography: 'caption', fontWeight: 700, textAlign: 'center', lineHeight: 1.45 }}
+              >
+                Mode: {modeBadgeText}
+              </Box>
+            </Label>
+
+            <Typography variant="subtitle1" noWrap sx={{ mt: 1.5 }}>
               {displayName}
             </Typography>
 

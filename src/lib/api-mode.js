@@ -1,9 +1,22 @@
 /** مقادیر مجاز هدر `mode` برای API (هم‌راستا با بک‌اند) */
 export const API_MODE_VALUES = ['mobile', 'company', 'branch'];
 
+export const API_MODE_LABELS_FA = {
+  mobile: 'موبایل',
+  company: 'شرکت',
+  branch: 'شعبه',
+};
+
 export const API_MODE_STORAGE_KEY = 'api_request_mode';
 
 const DEFAULT_MODE = 'mobile';
+
+/** برچسب فارسی برای یک مقدار `mode` (یا مقدار پیش‌فرض در صورت نامعتبر بودن) */
+export function getApiModeLabelFa(mode) {
+  const m =
+    mode && typeof mode === 'string' && API_MODE_VALUES.includes(mode) ? mode : DEFAULT_MODE;
+  return API_MODE_LABELS_FA[m] ?? m;
+}
 
 export function getApiMode() {
   if (typeof window === 'undefined') {

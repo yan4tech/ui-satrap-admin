@@ -26,7 +26,7 @@ import {
   getBranchIdStored,
   setBranchIdForApi,
 } from 'src/lib/api-branch-header';
-import { API_MODE_VALUES, getApiMode, setApiMode } from 'src/lib/api-mode';
+import { API_MODE_LABELS_FA, API_MODE_VALUES, getApiMode, setApiMode } from 'src/lib/api-mode';
 
 import { useAuthContext } from '../../hooks';
 import { getErrorMessage } from '../../utils';
@@ -47,12 +47,6 @@ export const SignInSchema = zod.object({
       message: 'کد تایید باید بین 4 تا 6 رقم باشد.',
     }),
 });
-
-const MODE_LABELS = {
-  mobile: 'موبایل',
-  company: 'شرکت',
-  branch: 'شعبه',
-};
 
 // ----------------------------------------------------------------------
 
@@ -168,7 +162,7 @@ export function JwtSignInView() {
         >
           {API_MODE_VALUES.map((m) => (
             <ToggleButton key={m} value={m}>
-              {MODE_LABELS[m]}
+              {API_MODE_LABELS_FA[m]}
             </ToggleButton>
           ))}
         </ToggleButtonGroup>

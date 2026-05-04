@@ -184,7 +184,7 @@ export default function WorkflowWizard() {
             pickFallbackLatestTouchTask(merged) ||
             ({
               ID: 0,
-              element_id: 'centralReviewForm2',
+              element_id: 'review2',
               type: 'SERVICE_REVIEW',
               status: 'READY',
               process_instance_id: pid,

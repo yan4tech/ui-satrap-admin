@@ -10,8 +10,8 @@ export const SERVICE1_BPMN_USER_STEPS = [
   { elementId: 'review1', label: 'بررسی مرکزی فرم ۱', isReview: true },
   { elementId: 'enterCode', label: 'ورود کد پیامک' },
   { elementId: 'form2', label: 'پر کردن فرم ۲' },
-  { elementId: 'centralReviewForm2', label: 'بررسی مرکزی فرم ۲', isReview: true },
-  { elementId: 'review2', label: 'بررسی نهایی', isReview: true },
+  /** در BPMN موتور همین node با element_id برابر review2 و نام «Central Review Form 2» است */
+  { elementId: 'review2', label: 'بررسی مرکزی فرم ۲', isReview: true },
 ];
 
 export const SERVICE1_STEPPER_LABELS = [
@@ -28,7 +28,9 @@ export const SERVICE1_ELEMENT_ORDER = [
 /** عدد کوچکتر = زودتر در فرایند؛ ناشناس آخر */
 export function getService1WorkflowRank(elementId) {
   if (elementId == null || elementId === '') return 999;
-  const key = String(elementId).trim().toLowerCase();
+  let key = String(elementId).trim().toLowerCase();
+  /* نسخهٔ قدیمی BPMN — همان رتبهٔ بررسی مرکزی فرم ۲ */
+  if (key === 'centralreviewform2') key = 'review2';
   const i = SERVICE1_ELEMENT_ORDER.map((e) => String(e).toLowerCase()).indexOf(key);
   return i === -1 ? 999 : i;
 }
@@ -39,14 +41,16 @@ const ELEMENT_TO_INDEX = Object.fromEntries(
 
 export function getStepperIndexForElementId(elementId) {
   if (!elementId) return 0;
-  const key = String(elementId).trim().toLowerCase();
+  let key = String(elementId).trim().toLowerCase();
   if (key === 'start') return 0;
+  if (key === 'centralreviewform2') key = 'review2';
   const idx = ELEMENT_TO_INDEX[key];
   return idx ?? 1;
 }
 
 export function isReviewElementId(elementId) {
   const key = elementId == null ? '' : String(elementId).trim().toLowerCase();
+  if (key === 'centralreviewform2') return true;
   return Boolean(SERVICE1_BPMN_USER_STEPS.find((s) => String(s.elementId).toLowerCase() === key && s.isReview));
 }
 

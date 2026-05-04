@@ -13,8 +13,7 @@ import { isReviewElementId } from './service1-step-config';
 import StaticPayment from './payment/WorkflowWizard';
 import Page1Wizard from './page1/WorkflowWizard';
 import Page2Wizard from './page2/WorkflowWizard';
-import SurveyPaymentPage from './payment-survey/WorkflowWizard';
-import SurveyRegistrationTrackingPage from './survey-registration-tracking/WorkflowWizard';
+import EnterCodeStep from './EnterCodeStep';
 
 function UserTaskFooter({ submitting, submitError, onSubmit }) {
   return (
@@ -110,7 +109,7 @@ export default function ServiceOneTaskPanel({
       setForm2Review(buildForm2ReviewStateFromTasksMap(map));
       return;
     }
-    if (elKey === 'centralreviewform2' && task?.ID != null) {
+    if ((elKey === 'centralreviewform2' || elKey === 'review2') && task?.ID != null) {
       if (lastHydratedCentral2TaskId.current !== task.ID) {
         lastHydratedCentral2TaskId.current = task.ID;
         setForm2Review(buildForm2ReviewStateFromTasksMap(map));
@@ -139,7 +138,10 @@ export default function ServiceOneTaskPanel({
 
   const isReview = isReviewElementId(elKey);
   /** فوتر دکمه‌های «تایید بررسی / رد» فقط برای مراحلی غیر از بررسی مرکزی فرم ۱ و ۲ */
-  const showOuterReviewFooter = isReview && elKey !== 'review1' && elKey !== 'centralreviewform2';
+  const showOuterReviewFooter =
+    isReview && elKey !== 'review1' && elKey !== 'centralreviewform2' && elKey !== 'review2';
+  /** ورود کد پیامک فوتر اختصاصی داخل همان کامپوننت دارد */
+  const hideOuterUserFooter = elKey === 'entercode';
 
   const engineReviewProps = {
     onEngineStepSubmit: onSubmitStepForm,
@@ -167,8 +169,14 @@ export default function ServiceOneTaskPanel({
         />
       );
       break;
-    case 'enterCode':
-      inner = <SurveyPaymentPage />;
+    case 'entercode':
+      inner = (
+        <EnterCodeStep
+          onEngineSubmit={onSubmitStepForm}
+          engineSubmitting={submitting}
+          engineSubmitError={submitError}
+        />
+      );
       break;
     case 'form2':
       inner = (
@@ -186,7 +194,14 @@ export default function ServiceOneTaskPanel({
       );
       break;
     case 'review2':
-      inner = <SurveyRegistrationTrackingPage />;
+      inner = (
+        <Page2Wizard
+          taskKind="centralReviewForm2"
+          review={form2Review}
+          setReview={setForm2Review}
+          {...engineReviewProps}
+        />
+      );
       break;
     default:
       inner = (
@@ -203,7 +218,7 @@ export default function ServiceOneTaskPanel({
         {!interactionLocked &&
           (showOuterReviewFooter ? (
             <ReviewTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
-          ) : isReview ? null : (
+          ) : isReview || hideOuterUserFooter ? null : (
             <UserTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
           ))}
       </Box>

@@ -371,9 +371,19 @@ export function buildForm1ReviewStateFromTasksMap(tasksMap) {
   return { status: 'pending', comment: '' };
 }
 
+function pickLatestDoneCentralForm2ReviewTask(tasksMap) {
+  const a = pickLatestDoneTaskForElement(tasksMap, 'review2');
+  const b = pickLatestDoneTaskForElement(tasksMap, 'centralReviewForm2');
+  if (!a) return b;
+  if (!b) return a;
+  const ta = new Date(a.completed_at || a.UpdatedAt || a.CreatedAt || 0).getTime();
+  const tb = new Date(b.completed_at || b.UpdatedAt || b.CreatedAt || 0).getTime();
+  return ta >= tb ? a : b;
+}
+
 /** برای نمایش بلوک بررسی در پر کردن فرم ۲ */
 export function buildForm2ReviewStateFromTasksMap(tasksMap) {
-  const doneCentral = pickLatestDoneTaskForElement(tasksMap, 'centralReviewForm2');
+  const doneCentral = pickLatestDoneCentralForm2ReviewTask(tasksMap);
   if (doneCentral) {
     const r = parseAttachedDataForReviewFeedback(doneCentral.attached_data);
     if (r.comment || r.status !== 'pending') return r;

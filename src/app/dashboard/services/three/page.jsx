@@ -25,7 +25,7 @@ import Page2 from './page2/WorkflowWizard';
 import PaymentPage from './payment/WorkflowWizard';
 import RegistrationTrackingPage from '../two/registration-tracking/WorkflowWizard';
 
-const steps = ['پرداخت', 'اطلاعات اولیه', 'تایید توسط سازمان ثبت', 'گواهی اقدام'];
+const steps = ['پرداخت', 'اطلاعات اولیه', 'تایید توسط شرکت', 'گواهی اقدام'];
 
 const stepSchemas = [
   z.object({}),
@@ -125,7 +125,9 @@ export default function WorkflowWizard() {
         {wrongService1Resume ? (
           <Alert severity="info" sx={{ mb: 2 }}>
             این فرایند از نوع خدمت شماره یک است. برای ادامه با موتور BPMN به{' '}
-            <Link href={`${paths.dashboard.services.one}?processId=${encodeURIComponent(processId)}&definitionKey=service1`}>
+            <Link
+              href={`${paths.dashboard.services.one}?processId=${encodeURIComponent(processId)}&definitionKey=service1`}
+            >
               صفحهٔ خدمت شماره یک
             </Link>{' '}
             بروید.

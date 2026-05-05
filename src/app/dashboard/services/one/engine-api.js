@@ -153,6 +153,17 @@ const USER_FACING_TYPES = new Set([
 
 const OPEN_STATUSES = new Set(['CREATED', 'Created', 'ACTIVE', 'Active', 'READY', 'Ready']);
 
+function normalizeTaskType(value) {
+  return String(value ?? '')
+    .trim()
+    .replace(/\s+/g, '')
+    .toUpperCase();
+}
+
+function normalizeTaskStatus(value) {
+  return String(value ?? '').trim().toUpperCase();
+}
+
 /** tasks از API گاهی آرایه و گاهی map به‌کلید ID است */
 export function normalizeTasksInput(tasks) {
   if (tasks == null) return [];
@@ -221,8 +232,8 @@ export function pickActiveUserFacingTask(tasksMap) {
   const list = Object.values(tasksMap).filter(Boolean);
   const eligible = list.filter(
     (t) =>
-      USER_FACING_TYPES.has(t.type) &&
-      (t.status == null || OPEN_STATUSES.has(String(t.status))),
+      (normalizeTaskType(t.type) === 'USER_TASK' || normalizeTaskType(t.type) === 'SERVICE_REVIEW') &&
+      (t.status == null || OPEN_STATUSES.has(normalizeTaskStatus(t.status))),
   );
   /* جلوترین مرحلهٔ باز در pipeline (رتبهٔ بزرگ‌تر)، نه کوچک‌ترین ID — تا با «شروع»/فرم قاطی نشود */
   eligible.sort((a, b) => {

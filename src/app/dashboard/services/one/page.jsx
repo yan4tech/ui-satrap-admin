@@ -56,6 +56,45 @@ import {
 
 const SERVICE1_DEFINITION_KEY = 'service1';
 
+function isEngineInstanceFinished(instance) {
+  if (!instance || typeof instance !== 'object') return false;
+  const status = String(instance.status ?? instance.process_status ?? instance.state ?? '')
+    .trim()
+    .toUpperCase();
+  const lastAction = String(instance.last_action ?? '')
+    .trim()
+    .toUpperCase();
+  if (
+    status === 'COMPLETED' ||
+    status === 'COMPLETE' ||
+    status === 'DONE' ||
+    status === 'FINISHED' ||
+    status === 'ENDED' ||
+    status === 'TERMINATED' ||
+    status === 'CANCELLED'
+  ) {
+    return true;
+  }
+  if (
+    lastAction === 'COMPLETE' ||
+    lastAction === 'COMPLETED' ||
+    lastAction === 'FINISH' ||
+    lastAction === 'FINISHED' ||
+    lastAction === 'END' ||
+    lastAction === 'ENDED'
+  ) {
+    return true;
+  }
+  return Boolean(
+    instance.completed_at ??
+      instance.CompletedAt ??
+      instance.ended_at ??
+      instance.EndedAt ??
+      instance.finished_at ??
+      instance.FinishedAt
+  );
+}
+
 function createService1StepIcon(stepIndex, uiStep, processFinished, waitingOnOtherParty) {
   return function Service1QueuedStepIcon(props) {
     const showWait =
@@ -197,15 +236,20 @@ export default function WorkflowWizard() {
     return m;
   }, [allTasksById]);
 
-  const syncFromTasks = useCallback((taskMap) => {
+  const syncFromTasks = useCallback((taskMap, options = {}) => {
+    const { canMarkFinished = true } = options;
     const t = pickActiveUserFacingTask(taskMap);
     if (!t) {
       const last = lastCurrentTaskRef.current;
       if (last?.ID != null) {
         setAllTasksById((prev) => ({ ...prev, [String(last.ID)]: { ...last } }));
       }
-      setProcessFinished(true);
-      setUiStep(SERVICE1_STEPPER_LABELS.length);
+      if (canMarkFinished) {
+        setProcessFinished(true);
+        setUiStep(SERVICE1_STEPPER_LABELS.length);
+      } else {
+        setProcessFinished(false);
+      }
       return;
     }
     setProcessFinished(false);
@@ -258,7 +302,7 @@ export default function WorkflowWizard() {
           setProcessRejectComment('');
           setRejectedViewTask(null);
           setTasks(merged);
-          syncFromTasks(merged);
+          syncFromTasks(merged, { canMarkFinished: isEngineInstanceFinished(inst) });
           mergedOut = merged;
         }
       } catch (e) {

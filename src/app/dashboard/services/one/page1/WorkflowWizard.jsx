@@ -159,6 +159,7 @@ export default function WorkflowWizard({
   taskKind = 'form1',
   review: reviewProp,
   setReview: setReviewProp,
+  formMethods,
   onEngineStepSubmit,
   engineSubmitting = false,
   engineSubmitError,
@@ -176,7 +177,7 @@ export default function WorkflowWizard({
 
   const [workflowStatus, setWorkflowStatus] = useState('draft');
 
-  const methods = useForm({
+  const localMethods = useForm({
     resolver: zodResolver(z.object({})),
     mode: 'onChange',
     defaultValues: {
@@ -202,6 +203,7 @@ export default function WorkflowWizard({
       access_people: [],
     },
   });
+  const methods = formMethods ?? localMethods;
 
   const { handleSubmit, watch, setValue } = methods;
 

@@ -552,14 +552,7 @@ export default function WorkflowWizard() {
       setAllTasksById((prev) => ({ ...prev, [String(currentTask.ID)]: { ...currentTask } }));
       await advanceTaskNext(processInstanceId, currentTask.ID, { approved: true });
       setFormPhaseComplete(false);
-      const nextTasks = await fetchProcessTasks(processInstanceId);
-      const merged = mergeApiTasksWithSnapshot(
-        processInstanceId,
-        allTasksByIdRef.current,
-        nextTasks
-      );
-      setTasks(merged);
-      syncFromTasks(merged);
+      await loadTasks(processInstanceId);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'خطا در رفتن به مرحله بعد.');
     } finally {

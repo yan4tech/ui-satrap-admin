@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 
 import {
   buildForm1ReviewStateFromTasksMap,
   buildForm2ReviewStateFromTasksMap,
+  sanitizeValuesForEngineJson,
 } from './engine-api';
 import { isReviewElementId } from './service1-step-config';
 
@@ -22,7 +23,7 @@ function UserTaskFooter({ submitting, submitError, onSubmit }) {
       <Typography variant="caption" color="text.secondary">
         پس از تکمیل فرم بالا، ثبت مرحله در موتور را بزنید تا دکمهٔ «بعدی» در پایین صفحه فعال شود.
       </Typography>
-      <Button variant="contained" disabled={submitting} onClick={() => onSubmit({})}>
+      <Button variant="contained" disabled={submitting} onClick={() => void onSubmit()}>
         {submitting ? 'در حال ثبت…' : 'ثبت این مرحله در موتور'}
       </Button>
     </Stack>
@@ -41,7 +42,7 @@ function ReviewTaskFooter({ submitting, submitError, onSubmit }) {
           variant="contained"
           color="success"
           disabled={submitting}
-          onClick={() => onSubmit({ approved: true })}
+          onClick={() => void onSubmit({ approved: true })}
         >
           {submitting ? 'در حال ثبت…' : 'تایید بررسی'}
         </Button>
@@ -49,7 +50,7 @@ function ReviewTaskFooter({ submitting, submitError, onSubmit }) {
           variant="outlined"
           color="error"
           disabled={submitting}
-          onClick={() => onSubmit({ approved: false })}
+          onClick={() => void onSubmit({ approved: false })}
         >
           رد / نیاز به اصلاح
         </Button>
@@ -133,6 +134,14 @@ export default function ServiceOneTaskPanel({
     },
   });
 
+  const submitWithFormValues = useCallback(
+    async (extra = {}) => {
+      const values = sanitizeValuesForEngineJson(formMethods.getValues());
+      return onSubmitStepForm({ ...values, ...(extra || {}) });
+    },
+    [formMethods, onSubmitStepForm]
+  );
+
   if (!el) {
     return <Alert severity="info">تسک فعالی برای نمایش نیست.</Alert>;
   }
@@ -159,7 +168,12 @@ export default function ServiceOneTaskPanel({
       break;
     case 'form1':
       inner = (
-        <Page1Wizard taskKind="form1" review={form1Review} setReview={setForm1Review} />
+        <Page1Wizard
+          taskKind="form1"
+          review={form1Review}
+          setReview={setForm1Review}
+          formMethods={formMethods}
+        />
       );
       break;
     case 'review1':
@@ -168,6 +182,7 @@ export default function ServiceOneTaskPanel({
           taskKind="review1"
           review={form1Review}
           setReview={setForm1Review}
+          formMethods={formMethods}
           {...engineReviewProps}
         />
       );
@@ -230,9 +245,17 @@ export default function ServiceOneTaskPanel({
         {inner}
         {!bodyLocked &&
           (showOuterReviewFooter ? (
-            <ReviewTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
+            <ReviewTaskFooter
+              submitting={submitting}
+              submitError={submitError}
+              onSubmit={submitWithFormValues}
+            />
           ) : isReview || hideOuterUserFooter ? null : (
-            <UserTaskFooter submitting={submitting} submitError={submitError} onSubmit={onSubmitStepForm} />
+            <UserTaskFooter
+              submitting={submitting}
+              submitError={submitError}
+              onSubmit={submitWithFormValues}
+            />
           ))}
       </Box>
     </FormProvider>

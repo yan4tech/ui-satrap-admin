@@ -397,6 +397,29 @@ export function parseAttachedDataForReviewFeedback(attachedData) {
   return { status, comment };
 }
 
+function parseReviewNodeFeedback(node, fallbackStatus = 'pending') {
+  const n = node && typeof node === 'object' ? node : {};
+  const rejectPayload =
+    n.reject_payload && typeof n.reject_payload === 'object' ? n.reject_payload : {};
+  const comment = pickFirstReviewComment(
+    n.comment,
+    n.reject_reason,
+    rejectPayload.comment,
+    n.review_comment,
+    n.reviewer_comment,
+  );
+  const explicitStatus = normalizeService1ReviewStatus(
+    n.status ?? n.review_status ?? n.decision ?? n.review_decision ?? '',
+  );
+
+  // طبق نیاز UI شعبه: وقتی reject_payload داریم، تگ «در انتظار بررسی» بماند ولی پیام اصلاح نمایش داده شود.
+  if (rejectPayload.comment != null || Object.keys(rejectPayload).length > 0) {
+    return { status: 'pending', comment };
+  }
+
+  return { status: explicitStatus === 'pending' ? fallbackStatus : explicitStatus, comment };
+}
+
 /** برای نمایش بلوک «نتیجه بررسی» در پر کردن فرم ۱ بعد از اصلاح */
 export function buildForm1ReviewStateFromTasksMap(tasksMap) {
   const doneReview = pickLatestDoneTaskForElement(tasksMap, 'review1');
@@ -407,6 +430,14 @@ export function buildForm1ReviewStateFromTasksMap(tasksMap) {
 
   const form1 = pickLatestTaskForElement(tasksMap, 'form1');
   if (form1) {
+    const ad = form1.attached_data && typeof form1.attached_data === 'object' ? form1.attached_data : {};
+    const review1Node = ad.review1 && typeof ad.review1 === 'object' ? ad.review1 : null;
+    if (review1Node) {
+      const fromReviewNode = parseReviewNodeFeedback(review1Node);
+      if (fromReviewNode.comment || fromReviewNode.status !== 'pending') {
+        return fromReviewNode;
+      }
+    }
     const r = parseAttachedDataForReviewFeedback(form1.attached_data);
     if (r.comment && r.status === 'pending') {
       return { ...r, status: 'needs_correction' };
@@ -437,6 +468,16 @@ export function buildForm2ReviewStateFromTasksMap(tasksMap) {
 
   const form2 = pickLatestTaskForElement(tasksMap, 'form2');
   if (form2) {
+    const ad = form2.attached_data && typeof form2.attached_data === 'object' ? form2.attached_data : {};
+    const review2Node =
+      (ad.review2 && typeof ad.review2 === 'object' ? ad.review2 : null) ||
+      (ad.centralReviewForm2 && typeof ad.centralReviewForm2 === 'object' ? ad.centralReviewForm2 : null);
+    if (review2Node) {
+      const fromReviewNode = parseReviewNodeFeedback(review2Node);
+      if (fromReviewNode.comment || fromReviewNode.status !== 'pending') {
+        return fromReviewNode;
+      }
+    }
     const r = parseAttachedDataForReviewFeedback(form2.attached_data);
     if (r.comment && r.status === 'pending') {
       return { ...r, status: 'needs_correction' };

@@ -16,6 +16,60 @@ import Page1Wizard from './page1/WorkflowWizard';
 import Page2Wizard from './page2/WorkflowWizard';
 import EnterCodeStep from './EnterCodeStep';
 
+function asObject(value) {
+  if (!value) return null;
+  if (typeof value === 'object') return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === 'object' ? parsed : null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+}
+
+function getFormAttachKeyByElementId(elKey) {
+  if (elKey === 'form1' || elKey === 'review1') return 'form1';
+  if (elKey === 'form2' || elKey === 'review2' || elKey === 'centralreviewform2') return 'form2';
+  if (elKey === 'entercode') return 'enterCode';
+  return null;
+}
+
+function pickHydrationPayloadFromAttachedData(attachedData, attachKey) {
+  const ad = asObject(attachedData);
+  if (!ad || !attachKey) return null;
+  const form = asObject(ad.form);
+  const previous = asObject(ad.previous_submission);
+  const payload = asObject(ad.payload);
+  const data = asObject(ad.data);
+  const submission = asObject(ad.submission);
+
+  const direct = asObject(ad[attachKey]);
+  if (direct) return direct;
+  const fromFormByKey = asObject(form?.[attachKey]);
+  if (fromFormByKey) return fromFormByKey;
+  const fromPreviousByKey = asObject(previous?.[attachKey]);
+  if (fromPreviousByKey) return fromPreviousByKey;
+  const fromPayloadByKey = asObject(payload?.[attachKey]);
+  if (fromPayloadByKey) return fromPayloadByKey;
+  const fromDataByKey = asObject(data?.[attachKey]);
+  if (fromDataByKey) return fromDataByKey;
+  const fromSubmissionByKey = asObject(submission?.[attachKey]);
+  if (fromSubmissionByKey) return fromSubmissionByKey;
+
+  const flatForm = asObject(form);
+  if (flatForm && !flatForm[attachKey] && (attachKey === 'form1' || attachKey === 'form2')) {
+    return flatForm;
+  }
+  const flatPrevious = asObject(previous);
+  if (flatPrevious && !flatPrevious[attachKey] && (attachKey === 'form1' || attachKey === 'form2')) {
+    return flatPrevious;
+  }
+  return null;
+}
+
 function UserTaskFooter({ submitting, submitError, onSubmit }) {
   return (
     <Stack spacing={1} sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
@@ -81,10 +135,12 @@ export default function ServiceOneTaskPanel({
   const [form2Review, setForm2Review] = useState(initialFormReview);
   const lastHydratedReview1TaskId = useRef(null);
   const lastHydratedCentral2TaskId = useRef(null);
+  const lastHydratedFormTaskId = useRef(null);
 
   useEffect(() => {
     lastHydratedReview1TaskId.current = null;
     lastHydratedCentral2TaskId.current = null;
+    lastHydratedFormTaskId.current = null;
   }, [reviewHydrationKey]);
 
   useEffect(() => {
@@ -133,6 +189,20 @@ export default function ServiceOneTaskPanel({
       },
     },
   });
+
+  useEffect(() => {
+    if (!task?.ID || !elKey) return;
+    if (lastHydratedFormTaskId.current === task.ID) return;
+    const attachKey = getFormAttachKeyByElementId(elKey);
+    if (!attachKey) return;
+
+    const taskPayload = pickHydrationPayloadFromAttachedData(task.attached_data, attachKey);
+    if (!taskPayload) return;
+
+    lastHydratedFormTaskId.current = task.ID;
+    const merged = { ...formMethods.getValues(), ...taskPayload };
+    formMethods.reset(merged);
+  }, [task?.ID, task?.attached_data, elKey, formMethods]);
 
   const submitWithFormValues = useCallback(
     async (extra = {}) => {

@@ -412,9 +412,9 @@ function parseReviewNodeFeedback(node, fallbackStatus = 'pending') {
     n.status ?? n.review_status ?? n.decision ?? n.review_decision ?? '',
   );
 
-  // طبق نیاز UI شعبه: وقتی reject_payload داریم، تگ «در انتظار بررسی» بماند ولی پیام اصلاح نمایش داده شود.
+  // وقتی reject_payload داریم یعنی فرم برای اصلاح برگشته است.
   if (rejectPayload.comment != null || Object.keys(rejectPayload).length > 0) {
-    return { status: 'pending', comment };
+    return { status: 'needs_correction', comment };
   }
 
   return { status: explicitStatus === 'pending' ? fallbackStatus : explicitStatus, comment };

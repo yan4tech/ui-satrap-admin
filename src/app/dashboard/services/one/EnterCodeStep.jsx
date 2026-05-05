@@ -5,7 +5,12 @@ import { Alert, Box, Button, Stack, TextField, Typography } from '@mui/material'
 
 const CODE_OK = /^\d{4,6}$/;
 
-export default function EnterCodeStep({ onEngineSubmit, engineSubmitting, engineSubmitError }) {
+export default function EnterCodeStep({
+  onEngineSubmit,
+  engineSubmitting,
+  engineSubmitError,
+  finalSubmitDisabled = false,
+}) {
   const [code, setCode] = useState('');
 
   const trimmed = code.trim();
@@ -30,7 +35,7 @@ export default function EnterCodeStep({ onEngineSubmit, engineSubmitting, engine
         ورود کد پیامک
       </Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-        کد ارسال‌شده به شمارهٔ ثبت‌شده را وارد کنید؛ سپس با «ثبت این مرحله در موتور» تکمیل کنید. پس از آن دکمهٔ «بعدی» در پایین صفحه فعال می‌شود.
+        کد ارسال‌شده به شمارهٔ ثبت‌شده را وارد کنید؛ سپس با «ثبت نهایی» تکمیل کنید. پس از آن دکمهٔ «بعدی» در پایین صفحه فعال می‌شود.
       </Typography>
 
       <TextField
@@ -49,10 +54,25 @@ export default function EnterCodeStep({ onEngineSubmit, engineSubmitting, engine
       <Stack spacing={1} sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
         {engineSubmitError ? <Alert severity="error">{engineSubmitError}</Alert> : null}
         <Typography variant="caption" color="text.secondary">
-          پس از وارد کردن کد، ثبت مرحله در موتور را بزنید تا دکمهٔ «بعدی» در پایین صفحه فعال شود.
+          پس از وارد کردن کد، «ثبت نهایی» را بزنید تا دکمهٔ «بعدی» در پایین صفحه فعال شود.
         </Typography>
-        <Button variant="contained" disabled={!codeValid || engineSubmitting} onClick={handleSubmit}>
-          {engineSubmitting ? 'در حال ثبت…' : 'ثبت این مرحله در موتور'}
+        <Button
+          variant="contained"
+          color="success"
+          sx={{
+            borderRadius: 2,
+            px: 3,
+            py: 1.1,
+            fontWeight: 700,
+            boxShadow: 2,
+            '&:hover': {
+              boxShadow: 4,
+            },
+          }}
+          disabled={!codeValid || engineSubmitting || finalSubmitDisabled}
+          onClick={handleSubmit}
+        >
+          {engineSubmitting ? 'در حال ثبت…' : 'ثبت نهایی'}
         </Button>
       </Stack>
     </Box>

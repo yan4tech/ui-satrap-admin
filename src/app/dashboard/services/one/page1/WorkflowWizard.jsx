@@ -163,6 +163,7 @@ export default function WorkflowWizard({
   onEngineStepSubmit,
   engineSubmitting = false,
   engineSubmitError,
+  finalSubmitDisabled = false,
 } = {}) {
   const [internalReview, setInternalReview] = useState(defaultReview);
   const review = reviewProp !== undefined ? reviewProp : internalReview;
@@ -387,21 +388,25 @@ export default function WorkflowWizard({
                   <Button
                     type="button"
                     variant="contained"
-                    color="primary"
-                    sx={{ minWidth: 220 }}
-                    disabled={!canFinalizeReview || engineSubmitting}
+                    color="success"
+                    sx={{
+                      minWidth: 220,
+                      borderRadius: 2,
+                      px: 3,
+                      py: 1.1,
+                      fontWeight: 700,
+                      boxShadow: 2,
+                      '&:hover': {
+                        boxShadow: 4,
+                      },
+                    }}
+                    disabled={!canFinalizeReview || engineSubmitting || finalSubmitDisabled}
                     onClick={() => void handleFinalizeReview()}
                   >
-                    {engineSubmitting ? 'در حال ثبت…' : 'ثبت نتیجه نهایی بررسی در موتور'}
+                    {engineSubmitting ? 'در حال ثبت…' : 'ثبت نهایی'}
                   </Button>
                 </Box>
-              ) : (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
-                  <Button type="submit" variant="contained" color="success" sx={{ minWidth: 140 }}>
-                    ثبت نهایی
-                  </Button>
-                </Box>
-              )}
+              ) : null}
             </form>
           </FormProvider>
         </CardContent>

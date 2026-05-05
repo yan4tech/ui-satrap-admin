@@ -37,6 +37,22 @@ function getFormAttachKeyByElementId(elKey) {
   return null;
 }
 
+function isTaskAlreadyComplete(task) {
+  if (!task || typeof task !== 'object') return false;
+  if (
+    task.is_complete === true ||
+    task.isComplete === true ||
+    task.completed === true ||
+    task.IsComplete === true
+  ) {
+    return true;
+  }
+  const status = String(task.status ?? task.task_status ?? '')
+    .trim()
+    .toUpperCase();
+  return status === 'DONE' || status === 'COMPLETED' || status === 'COMPLETE' || status === 'FINISHED';
+}
+
 function pickHydrationPayloadFromAttachedData(attachedData, attachKey) {
   const ad = asObject(attachedData);
   if (!ad || !attachKey) return null;
@@ -70,15 +86,30 @@ function pickHydrationPayloadFromAttachedData(attachedData, attachKey) {
   return null;
 }
 
-function UserTaskFooter({ submitting, submitError, onSubmit }) {
+function UserTaskFooter({ submitting, submitError, onSubmit, finalSubmitDisabled = false }) {
   return (
     <Stack spacing={1} sx={{ mt: 2, pt: 2, borderTop: '1px dashed', borderColor: 'divider' }}>
       {submitError ? <Alert severity="error">{submitError}</Alert> : null}
       <Typography variant="caption" color="text.secondary">
-        پس از تکمیل فرم بالا، ثبت مرحله در موتور را بزنید تا دکمهٔ «بعدی» در پایین صفحه فعال شود.
+        پس از تکمیل فرم بالا، «ثبت نهایی» را بزنید تا دکمهٔ «بعدی» در پایین صفحه فعال شود.
       </Typography>
-      <Button variant="contained" disabled={submitting} onClick={() => void onSubmit()}>
-        {submitting ? 'در حال ثبت…' : 'ثبت این مرحله در موتور'}
+      <Button
+        variant="contained"
+        color="success"
+        sx={{
+          borderRadius: 2,
+          px: 3,
+          py: 1.1,
+          fontWeight: 700,
+          boxShadow: 2,
+          '&:hover': {
+            boxShadow: 4,
+          },
+        }}
+        disabled={submitting || finalSubmitDisabled}
+        onClick={() => void onSubmit()}
+      >
+        {submitting ? 'در حال ثبت…' : 'ثبت نهایی'}
       </Button>
     </Stack>
   );
@@ -127,6 +158,7 @@ export default function ServiceOneTaskPanel({
   submitError,
   interactionLocked = false,
   waitForOtherUser = false,
+  finalSubmitDisabled = false,
 }) {
   const el = task?.element_id;
   const elKey = el == null ? '' : String(el).trim().toLowerCase();
@@ -222,11 +254,13 @@ export default function ServiceOneTaskPanel({
     isReview && elKey !== 'review1' && elKey !== 'centralreviewform2' && elKey !== 'review2';
   /** ورود کد پیامک فوتر اختصاصی داخل همان کامپوننت دارد */
   const hideOuterUserFooter = elKey === 'entercode';
+  const submitLockedForComplete = finalSubmitDisabled || isTaskAlreadyComplete(task);
 
   const engineReviewProps = {
     onEngineStepSubmit: onSubmitStepForm,
     engineSubmitting: submitting,
     engineSubmitError: submitError,
+    finalSubmitDisabled: submitLockedForComplete,
   };
 
   let inner = null;
@@ -263,6 +297,7 @@ export default function ServiceOneTaskPanel({
           onEngineSubmit={onSubmitStepForm}
           engineSubmitting={submitting}
           engineSubmitError={submitError}
+          finalSubmitDisabled={submitLockedForComplete}
         />
       );
       break;
@@ -325,6 +360,7 @@ export default function ServiceOneTaskPanel({
               submitting={submitting}
               submitError={submitError}
               onSubmit={submitWithFormValues}
+              finalSubmitDisabled={submitLockedForComplete}
             />
           ))}
       </Box>

@@ -119,6 +119,7 @@ export default function WorkflowWizardPage2({
   onEngineStepSubmit,
   engineSubmitting = false,
   engineSubmitError,
+  finalSubmitDisabled = false,
 } = {}) {
   const { getValues } = useFormContext();
   const [internalReview, setInternalReview] = useState(defaultReview);
@@ -360,11 +361,21 @@ export default function WorkflowWizardPage2({
               <Button
                 type="button"
                 variant="contained"
-                color="primary"
-                disabled={!canFinalizeReview || engineSubmitting}
+                color="success"
+                sx={{
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1.1,
+                  fontWeight: 700,
+                  boxShadow: 2,
+                  '&:hover': {
+                    boxShadow: 4,
+                  },
+                }}
+                disabled={!canFinalizeReview || engineSubmitting || finalSubmitDisabled}
                 onClick={() => void handleFinalizeReview()}
               >
-                {engineSubmitting ? 'در حال ثبت…' : 'ثبت نتیجه نهایی بررسی در موتور'}
+                {engineSubmitting ? 'در حال ثبت…' : 'ثبت نهایی'}
               </Button>
             </Box>
           ) : null}

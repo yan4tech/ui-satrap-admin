@@ -126,6 +126,22 @@ function createService1StepIcon(stepIndex, uiStep, processFinished, waitingOnOth
   };
 }
 
+function isTaskAlreadyComplete(task) {
+  if (!task || typeof task !== 'object') return false;
+  if (
+    task.is_complete === true ||
+    task.isComplete === true ||
+    task.completed === true ||
+    task.IsComplete === true
+  ) {
+    return true;
+  }
+  const status = String(task.status ?? task.task_status ?? '')
+    .trim()
+    .toUpperCase();
+  return status === 'DONE' || status === 'COMPLETED' || status === 'COMPLETE' || status === 'FINISHED';
+}
+
 export default function WorkflowWizard() {
   const router = useRouter();
   const pathname = usePathname();
@@ -723,6 +739,7 @@ export default function WorkflowWizard() {
         submitError={submitError}
         interactionLocked={processRejected}
         waitForOtherUser={waitingOnOtherParty}
+        finalSubmitDisabled={formPhaseComplete || isTaskAlreadyComplete(currentTask)}
       />
     );
   };

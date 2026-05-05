@@ -33,6 +33,7 @@ import {
   SERVICE1_STEPPER_LABELS,
   getStepperIndexForElementId,
   getBpmnElementIdForStepperIndex,
+  getService1WorkflowRank,
 } from './service1-step-config';
 import {
   rejectProcess,
@@ -142,6 +143,32 @@ function isTaskAlreadyComplete(task) {
   return status === 'DONE' || status === 'COMPLETED' || status === 'COMPLETE' || status === 'FINISHED';
 }
 
+function pickLatestUserFacingTask(taskMap, { actionableOnly = false } = {}) {
+  if (!taskMap || typeof taskMap !== 'object') return null;
+  const list = Object.values(taskMap).filter(Boolean);
+  if (!list.length) return null;
+  const eligible = list.filter((t) => {
+    const type = String(t?.type ?? '')
+      .trim()
+      .replace(/\s+/g, '')
+      .toUpperCase();
+    const isUserFacing = type === 'USER_TASK' || type === 'SERVICE_REVIEW';
+    if (!isUserFacing) return false;
+    if (!actionableOnly) return true;
+    return canCurrentClientCompleteTask(t);
+  });
+  if (!eligible.length) return null;
+  return [...eligible].sort((a, b) => {
+    const tb = new Date(b.UpdatedAt || b.completed_at || b.CreatedAt || 0).getTime();
+    const ta = new Date(a.UpdatedAt || a.completed_at || a.CreatedAt || 0).getTime();
+    if (tb !== ta) return tb - ta;
+    const ra = getService1WorkflowRank(a.element_id);
+    const rb = getService1WorkflowRank(b.element_id);
+    if (rb !== ra) return rb - ra;
+    return (b.ID ?? 0) - (a.ID ?? 0);
+  })[0];
+}
+
 export default function WorkflowWizard() {
   const router = useRouter();
   const pathname = usePathname();
@@ -200,7 +227,9 @@ export default function WorkflowWizard() {
 
   const currentTask = useMemo(() => {
     if (processRejected && rejectedViewTask) return rejectedViewTask;
-    return pickActiveUserFacingTask(tasks);
+    const active = pickActiveUserFacingTask(tasks);
+    if (active) return active;
+    return pickLatestUserFacingTask(tasks);
   }, [tasks, processRejected, rejectedViewTask]);
 
   const waitingOnOtherParty = useMemo(
@@ -256,6 +285,12 @@ export default function WorkflowWizard() {
     const { canMarkFinished = true } = options;
     const t = pickActiveUserFacingTask(taskMap);
     if (!t) {
+      const latest = pickLatestUserFacingTask(taskMap);
+      if (latest) {
+        setProcessFinished(false);
+        setUiStep(getStepperIndexForElementId(latest.element_id));
+        return;
+      }
       const last = lastCurrentTaskRef.current;
       if (last?.ID != null) {
         setAllTasksById((prev) => ({ ...prev, [String(last.ID)]: { ...last } }));
@@ -534,6 +569,8 @@ export default function WorkflowWizard() {
     }
   };
 
+  const canAdvanceFromCurrent = formPhaseComplete || isTaskAlreadyComplete(currentTask);
+
   const handleNext = async () => {
     if (uiStep === 0) {
       setStartError(null);
@@ -559,7 +596,7 @@ export default function WorkflowWizard() {
       return;
     }
 
-    if (processFinished || processRejected || !currentTask || !formPhaseComplete) return;
+    if (processFinished || processRejected || !currentTask || !canAdvanceFromCurrent) return;
     if (!canCurrentClientCompleteTask(currentTask)) return;
 
     setNavSubmitting(true);
@@ -750,7 +787,7 @@ export default function WorkflowWizard() {
       : tasksLoading ||
         processFinished ||
         processRejected ||
-        !formPhaseComplete ||
+        !canAdvanceFromCurrent ||
         navSubmitting ||
         !currentTask ||
         waitingOnOtherParty;

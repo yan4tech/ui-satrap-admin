@@ -10,6 +10,7 @@ import {
   Card,
   Chip,
   Step,
+  StepButton,
   Alert,
   Stack,
   Button,
@@ -206,6 +207,7 @@ export default function WorkflowWizard() {
   const [processRejectDialogComment, setProcessRejectDialogComment] = useState('');
   const [processRejectDialogError, setProcessRejectDialogError] = useState('');
   const [rejectProcessSubmitting, setRejectProcessSubmitting] = useState(false);
+  const [previewStep, setPreviewStep] = useState(null);
   const pendingRejectAnchorTaskRef = useRef(null);
   const [loadError, setLoadError] = useState(null);
   const [urlResumeDone, setUrlResumeDone] = useState(() => !hasResumeQuery);
@@ -461,6 +463,10 @@ export default function WorkflowWizard() {
     setSubmitError(null);
   }, [currentTask?.ID]);
 
+  useEffect(() => {
+    setPreviewStep(null);
+  }, [processInstanceId, uiStep, processFinished, processRejected]);
+
   const closeProcessRejectDialog = useCallback(() => {
     if (rejectProcessSubmitting) return;
     setProcessRejectDialogOpen(false);
@@ -641,11 +647,6 @@ export default function WorkflowWizard() {
     alert('فرایند تکمیل شد.');
   };
 
-  const handleBack = () => {
-    if (processInstanceId) return;
-    setUiStep((s) => Math.max(0, s - 1));
-  };
-
   const resolvedStepForHistory = processFinished ? SERVICE1_STEPPER_LABELS.length : uiStep;
 
   const openStepDetail = useCallback(
@@ -773,7 +774,16 @@ export default function WorkflowWizard() {
   );
 
   const renderBody = () => {
-    if (uiStep === 0) {
+    const stepToRender = previewStep != null ? previewStep : uiStep;
+    const elementIdForPreview =
+      previewStep != null && previewStep > 0 ? getBpmnElementIdForStepperIndex(previewStep) : null;
+    const previewTask =
+      previewStep != null && elementIdForPreview
+        ? pickLatestTaskForElement(allTasksById, elementIdForPreview)
+        : null;
+    const renderedTask = previewStep != null ? previewTask : currentTask;
+
+    if (stepToRender === 0) {
       return <StartServiceStep error={startError} />;
     }
     if (tasksLoading) {
@@ -786,21 +796,33 @@ export default function WorkflowWizard() {
     if (loadError) {
       return <Alert severity="error">{loadError}</Alert>;
     }
-    if (processFinished) {
+    if (processFinished && previewStep == null) {
       return <Alert severity="success">همه مراحل قابل نمایش برای این فرایند انجام شد.</Alert>;
+    }
+    if (previewStep != null && !renderedTask) {
+      return (
+        <Alert severity="info">
+          برای این مرحله هنوز داده‌ای جهت نمایش وجود ندارد. بعد از ثبت یا پیشروی فرایند، این بخش قابل
+          مشاهده می‌شود.
+        </Alert>
+      );
     }
     return (
       <ServiceOneTaskPanel
-        key={currentTask?.ID ?? 'no-task'}
-        task={currentTask}
+        key={`${renderedTask?.ID ?? 'no-task'}-${previewStep ?? 'live'}`}
+        task={renderedTask}
         tasksIdMap={allTasksById}
         reviewHydrationKey={processInstanceId}
         onSubmitStepForm={handleSubmitStepForm}
         submitting={stepSubmitting}
         submitError={submitError}
-        interactionLocked={processRejected}
+        interactionLocked={processRejected || previewStep != null}
         waitForOtherUser={waitingOnOtherParty}
-        finalSubmitDisabled={formPhaseComplete || isTaskAlreadyComplete(currentTask)}
+        finalSubmitDisabled={
+          previewStep != null ||
+          formPhaseComplete ||
+          isTaskAlreadyComplete(previewStep != null ? renderedTask : currentTask)
+        }
       />
     );
   };
@@ -809,6 +831,7 @@ export default function WorkflowWizard() {
     uiStep === 0
       ? startSubmitting
       : tasksLoading ||
+        previewStep != null ||
         processFinished ||
         processRejected ||
         !canAdvanceFromCurrent ||
@@ -916,44 +939,95 @@ export default function WorkflowWizard() {
         ) : null}
 
         <Stepper
-          activeStep={processFinished ? SERVICE1_STEPPER_LABELS.length : uiStep}
+          nonLinear
+          activeStep={
+            processFinished ? SERVICE1_STEPPER_LABELS.length : uiStep
+          }
           alternativeLabel
-          sx={{ mb: 1 }}
+          sx={{
+            mb: 1.5,
+            px: { xs: 0, md: 0.5 },
+            '& .MuiStepLabel-label': {
+              fontWeight: 600,
+            },
+            '& .MuiStepLabel-label.Mui-active': {
+              color: 'primary.main',
+              fontWeight: 800,
+            },
+            '& .MuiStepLabel-label.Mui-completed': {
+              color: 'success.main',
+            },
+          }}
         >
           {SERVICE1_STEPPER_LABELS.map((label, index) => {
             const showStepWait =
               !processFinished && waitingOnOtherParty && index === uiStep && index > 0;
+            const isPastStep = resolvedStepForHistory > index;
+            const canPreview = processInstanceId != null && (index === uiStep || isPastStep);
             return (
-              <Step key={label}>
-                <StepLabel
-                  StepIconComponent={createService1StepIcon(
-                    index,
-                    uiStep,
-                    processFinished,
-                    waitingOnOtherParty
-                  )}
-                  optional={
-                    showStepWait ? (
-                      <Typography
-                        variant="caption"
-                        color="warning.main"
-                        display="block"
-                        sx={{
-                          mt: 0.35,
-                          maxWidth: 160,
-                          mx: 'auto',
-                          lineHeight: 1.25,
-                          textAlign: 'center',
-                          fontWeight: 600,
-                        }}
-                      >
-                        در انتظار انجام
-                      </Typography>
-                    ) : null
-                  }
+              <Step key={label} completed={isPastStep}>
+                <StepButton
+                  disableRipple={!canPreview}
+                  disableTouchRipple={!canPreview}
+                  onClick={() => {
+                    if (!canPreview) return;
+                    if (index === uiStep) {
+                      setPreviewStep(null);
+                      return;
+                    }
+                    setPreviewStep(index);
+                  }}
+                  sx={{
+                    borderRadius: 2,
+                    transition: 'all 0.2s ease',
+                    ...(previewStep === index
+                      ? {
+                          bgcolor: 'action.selected',
+                          '& .MuiStepLabel-label': {
+                            color: 'primary.main',
+                            fontWeight: 800,
+                          },
+                        }
+                      : {}),
+                    ...(canPreview
+                      ? {
+                          '&:hover': {
+                            bgcolor: 'action.hover',
+                          },
+                        }
+                      : {}),
+                  }}
                 >
-                  {label}
-                </StepLabel>
+                  <StepLabel
+                    StepIconComponent={createService1StepIcon(
+                      index,
+                      uiStep,
+                      processFinished,
+                      waitingOnOtherParty
+                    )}
+                    optional={
+                      showStepWait ? (
+                        <Typography
+                          variant="caption"
+                          color="warning.main"
+                          display="block"
+                          sx={{
+                            mt: 0.35,
+                            maxWidth: 160,
+                            mx: 'auto',
+                            lineHeight: 1.25,
+                            textAlign: 'center',
+                            fontWeight: 600,
+                          }}
+                        >
+                          در انتظار انجام
+                        </Typography>
+                      ) : null
+                    }
+                  >
+                    {label}
+                  </StepLabel>
+                </StepButton>
               </Step>
             );
           })}
@@ -1005,6 +1079,12 @@ export default function WorkflowWizard() {
           </Box>
         ) : null}
 
+        {previewStep != null ? (
+          <Alert severity="info" variant="outlined" sx={{ mb: 2, borderRadius: 2 }}>
+            شما در حالت مشاهدهٔ مرحله قبل هستید؛ تمام اکشن‌ها غیرفعال هستند.
+          </Alert>
+        ) : null}
+
         <Box
           sx={{
             minHeight: uiStep === 0 ? 300 : 120,
@@ -1019,15 +1099,12 @@ export default function WorkflowWizard() {
           {renderBody()}
         </Box>
 
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-          <Button
-            variant="outlined"
-            disabled={uiStep === 0 || Boolean(processInstanceId)}
-            onClick={handleBack}
-          >
-            قبلی
-          </Button>
-
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4, gap: 1.5 }}>
+          {previewStep != null ? (
+            <Button variant="outlined" onClick={() => setPreviewStep(null)}>
+              بازگشت به مرحله جاری
+            </Button>
+          ) : null}
           {processFinished ? (
             <Button variant="contained" color="success" onClick={handleFinishClick}>
               پایان

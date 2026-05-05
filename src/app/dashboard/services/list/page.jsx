@@ -57,13 +57,38 @@ const DEFINITION_OPTIONS = [
   { value: 'service3', label: DEFINITION_LABELS.service3 },
 ];
 
+const PROCESS_STATUS_LABELS = {
+  RUNNING: 'در حال اجرا',
+  WAITING_CENTRAL: 'در انتظار ستاد',
+  WAITING_BRANCH: 'در انتظار شعبه',
+  WAITING_EXTERNAL: 'در انتظار سامانه بیرونی',
+  LOCKED: 'قفل شده',
+  REJECTED: 'رد شده',
+  COMPLETED: 'تکمیل شده',
+  DONE: 'انجام شده',
+  FAILED: 'ناموفق',
+  CANCELLED: 'لغوشده',
+  SUSPENDED: 'معلق',
+};
+
+function getProcessStatusLabel(status) {
+  const key = String(status || '').toUpperCase();
+  return PROCESS_STATUS_LABELS[key] ?? (status || '—');
+}
+
 const PROCESS_STATUS_OPTIONS = [
   { value: '', label: 'همه' },
-  { value: 'RUNNING', label: 'در حال اجرا' },
-  { value: 'COMPLETED', label: 'تکمیل‌شده' },
-  { value: 'CANCELLED', label: 'لغوشده' },
-  { value: 'SUSPENDED', label: 'معلق' },
-  { value: 'REJECTED', label: 'رد شده' },
+  { value: 'RUNNING', label: getProcessStatusLabel('RUNNING') },
+  { value: 'WAITING_CENTRAL', label: getProcessStatusLabel('WAITING_CENTRAL') },
+  { value: 'WAITING_BRANCH', label: getProcessStatusLabel('WAITING_BRANCH') },
+  { value: 'WAITING_EXTERNAL', label: getProcessStatusLabel('WAITING_EXTERNAL') },
+  { value: 'LOCKED', label: getProcessStatusLabel('LOCKED') },
+  { value: 'REJECTED', label: getProcessStatusLabel('REJECTED') },
+  { value: 'COMPLETED', label: getProcessStatusLabel('COMPLETED') },
+  { value: 'DONE', label: getProcessStatusLabel('DONE') },
+  { value: 'FAILED', label: getProcessStatusLabel('FAILED') },
+  { value: 'CANCELLED', label: getProcessStatusLabel('CANCELLED') },
+  { value: 'SUSPENDED', label: getProcessStatusLabel('SUSPENDED') },
 ];
 
 const defaultFilters = {
@@ -131,10 +156,13 @@ function mapItemsToRows(items) {
 
 function processStatusColor(status) {
   const s = String(status || '').toUpperCase();
+  if (s === 'COMPLETED' || s === 'DONE') return 'success';
+  if (s === 'REJECTED' || s === 'FAILED' || s === 'CANCELLED') return 'error';
+  if (s === 'WAITING_CENTRAL' || s === 'WAITING_BRANCH' || s === 'WAITING_EXTERNAL' || s === 'LOCKED') {
+    return 'warning';
+  }
   if (s === 'RUNNING') return 'info';
-  if (s === 'COMPLETED') return 'success';
-  if (s === 'CANCELLED' || s === 'REJECTED') return 'error';
-  if (s === 'SUSPENDED') return 'warning';
+  if (s === 'SUSPENDED') return 'default';
   return 'default';
 }
 
@@ -291,7 +319,7 @@ export default function ServicesListPage() {
         const isRejected = String(params.value || '').toUpperCase() === 'REJECTED';
         return (
           <Chip
-            label={params.value}
+            label={getProcessStatusLabel(params.value)}
             size="small"
             color={processStatusColor(params.value)}
             variant={isRejected ? 'filled' : 'outlined'}
@@ -443,10 +471,10 @@ export default function ServicesListPage() {
                   borderColor: 'divider',
                 }}
               >
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Field.Text name="processId" label="شماره فرایند" placeholder="مثلاً 1749882971" />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Field.Select name="definitionKey" label="نوع خدمت">
                     {DEFINITION_OPTIONS.map((item) => (
                       <MenuItem key={item.value || 'all'} value={item.value}>
@@ -455,7 +483,7 @@ export default function ServicesListPage() {
                     ))}
                   </Field.Select>
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Field.Select name="processStatus" label="وضعیت فرایند">
                     {PROCESS_STATUS_OPTIONS.map((item) => (
                       <MenuItem key={item.value || 'all'} value={item.value}>
@@ -464,10 +492,10 @@ export default function ServicesListPage() {
                     ))}
                   </Field.Select>
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Field.Text name="applicantName" label="نام متقاضی" />
                 </Grid>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                   <Field.Text
                     name="currentElementId"
                     label="شناسه مرحله (element)"

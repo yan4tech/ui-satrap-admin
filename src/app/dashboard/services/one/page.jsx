@@ -32,9 +32,9 @@ import ServiceOneTaskPanel from './ServiceOneTaskPanel';
 import ServiceOneStepTaskDetailDialog from './ServiceOneStepTaskDetailDialog';
 import {
   SERVICE1_STEPPER_LABELS,
-  getStepperIndexForElementId,
-  getBpmnElementIdForStepperIndex,
-  getService1WorkflowRank,
+  getStepperIndexForElementId as getService1StepperIndexForElementId,
+  getBpmnElementIdForStepperIndex as getService1BpmnElementIdForStepperIndex,
+  getService1WorkflowRank as getService1WorkflowRankDefault,
 } from './service1-step-config';
 import {
   rejectProcess,
@@ -144,7 +144,7 @@ function isTaskAlreadyComplete(task) {
   return status === 'DONE' || status === 'COMPLETED' || status === 'COMPLETE' || status === 'FINISHED';
 }
 
-function pickLatestUserFacingTask(taskMap, { actionableOnly = false } = {}) {
+function pickLatestUserFacingTask(taskMap, getWorkflowRank, { actionableOnly = false } = {}) {
   if (!taskMap || typeof taskMap !== 'object') return null;
   const list = Object.values(taskMap).filter(Boolean);
   if (!list.length) return null;
@@ -163,14 +163,24 @@ function pickLatestUserFacingTask(taskMap, { actionableOnly = false } = {}) {
     const tb = new Date(b.UpdatedAt || b.completed_at || b.CreatedAt || 0).getTime();
     const ta = new Date(a.UpdatedAt || a.completed_at || a.CreatedAt || 0).getTime();
     if (tb !== ta) return tb - ta;
-    const ra = getService1WorkflowRank(a.element_id);
-    const rb = getService1WorkflowRank(b.element_id);
+    const ra = getWorkflowRank(a.element_id);
+    const rb = getWorkflowRank(b.element_id);
     if (rb !== ra) return rb - ra;
     return (b.ID ?? 0) - (a.ID ?? 0);
   })[0];
 }
 
-export default function WorkflowWizard() {
+export function ServiceWorkflowPage({
+  serviceDefinitionKey = SERVICE1_DEFINITION_KEY,
+  serviceTitle = 'خدمت شماره یک',
+  startServiceFn = startService,
+  TaskPanelComponent = ServiceOneTaskPanel,
+  StepTaskDetailDialogComponent = ServiceOneStepTaskDetailDialog,
+  stepperLabels = SERVICE1_STEPPER_LABELS,
+  getStepperIndexForElementId = getService1StepperIndexForElementId,
+  getBpmnElementIdForStepperIndex = getService1BpmnElementIdForStepperIndex,
+  getWorkflowRank = getService1WorkflowRankDefault,
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -187,7 +197,7 @@ export default function WorkflowWizard() {
     hasResumeQuery &&
     definitionKeyFromUrl != null &&
     String(definitionKeyFromUrl).trim() !== '' &&
-    definitionKeyFromUrl !== SERVICE1_DEFINITION_KEY;
+    definitionKeyFromUrl !== serviceDefinitionKey;
 
   const [processInstanceId, setProcessInstanceId] = useState(null);
   const [tasks, setTasks] = useState({});
@@ -231,8 +241,8 @@ export default function WorkflowWizard() {
     if (processRejected && rejectedViewTask) return rejectedViewTask;
     const active = pickActiveUserFacingTask(tasks);
     if (active) return active;
-    return pickLatestUserFacingTask(tasks);
-  }, [tasks, processRejected, rejectedViewTask]);
+    return pickLatestUserFacingTask(tasks, getWorkflowRank);
+  }, [tasks, processRejected, rejectedViewTask, getWorkflowRank]);
 
   const waitingOnOtherParty = useMemo(
     () =>
@@ -287,13 +297,13 @@ export default function WorkflowWizard() {
     const { canMarkFinished = true } = options;
     const t = pickActiveUserFacingTask(taskMap);
     if (!t) {
-      if (canMarkFinished) {
-        setProcessFinished(true);
-        setUiStep(SERVICE1_STEPPER_LABELS.length);
-        return;
-      }
-      const latest = pickLatestUserFacingTask(taskMap);
+      const latest = pickLatestUserFacingTask(taskMap, getWorkflowRank);
       if (latest) {
+        if (canMarkFinished && isTaskAlreadyComplete(latest)) {
+          setProcessFinished(true);
+          setUiStep(stepperLabels.length);
+          return;
+        }
         setProcessFinished(false);
         setUiStep(getStepperIndexForElementId(latest.element_id));
         return;
@@ -304,7 +314,7 @@ export default function WorkflowWizard() {
       }
       if (canMarkFinished) {
         setProcessFinished(true);
-        setUiStep(SERVICE1_STEPPER_LABELS.length);
+        setUiStep(stepperLabels.length);
       } else {
         setProcessFinished(false);
       }
@@ -312,7 +322,7 @@ export default function WorkflowWizard() {
     }
     setProcessFinished(false);
     setUiStep(getStepperIndexForElementId(t.element_id));
-  }, []);
+  }, [getStepperIndexForElementId, getWorkflowRank, stepperLabels.length]);
 
   const loadTasks = useCallback(
     async (pid, options = {}) => {
@@ -587,7 +597,7 @@ export default function WorkflowWizard() {
       setStartError(null);
       setStartSubmitting(true);
       try {
-        const id = await startService();
+        const id = await startServiceFn();
         setAllTasksById({});
         setProcessInstanceId(id);
         setFormPhaseComplete(false);
@@ -596,7 +606,7 @@ export default function WorkflowWizard() {
         skipResumeLoadAfterStartRef.current = true;
         const qs = new URLSearchParams({
           processId: String(id),
-          definitionKey: SERVICE1_DEFINITION_KEY,
+          definitionKey: serviceDefinitionKey,
         });
         router.replace(`${pathname}?${qs.toString()}`);
       } catch (e) {
@@ -632,7 +642,7 @@ export default function WorkflowWizard() {
         Boolean(nextData?.completed_at ?? nextData?.ended_at ?? nextData?.finished_at);
       if (nextCompleted) {
         setProcessFinished(true);
-        setUiStep(SERVICE1_STEPPER_LABELS.length);
+        setUiStep(stepperLabels.length);
       }
       setFormPhaseComplete(false);
       await loadTasks(processInstanceId);
@@ -647,7 +657,7 @@ export default function WorkflowWizard() {
     alert('فرایند تکمیل شد.');
   };
 
-  const resolvedStepForHistory = processFinished ? SERVICE1_STEPPER_LABELS.length : uiStep;
+  const resolvedStepForHistory = processFinished ? stepperLabels.length : uiStep;
 
   const openStepDetail = useCallback(
     async (stepIndex, stepLabel) => {
@@ -784,7 +794,7 @@ export default function WorkflowWizard() {
     const renderedTask = previewStep != null ? previewTask : currentTask;
 
     if (stepToRender === 0) {
-      return <StartServiceStep error={startError} />;
+      return <StartServiceStep error={startError} serviceTitle={serviceTitle} />;
     }
     if (tasksLoading) {
       return (
@@ -808,7 +818,7 @@ export default function WorkflowWizard() {
       );
     }
     return (
-      <ServiceOneTaskPanel
+      <TaskPanelComponent
         key={`${renderedTask?.ID ?? 'no-task'}-${previewStep ?? 'live'}`}
         task={renderedTask}
         tasksIdMap={allTasksById}
@@ -916,7 +926,7 @@ export default function WorkflowWizard() {
         ) : null}
         <Typography variant="h5" sx={{ mb: 3 }} component="div">
           <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" useFlexGap>
-            <span>خدمت شماره یک</span>
+            <span>{serviceTitle}</span>
             {processInstanceId != null ? (
               <Chip
                 label={`شماره خدمت: ${processInstanceId}`}
@@ -941,7 +951,7 @@ export default function WorkflowWizard() {
         <Stepper
           nonLinear
           activeStep={
-            processFinished ? SERVICE1_STEPPER_LABELS.length : uiStep
+            processFinished ? stepperLabels.length : uiStep
           }
           alternativeLabel
           sx={{
@@ -959,7 +969,7 @@ export default function WorkflowWizard() {
             },
           }}
         >
-          {SERVICE1_STEPPER_LABELS.map((label, index) => {
+          {stepperLabels.map((label, index) => {
             const showStepWait =
               !processFinished && waitingOnOtherParty && index === uiStep && index > 0;
             const isPastStep = resolvedStepForHistory > index;
@@ -1044,7 +1054,7 @@ export default function WorkflowWizard() {
               px: { xs: 0, md: 0.5 },
             }}
           >
-            {SERVICE1_STEPPER_LABELS.map((label, si) => {
+            {stepperLabels.map((label, si) => {
               const elementId = getBpmnElementIdForStepperIndex(si);
               /* API گاهی تسک‌های DONE را در map برنمی‌گرداند؛ آنگاه tasksByElement خالی است ولی مرحله از نظر استپر گذشته */
               const hasMergedTasksForStep =
@@ -1116,7 +1126,7 @@ export default function WorkflowWizard() {
           )}
         </Box>
 
-        <ServiceOneStepTaskDetailDialog
+        <StepTaskDetailDialogComponent
           open={detailDialog.open}
           onClose={() =>
             setDetailDialog({
@@ -1192,5 +1202,17 @@ export default function WorkflowWizard() {
         </Dialog>
       </CardContent>
     </Card>
+  );
+}
+
+export default function WorkflowWizard() {
+  return (
+    <ServiceWorkflowPage
+      serviceDefinitionKey={SERVICE1_DEFINITION_KEY}
+      serviceTitle="خدمت شماره یک"
+      startServiceFn={startService}
+      TaskPanelComponent={ServiceOneTaskPanel}
+      StepTaskDetailDialogComponent={ServiceOneStepTaskDetailDialog}
+    />
   );
 }

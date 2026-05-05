@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,7 @@ import {
   TextField,
   Alert,
 } from '@mui/material';
+import { sanitizeValuesForEngineJson } from '../../one/engine-api';
 
 import Step0 from './steps/Step0';
 import Step1 from './steps/Step1';
@@ -116,6 +117,8 @@ function ApplicantReviewFeedback({ review, isReviewer }) {
   if (isReviewer) return null;
 
   const currentMeta = REVIEW_STATUS_META[review.status];
+  const reviewerComment = (review.comment || '').trim();
+  if (!reviewerComment) return null;
   const statusToSeverity = {
     [REVIEW_STATUS.PENDING]: 'warning',
     [REVIEW_STATUS.APPROVED]: 'success',
@@ -144,25 +147,35 @@ function ApplicantReviewFeedback({ review, isReviewer }) {
         multiline
         rows={2}
         label="توضیح کارشناس"
-        value={review.comment}
+        value={reviewerComment}
         InputProps={{ readOnly: true }}
-        placeholder="هنوز توضیحی توسط کارشناس ثبت نشده است."
-        helperText={
-          review.status === REVIEW_STATUS.PENDING
-            ? 'این مرحله هنوز توسط شرکت بررسی نشده است.'
-            : 'در صورت ثبت توضیح توسط کارشناس، در این بخش نمایش داده می‌شود.'
-        }
       />
     </Box>
   );
 }
 
-export default function WorkflowWizard() {
-  const [activeRole, setActiveRole] = useState('applicant');
-  const [workflowStatus, setWorkflowStatus] = useState('draft');
-  const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
+const defaultReview = () => ({ status: REVIEW_STATUS.PENDING, comment: '' });
 
-  const methods = useForm({
+export default function WorkflowWizard({
+  taskKind = 'form1',
+  review: reviewProp,
+  setReview: setReviewProp,
+  formMethods,
+  onEngineStepSubmit,
+  engineSubmitting = false,
+  engineSubmitError,
+  finalSubmitDisabled = false,
+} = {}) {
+  const [internalReview, setInternalReview] = useState(defaultReview);
+  const review = reviewProp !== undefined ? reviewProp : internalReview;
+  const setReview = setReviewProp ?? setInternalReview;
+  const patchReview = useCallback((partial) => {
+    setReview((prev) => ({ ...prev, ...partial }));
+  }, [setReview]);
+
+  const [workflowStatus, setWorkflowStatus] = useState('draft');
+
+  const localMethods = useForm({
     resolver: zodResolver(z.object({})),
     mode: 'onChange',
     defaultValues: {
@@ -203,6 +216,7 @@ export default function WorkflowWizard() {
       access_people: [],
     },
   });
+  const methods = formMethods ?? localMethods;
 
   const { handleSubmit, watch, setValue } = methods;
 
@@ -214,8 +228,8 @@ export default function WorkflowWizard() {
     setValue('final_amount', Math.max(0, total - discount));
   }, [total, discount, setValue]);
 
-  const isReviewer = activeRole === 'company_reviewer';
-  const isCompanyLocked = isReviewer;
+  const isReviewer = taskKind === 'review1';
+  const hasReviewerComment = Boolean((review.comment || '').trim());
 
   const canFinalizeReview = useMemo(() => {
     if (!isReviewer) return false;
@@ -229,27 +243,41 @@ export default function WorkflowWizard() {
     return review.status !== REVIEW_STATUS.PENDING;
   }, [isReviewer, review]);
 
-  const handleReviewStatusChange = (status) => {
-    setReview((prev) => ({
-      ...prev,
-      status,
-    }));
-  };
+  const handleReviewStatusChange = (status) => patchReview({ status });
 
-  const handleReviewCommentChange = (comment) => {
-    setReview((prev) => ({
-      ...prev,
-      comment,
-    }));
-  };
+  const handleReviewCommentChange = (comment) => patchReview({ comment });
 
-  const handleFinalizeReview = () => {
+  const handleFinalizeReview = async () => {
     if (!canFinalizeReview) return;
 
-    const hasCorrection =
-      review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION;
-    setWorkflowStatus(hasCorrection ? 'returned_for_edit' : 'approved');
-    alert(hasCorrection ? 'درخواست برای اصلاح برگشت داده شد.' : 'درخواست توسط شرکت تایید شد.');
+    const comment = (review.comment || '').trim();
+    if (typeof onEngineStepSubmit === 'function') {
+      let ok = false;
+      if (review.status === REVIEW_STATUS.APPROVED) {
+        const taskFormPayload = sanitizeValuesForEngineJson(methods.getValues());
+        ok = await onEngineStepSubmit({
+          engineReviewDecision: 'approved',
+          review_comment: comment || 'ok',
+          taskFormPayload,
+        });
+      } else if (review.status === REVIEW_STATUS.NEEDS_CORRECTION) {
+        ok = await onEngineStepSubmit({
+          engineReviewDecision: 'correction',
+          comment,
+        });
+      } else if (review.status === REVIEW_STATUS.REJECTED) {
+        ok = await onEngineStepSubmit({
+          engineReviewDecision: 'rejected',
+          comment,
+        });
+      }
+      if (ok) {
+        if (review.status === REVIEW_STATUS.APPROVED) setWorkflowStatus('approved');
+        else if (review.status === REVIEW_STATUS.NEEDS_CORRECTION) setWorkflowStatus('returned_for_edit');
+        else if (review.status === REVIEW_STATUS.REJECTED) setWorkflowStatus('rejected');
+      }
+      return;
+    }
   };
 
   // ---------------- SUBMIT ----------------
@@ -274,26 +302,14 @@ export default function WorkflowWizard() {
         }}
       >
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          {engineSubmitError && isReviewer ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {engineSubmitError}
+            </Alert>
+          ) : null}
           <Typography variant="h5" textAlign="center" mb={3}>
-            {isReviewer
-              ? 'بررسی و تایید اطلاعات متقاضی توسط شرکت'
-              : 'تکمیل فرم درخواست اولیه توسط متقاضی'}
+            {isReviewer ? 'تایید اطلاعات اولیه' : 'اطلاعات اولیه'}
           </Typography>
-
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-            <Button
-              variant={activeRole === 'applicant' ? 'contained' : 'outlined'}
-              onClick={() => setActiveRole('applicant')}
-            >
-              حالت متقاضی
-            </Button>
-            <Button
-              variant={activeRole === 'company_reviewer' ? 'contained' : 'outlined'}
-              onClick={() => setActiveRole('company_reviewer')}
-            >
-              حالت شرکت
-            </Button>
-          </Stack>
 
           <Chip
             label={`وضعیت پرونده: ${workflowStatus}`}
@@ -330,22 +346,7 @@ export default function WorkflowWizard() {
                     </React.Fragment>
                   ))}
 
-                  {isReviewer ? (
-                    <>
-                      <Divider />
-                      <Box sx={{ p: 2, borderRadius: 2, bgcolor: 'action.hover' }}>
-                        <Typography variant="subtitle1" fontWeight={700} mb={2}>
-                          تخصیص کارشناس نقشه برداری
-                        </Typography>
-                        <fieldset
-                          disabled={isCompanyLocked}
-                          style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}
-                        >
-                          <Step5 />
-                        </fieldset>
-                      </Box>
-                    </>
-                  ) : null}
+                  {isReviewer ? null : null}
 
                   {isReviewer ? (
                     <Box
@@ -360,28 +361,30 @@ export default function WorkflowWizard() {
                   ) : null}
                 </Box>
 
-                  <Box
-                    sx={{
-                      border: '1px solid',
-                      borderColor: 'primary.main',
-                      borderRadius: 2,
-                      p: 2,
-                      bgcolor: 'background.paper',
-                    }}
-                  >
-                    <Typography variant="subtitle1" fontWeight={700}>
-                      نتیجه بررسی کل فرم
-                    </Typography>
+                  {isReviewer || hasReviewerComment ? (
+                    <Box
+                      sx={{
+                        border: '1px solid',
+                        borderColor: 'primary.main',
+                        borderRadius: 2,
+                        p: 2,
+                        bgcolor: 'background.paper',
+                      }}
+                    >
+                      <Typography variant="subtitle1" fontWeight={700}>
+                        نتیجه بررسی کل فرم
+                      </Typography>
 
-                    <ReviewDecisionCard
-                      review={review}
-                      isReviewer={isReviewer}
-                      onStatusChange={handleReviewStatusChange}
-                      onCommentChange={handleReviewCommentChange}
-                    />
+                      <ReviewDecisionCard
+                        review={review}
+                        isReviewer={isReviewer}
+                        onStatusChange={handleReviewStatusChange}
+                        onCommentChange={handleReviewCommentChange}
+                      />
 
-                    <ApplicantReviewFeedback review={review} isReviewer={isReviewer} />
-                  </Box>
+                      <ApplicantReviewFeedback review={review} isReviewer={isReviewer} />
+                    </Box>
+                  ) : null}
               </Box>
 
               {isReviewer ? (
@@ -389,21 +392,15 @@ export default function WorkflowWizard() {
                   <Button
                     type="button"
                     variant="contained"
-                    color="primary"
+                    color="success"
                     sx={{ minWidth: 220 }}
-                    disabled={!canFinalizeReview}
-                    onClick={handleFinalizeReview}
+                    disabled={!canFinalizeReview || engineSubmitting || finalSubmitDisabled}
+                    onClick={() => void handleFinalizeReview()}
                   >
-                    ثبت نتیجه نهایی بررسی
+                    {engineSubmitting ? 'در حال ثبت…' : 'ثبت نهایی'}
                   </Button>
                 </Box>
-              ) : (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
-                  <Button type="submit" variant="contained" color="success" sx={{ minWidth: 140 }}>
-                    ثبت نهایی
-                  </Button>
-                </Box>
-              )}
+              ) : null}
             </form>
           </FormProvider>
         </CardContent>

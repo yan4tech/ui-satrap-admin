@@ -3,7 +3,7 @@
 import React from 'react';
 import { Alert, Stack } from '@mui/material';
 
-export default function StartServiceStep({ error }) {
+export default function StartServiceStep({ error, serviceTitle = 'خدمت 1' }) {
   return (
     <Stack spacing={2} alignItems="center" sx={{ width: '100%', maxWidth: 520, mx: 'auto' }}>
       <Alert
@@ -18,7 +18,7 @@ export default function StartServiceStep({ error }) {
           '& .MuiAlert-message': { textAlign: 'center', width: '100%' },
         }}
       >
-        برای شروع خدمت 1 لطفا روی دکمه بعدی کلیک کنید.
+        برای شروع {serviceTitle} لطفا روی دکمه بعدی کلیک کنید.
       </Alert>
       {error ? (
         <Alert severity="error" sx={{ width: '100%' }}>

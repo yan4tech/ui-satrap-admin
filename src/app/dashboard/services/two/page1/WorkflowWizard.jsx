@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -18,6 +18,7 @@ import {
   TextField,
   Alert,
 } from '@mui/material';
+import { sanitizeValuesForEngineJson } from '../../one/engine-api';
 
 import Step0 from './steps/Step0';
 import Step1 from './steps/Step1';
@@ -157,12 +158,28 @@ function ApplicantReviewFeedback({ review, isReviewer }) {
   );
 }
 
-export default function WorkflowWizard() {
-  const [activeRole, setActiveRole] = useState('applicant');
-  const [workflowStatus, setWorkflowStatus] = useState('draft');
-  const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
+const defaultReview = () => ({ status: REVIEW_STATUS.PENDING, comment: '' });
 
-  const methods = useForm({
+export default function WorkflowWizard({
+  taskKind = 'form1',
+  review: reviewProp,
+  setReview: setReviewProp,
+  formMethods,
+  onEngineStepSubmit,
+  engineSubmitting = false,
+  engineSubmitError,
+  finalSubmitDisabled = false,
+} = {}) {
+  const [internalReview, setInternalReview] = useState(defaultReview);
+  const review = reviewProp !== undefined ? reviewProp : internalReview;
+  const setReview = setReviewProp ?? setInternalReview;
+  const patchReview = useCallback((partial) => {
+    setReview((prev) => ({ ...prev, ...partial }));
+  }, [setReview]);
+
+  const [workflowStatus, setWorkflowStatus] = useState('draft');
+
+  const localMethods = useForm({
     resolver: zodResolver(z.object({})),
     mode: 'onChange',
     defaultValues: {
@@ -203,6 +220,7 @@ export default function WorkflowWizard() {
       access_people: [],
     },
   });
+  const methods = formMethods ?? localMethods;
 
   const { handleSubmit, watch, setValue } = methods;
 
@@ -214,7 +232,7 @@ export default function WorkflowWizard() {
     setValue('final_amount', Math.max(0, total - discount));
   }, [total, discount, setValue]);
 
-  const isReviewer = activeRole === 'company_reviewer';
+  const isReviewer = taskKind === 'review1';
 
   const canFinalizeReview = useMemo(() => {
     if (!isReviewer) return false;
@@ -225,27 +243,41 @@ export default function WorkflowWizard() {
     return review.status !== REVIEW_STATUS.PENDING;
   }, [isReviewer, review]);
 
-  const handleReviewStatusChange = (status) => {
-    setReview((prev) => ({
-      ...prev,
-      status,
-    }));
-  };
+  const handleReviewStatusChange = (status) => patchReview({ status });
 
-  const handleReviewCommentChange = (comment) => {
-    setReview((prev) => ({
-      ...prev,
-      comment,
-    }));
-  };
+  const handleReviewCommentChange = (comment) => patchReview({ comment });
 
-  const handleFinalizeReview = () => {
+  const handleFinalizeReview = async () => {
     if (!canFinalizeReview) return;
 
-    const hasCorrection =
-      review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION;
-    setWorkflowStatus(hasCorrection ? 'returned_for_edit' : 'approved');
-    alert(hasCorrection ? 'درخواست برای اصلاح برگشت داده شد.' : 'درخواست توسط شرکت تایید شد.');
+    const comment = (review.comment || '').trim();
+    if (typeof onEngineStepSubmit === 'function') {
+      let ok = false;
+      if (review.status === REVIEW_STATUS.APPROVED) {
+        const taskFormPayload = sanitizeValuesForEngineJson(methods.getValues());
+        ok = await onEngineStepSubmit({
+          engineReviewDecision: 'approved',
+          review_comment: comment || 'ok',
+          taskFormPayload,
+        });
+      } else if (review.status === REVIEW_STATUS.NEEDS_CORRECTION) {
+        ok = await onEngineStepSubmit({
+          engineReviewDecision: 'correction',
+          comment,
+        });
+      } else if (review.status === REVIEW_STATUS.REJECTED) {
+        ok = await onEngineStepSubmit({
+          engineReviewDecision: 'rejected',
+          comment,
+        });
+      }
+      if (ok) {
+        if (review.status === REVIEW_STATUS.APPROVED) setWorkflowStatus('approved');
+        else if (review.status === REVIEW_STATUS.NEEDS_CORRECTION) setWorkflowStatus('returned_for_edit');
+        else if (review.status === REVIEW_STATUS.REJECTED) setWorkflowStatus('rejected');
+      }
+      return;
+    }
   };
 
   // ---------------- SUBMIT ----------------
@@ -270,26 +302,14 @@ export default function WorkflowWizard() {
         }}
       >
         <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+          {engineSubmitError && isReviewer ? (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {engineSubmitError}
+            </Alert>
+          ) : null}
           <Typography variant="h5" textAlign="center" mb={3}>
-            {isReviewer
-              ? 'بررسی و تایید اطلاعات متقاضی توسط شرکت'
-              : 'تکمیل فرم درخواست اولیه توسط متقاضی'}
+            {isReviewer ? 'تایید اطلاعات اولیه' : 'اطلاعات اولیه'}
           </Typography>
-
-          <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
-            <Button
-              variant={activeRole === 'applicant' ? 'contained' : 'outlined'}
-              onClick={() => setActiveRole('applicant')}
-            >
-              حالت متقاضی
-            </Button>
-            <Button
-              variant={activeRole === 'company_reviewer' ? 'contained' : 'outlined'}
-              onClick={() => setActiveRole('company_reviewer')}
-            >
-              حالت شرکت
-            </Button>
-          </Stack>
 
           <Chip
             label={`وضعیت پرونده: ${workflowStatus}`}
@@ -380,21 +400,15 @@ export default function WorkflowWizard() {
                   <Button
                     type="button"
                     variant="contained"
-                    color="primary"
+                    color="success"
                     sx={{ minWidth: 220 }}
-                    disabled={!canFinalizeReview}
-                    onClick={handleFinalizeReview}
+                    disabled={!canFinalizeReview || engineSubmitting || finalSubmitDisabled}
+                    onClick={() => void handleFinalizeReview()}
                   >
-                    ثبت نتیجه نهایی بررسی
+                    {engineSubmitting ? 'در حال ثبت…' : 'ثبت نهایی'}
                   </Button>
                 </Box>
-              ) : (
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 4 }}>
-                  <Button type="submit" variant="contained" color="success" sx={{ minWidth: 140 }}>
-                    ثبت نهایی
-                  </Button>
-                </Box>
-              )}
+              ) : null}
             </form>
           </FormProvider>
         </CardContent>

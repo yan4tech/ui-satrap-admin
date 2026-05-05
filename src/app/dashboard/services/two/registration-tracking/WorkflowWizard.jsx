@@ -17,7 +17,7 @@ export default function RegistrationTrackingStep() {
       }}
     >
       <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
-        تایید توسط شرکت
+        ورود کد پیامک
       </Typography>
 
       <Stack spacing={2}>

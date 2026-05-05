@@ -170,14 +170,26 @@ function InfoHint({ text }) {
   );
 }
 
-export default function WorkflowWizardPage2() {
-  const [activeRole, setActiveRole] = useState('applicant');
+const defaultReview = () => ({ status: REVIEW_STATUS.PENDING, comment: '' });
+
+export default function WorkflowWizardPage2({
+  taskKind = 'form2',
+  review: reviewProp,
+  setReview: setReviewProp,
+  onEngineStepSubmit,
+  engineSubmitting = false,
+  engineSubmitError,
+  finalSubmitDisabled = false,
+} = {}) {
   const [isRegistryInfoModalOpen, setIsRegistryInfoModalOpen] = useState(false);
-  const [review, setReview] = useState({ status: REVIEW_STATUS.PENDING, comment: '' });
-  const isReviewer = activeRole === 'company_reviewer';
+  const [internalReview, setInternalReview] = useState(defaultReview);
+  const review = reviewProp !== undefined ? reviewProp : internalReview;
+  const setReview = setReviewProp ?? setInternalReview;
+  const isReviewer = taskKind === 'centralReviewForm2';
   const isCommentRequired =
     review.status === REVIEW_STATUS.REJECTED || review.status === REVIEW_STATUS.NEEDS_CORRECTION;
   const currentMeta = REVIEW_STATUS_META[review.status];
+  const hasReviewerComment = Boolean((review.comment || '').trim());
 
   return (
     <Box
@@ -190,23 +202,8 @@ export default function WorkflowWizardPage2() {
       }}
     >
       <Typography variant="subtitle1" fontWeight={700}>
-        درج گواهی اقدام
+        {isReviewer ? 'تایید نقشه برداری' : 'گواهی اقدام'}
       </Typography>
-
-      <Stack direction="row" spacing={1}>
-        <Button
-          variant={activeRole === 'applicant' ? 'contained' : 'outlined'}
-          onClick={() => setActiveRole('applicant')}
-        >
-          حالت متقاضی
-        </Button>
-        <Button
-          variant={activeRole === 'company_reviewer' ? 'contained' : 'outlined'}
-          onClick={() => setActiveRole('company_reviewer')}
-        >
-          حالت شرکت
-        </Button>
-      </Stack>
 
       <Box sx={{ position: 'relative' }}>
         <fieldset disabled={isReviewer} style={{ border: 0, margin: 0, padding: 0, minWidth: 0 }}>
@@ -451,7 +448,7 @@ export default function WorkflowWizardPage2() {
             }
           />
         </Box>
-      ) : (
+      ) : hasReviewerComment ? (
         <Box
           sx={{
             mt: 20,
@@ -487,7 +484,45 @@ export default function WorkflowWizardPage2() {
             helperText="در صورت ثبت توضیح توسط کارشناس، در این بخش نمایش داده می‌شود."
           />
         </Box>
-      )}
+      ) : null}
+      {isReviewer && typeof onEngineStepSubmit === 'function' ? (
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2 }}>
+          <Button
+            type="button"
+            variant="contained"
+            color="success"
+            disabled={
+              engineSubmitting ||
+              finalSubmitDisabled ||
+              review.status === REVIEW_STATUS.PENDING ||
+              ((review.status === REVIEW_STATUS.REJECTED ||
+                review.status === REVIEW_STATUS.NEEDS_CORRECTION) &&
+                !review.comment.trim())
+            }
+            onClick={async () => {
+              const comment = (review.comment || '').trim();
+              if (review.status === REVIEW_STATUS.APPROVED) {
+                await onEngineStepSubmit({
+                  engineReviewDecision: 'approved',
+                  review_comment: comment || 'ok',
+                });
+              } else if (review.status === REVIEW_STATUS.NEEDS_CORRECTION) {
+                await onEngineStepSubmit({
+                  engineReviewDecision: 'correction',
+                  comment,
+                });
+              } else if (review.status === REVIEW_STATUS.REJECTED) {
+                await onEngineStepSubmit({
+                  engineReviewDecision: 'rejected',
+                  comment,
+                });
+              }
+            }}
+          >
+            {engineSubmitting ? 'در حال ثبت…' : 'ثبت نهایی'}
+          </Button>
+        </Box>
+      ) : null}
     </Box>
   );
 }

@@ -109,6 +109,8 @@ function ReviewDecisionCard({ review, isReviewer, onStatusChange, onCommentChang
 
 function ApplicantReviewFeedback({ review, isReviewer }) {
   if (isReviewer) return null;
+  const hasReviewerComment = Boolean((review.comment || '').trim());
+  if (!hasReviewerComment) return null;
 
   const currentMeta = REVIEW_STATUS_META[review.status];
   const statusToSeverity = {

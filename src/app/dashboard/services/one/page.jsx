@@ -285,6 +285,11 @@ export default function WorkflowWizard() {
     const { canMarkFinished = true } = options;
     const t = pickActiveUserFacingTask(taskMap);
     if (!t) {
+      if (canMarkFinished) {
+        setProcessFinished(true);
+        setUiStep(SERVICE1_STEPPER_LABELS.length);
+        return;
+      }
       const latest = pickLatestUserFacingTask(taskMap);
       if (latest) {
         setProcessFinished(false);
@@ -603,7 +608,26 @@ export default function WorkflowWizard() {
     setSubmitError(null);
     try {
       setAllTasksById((prev) => ({ ...prev, [String(currentTask.ID)]: { ...currentTask } }));
-      await advanceTaskNext(processInstanceId, currentTask.ID, { approved: true });
+      const nextRes = await advanceTaskNext(processInstanceId, currentTask.ID, { approved: true });
+      const nextData =
+        nextRes && typeof nextRes === 'object' && nextRes.data && typeof nextRes.data === 'object'
+          ? nextRes.data
+          : nextRes;
+      const nextStatus = String(nextData?.status ?? '').trim().toUpperCase();
+      const nextAction = String(nextData?.last_action ?? '').trim().toUpperCase();
+      const nextCompleted =
+        nextData?.is_completed === true ||
+        nextData?.step_workflow_closed === true ||
+        nextStatus === 'DONE' ||
+        nextAction === 'COMPLETE' ||
+        nextAction === 'COMPLETED' ||
+        nextAction === 'FINISH' ||
+        nextAction === 'FINISHED' ||
+        Boolean(nextData?.completed_at ?? nextData?.ended_at ?? nextData?.finished_at);
+      if (nextCompleted) {
+        setProcessFinished(true);
+        setUiStep(SERVICE1_STEPPER_LABELS.length);
+      }
       setFormPhaseComplete(false);
       await loadTasks(processInstanceId);
     } catch (e) {

@@ -137,6 +137,7 @@ export default function WorkflowWizardPage2({
   const isCommentRequired =
     review.status === REVIEW_STATUS.NEEDS_CORRECTION || review.status === REVIEW_STATUS.REJECTED;
   const currentMeta = REVIEW_STATUS_META[review.status];
+  const hasReviewerComment = Boolean((review.comment || '').trim());
 
   const canFinalizeReview = useMemo(() => {
     if (!isReviewer) return false;
@@ -380,7 +381,7 @@ export default function WorkflowWizardPage2({
             </Box>
           ) : null}
         </Box>
-      ) : (
+      ) : hasReviewerComment ? (
         <Box sx={{ border: '1px dashed', borderColor: 'divider', borderRadius: 2, p: 2 }}>
           <Alert severity={currentMeta.severity} sx={{ mb: 1.25 }}>
             <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
@@ -406,7 +407,7 @@ export default function WorkflowWizardPage2({
             helperText="در صورت ثبت توضیح توسط کارشناس، در این بخش نمایش داده می‌شود."
           />
         </Box>
-      )}
+      ) : null}
     </Box>
   );
 }

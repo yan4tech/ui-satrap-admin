@@ -11,7 +11,6 @@ import {
   Card,
   CardContent,
   Typography,
-  MenuItem,
   Alert,
   Container,
   Divider,
@@ -34,6 +33,7 @@ import {
 import Autocomplete from '@mui/material/Autocomplete';
 
 import { Form, Field } from 'src/components/hook-form';
+import ProvinceRegistrationUnitFields from 'src/components/location/ProvinceRegistrationUnitFields';
 import axios from 'src/lib/axios';
 import { CONFIG } from 'src/global-config';
 
@@ -43,7 +43,7 @@ import { CONFIG } from 'src/global-config';
 export const BranchSchema = zod.object({
   title: zod.string().trim().min(1, 'عنوان شعبه الزامی است'),
   province: zod.string().trim().min(1, 'استان الزامی است'),
-  city: zod.string().trim().min(1, 'شهر الزامی است'),
+  registration_unit: zod.string().trim().min(1, 'واحد ثبتی الزامی است'),
   ip: zod
     .string()
     .trim()
@@ -74,11 +74,9 @@ const DocumentSchema = zod.object({
 // --------------------------------------
 // COMPONENT
 // --------------------------------------
-export default function EditBranch({ branchData, onSaved }) {
+export default function EditBranch({ branchData, onSaved, readOnly = false }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [provinces, setProvinces] = useState([]);
-  const [cities, setCities] = useState([]);
   const [permissionsList, setPermissionsList] = useState([]);
   const [documents, setDocuments] = useState(branchData?.documents || []);
   const [newDocuments, setNewDocuments] = useState([
@@ -88,32 +86,16 @@ export default function EditBranch({ branchData, onSaved }) {
 
   const normalizeIsActive = (value) => value === true || value === 'true' || value === 1;
 
-  // fake APIs
-  const fetchProvinces = async () => [
-    { id: 1, name: 'تهران' },
-    { id: 2, name: 'اصفهان' },
-  ];
-
-  const fetchCitiesByProvince = async (provinceId) => {
-    const data = {
-      1: [
-        { id: 10, name: 'تهران' },
-        { id: 11, name: 'اسلامشهر' },
-      ],
-      2: [
-        { id: 20, name: 'اصفهان' },
-        { id: 21, name: 'کاشان' },
-      ],
-    };
-    return data[provinceId] || [];
-  };
+  const branchLocationId = branchData?.ID ?? branchData?.id;
+  const resolveRegistrationUnitId = (data) =>
+    data?.registration_unit ?? data?.registration_unit_id ?? data?.city ?? '';
 
   const methods = useForm({
     resolver: zodResolver(BranchSchema),
     defaultValues: {
       title: branchData?.title || '',
       province: String(branchData?.province || ''),
-      city: String(branchData?.city || ''),
+      registration_unit: String(resolveRegistrationUnitId(branchData) || ''),
       ip: branchData?.ip || '',
       phone: branchData?.phone || '',
       address: branchData?.address || '',
@@ -126,13 +108,9 @@ export default function EditBranch({ branchData, onSaved }) {
 
   const {
     handleSubmit,
-    watch,
-    setValue,
     control,
     formState: { isSubmitting },
   } = methods;
-
-  const selectedProvince = watch('province');
 
   useEffect(() => {
     setDocuments(branchData?.documents || []);
@@ -141,7 +119,7 @@ export default function EditBranch({ branchData, onSaved }) {
     methods.reset({
       title: branchData?.title || '',
       province: String(branchData?.province || ''),
-      city: String(branchData?.city || ''),
+      registration_unit: String(resolveRegistrationUnitId(branchData) || ''),
       ip: branchData?.ip || '',
       phone: branchData?.phone || '',
       address: branchData?.address || '',
@@ -151,14 +129,6 @@ export default function EditBranch({ branchData, onSaved }) {
       permissions: branchData?.permissions?.map((p) => p?.ID ?? p?.id).filter(Boolean) || [],
     });
   }, [branchData, methods]);
-
-  // load provinces
-  useEffect(() => {
-    (async () => {
-      const res = await fetchProvinces();
-      setProvinces(res);
-    })();
-  }, []);
 
   // load permissions/services options
   useEffect(() => {
@@ -196,20 +166,6 @@ export default function EditBranch({ branchData, onSaved }) {
     })();
   }, [branchData]);
 
-  useEffect(() => {
-    if (!selectedProvince) return;
-
-    (async () => {
-      const res = await fetchCitiesByProvince(selectedProvince);
-      setCities(res);
-      const currentCity = methods.getValues('city');
-      const cityExistsInProvince = res.some((c) => String(c.id) === String(currentCity));
-      if (!cityExistsInProvince) {
-        setValue('city', '');
-      }
-    })();
-  }, [selectedProvince, setValue, methods]);
-
   const onSubmit = handleSubmit(async (data) => {
     try {
       const branchId = Number(branchData?.ID ?? branchData?.id);
@@ -221,6 +177,8 @@ export default function EditBranch({ branchData, onSaved }) {
 
       const payload = {
         title: data.title,
+        province: Number(data.province),
+        registration_unit: Number(data.registration_unit),
         max_users: Number(data.max_users),
         is_active: data.is_active,
         user_ids: (branchData?.users || []).map((u) => u?.ID ?? u?.id).filter(Boolean),
@@ -471,30 +429,10 @@ export default function EditBranch({ branchData, onSaved }) {
                     rowGap: 2,
                   }}
                 >
-                  <Box>
-                    <Field.Select name="province" label="استان" placeholder="انتخاب استان">
-                      {provinces.map((p) => (
-                        <MenuItem key={p.id} value={String(p.id)}>
-                          {p.name}
-                        </MenuItem>
-                      ))}
-                    </Field.Select>
-                  </Box>
-
-                  <Box>
-                    <Field.Select
-                      name="city"
-                      label="شهر"
-                      disabled={!selectedProvince}
-                      placeholder="انتخاب شهر"
-                    >
-                      {cities.map((c) => (
-                        <MenuItem key={c.id} value={String(c.id)}>
-                          {c.name}
-                        </MenuItem>
-                      ))}
-                    </Field.Select>
-                  </Box>
+                  <ProvinceRegistrationUnitFields
+                    key={branchLocationId ?? 'branch-location'}
+                    disabled={readOnly}
+                  />
                 </Box>
               </Box>
 

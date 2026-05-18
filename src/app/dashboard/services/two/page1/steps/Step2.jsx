@@ -1,23 +1,7 @@
 import React from 'react';
-import { MenuItem, Typography, Box } from '@mui/material';
+import { Typography, Box } from '@mui/material';
 import { Field } from 'src/components/hook-form';
-
-// ---------------- MOCK DATA ----------------
-// (بعداً باید از API بیاد)
-const PROVINCES = [
-  { value: 1, label: 'تهران' },
-  { value: 2, label: 'اصفهان' },
-];
-
-const COUNTIES = [
-  { value: 1, label: 'شهرستان ۱' },
-  { value: 2, label: 'شهرستان ۲' },
-];
-
-const CITIES = [
-  { value: 1, label: 'شهر / روستا ۱' },
-  { value: 2, label: 'شهر / روستا ۲' },
-];
+import ProvinceRegistrationUnitFields from 'src/components/location/ProvinceRegistrationUnitFields';
 
 export default function Page2() {
   return (
@@ -30,45 +14,12 @@ export default function Page2() {
           rowGap: 2,
         }}
       >
-        {/* ---------------- استان ---------------- */}
-        <Box>
-          <Field.Select name="province" label="استان">
-            {PROVINCES.map((o) => (
-              <MenuItem key={o.value} value={o.value}>
-                {o.label}
-              </MenuItem>
-            ))}
-          </Field.Select>
-        </Box>
+        <ProvinceRegistrationUnitFields useStringValues={false} />
 
-        {/* ---------------- شهرستان ---------------- */}
-        <Box>
-          <Field.Select name="county" label="شهرستان">
-            {COUNTIES.map((o) => (
-              <MenuItem key={o.value} value={o.value}>
-                {o.label}
-              </MenuItem>
-            ))}
-          </Field.Select>
-        </Box>
-
-        {/* ---------------- شهر / روستا ---------------- */}
-        <Box>
-          <Field.Select name="city" label="شهر / روستا">
-            {CITIES.map((o) => (
-              <MenuItem key={o.value} value={o.value}>
-                {o.label}
-              </MenuItem>
-            ))}
-          </Field.Select>
-        </Box>
-
-        {/* ---------------- کد پستی ---------------- */}
         <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
           <Field.Text name="postal_code" label="کد پستی" />
         </Box>
 
-        {/* ---------------- مختصات جغرافیایی ---------------- */}
         <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
           <Box sx={{ border: '1px solid', borderColor: 'divider', p: 2, borderRadius: 2 }}>
             <Typography variant="subtitle1" fontWeight={600} mb={2}>

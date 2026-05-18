@@ -28,6 +28,11 @@ import { Icon } from '@iconify/react';
 import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
 import axios from 'src/lib/axios';
+import {
+  buildRegistrationUnitNameMap,
+  fetchProvinces,
+  fetchRegistrationUnitsByProvince,
+} from 'src/lib/location-api';
 
 // ---------------------- SCHEMA ----------------------
 const SearchSchema = zod.object({
@@ -36,7 +41,7 @@ const SearchSchema = zod.object({
   phone: zod.string().optional(),
   ip: zod.string().optional(),
   province: zod.number().optional(),
-  city: zod.number().optional(),
+  registration_unit: zod.number().optional(),
   is_active: zod.string().optional(),
   from_date: zod.any().optional(),
   to_date: zod.any().optional(),
@@ -49,75 +54,14 @@ const BranchSearch = () => {
   const [rowCount, setRowCount] = useState(0);
   const [loading, setLoading] = useState(false);
 
-  const [cities, setCities] = useState([]);
+  const [provinces, setProvinces] = useState([]);
+  const [registrationUnits, setRegistrationUnits] = useState([]);
 
   const [paginationModel, setPaginationModel] = useState({
     page: 0,
     pageSize: 10,
   });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-
-  const provinces = [
-    { id: 1, name: 'تهران' },
-    { id: 2, name: 'اصفهان' },
-  ];
-  const allCities = [
-    { id: 10, name: 'تهران' },
-    { id: 11, name: 'اسلامشهر' },
-    { id: 20, name: 'اصفهان' },
-    { id: 21, name: 'کاشان' },
-  ];
-
-  const fetchCitiesByProvince = async (provinceId) => {
-    const data = {
-      1: [
-        { id: 10, name: 'تهران' },
-        { id: 11, name: 'اسلامشهر' },
-      ],
-      2: [
-        { id: 20, name: 'اصفهان' },
-        { id: 21, name: 'کاشان' },
-      ],
-    };
-    return data[provinceId] || [];
-  };
-
-  const searchBranches = async (filters, page, pageSize) => {
-    const params = {
-      limit: pageSize,
-      offset: page * pageSize,
-    };
-
-    if (filters.branch_number) params.branch_number = filters.branch_number;
-    if (filters.title) params.title = filters.title;
-    if (filters.phone) params.phone = filters.phone;
-    if (filters.ip) params.ip = filters.ip;
-    if (filters.province) params.province = filters.province;
-    if (filters.city) params.city = filters.city;
-    if (filters.is_active !== '') params.is_active = filters.is_active;
-
-    const res = await axios.get('/api/membership/branch', {
-      params,
-      headers: { mode: 'company' },
-    });
-
-    const payload = res?.data ?? {};
-    const data = Array.isArray(payload?.data) ? payload.data : [];
-    const mapped = data.map((item) => ({
-      id: item.ID,
-      title: item.title || '-',
-      province: provinces.find((p) => p.id === item.province)?.name || item.province || '-',
-      city: allCities.find((c) => c.id === item.city)?.name || item.city || '-',
-      ip: item.ip || '-',
-      phone: item.phone || '-',
-      is_active: Boolean(item.is_active),
-    }));
-
-    return {
-      data: mapped,
-      total: Number(payload?.total ?? payload?.count ?? mapped.length),
-    };
-  };
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
@@ -127,7 +71,7 @@ const BranchSearch = () => {
       phone: '',
       ip: '',
       province: undefined,
-      city: undefined,
+      registration_unit: undefined,
       is_active: '',
       from_date: null,
       to_date: null,
@@ -137,21 +81,35 @@ const BranchSearch = () => {
   const { handleSubmit, watch, setValue, getValues, reset } = methods;
 
   const selectedProvince = watch('province');
-  const selectedCity = watch('city');
   const isActiveValue = watch('is_active');
 
-  // province -> city
+  useEffect(() => {
+    (async () => {
+      try {
+        const list = await fetchProvinces();
+        setProvinces(list);
+      } catch {
+        setProvinces([]);
+      }
+    })();
+  }, []);
+
   useEffect(() => {
     const load = async () => {
       if (!selectedProvince) {
-        setCities([]);
-        setValue('city', undefined);
+        setRegistrationUnits([]);
+        setValue('registration_unit', undefined);
         return;
       }
 
-      const res = await fetchCitiesByProvince(selectedProvince);
-      setCities(res);
-      setValue('city', undefined);
+      try {
+        const list = await fetchRegistrationUnitsByProvince(selectedProvince);
+        setRegistrationUnits(list);
+        setValue('registration_unit', undefined);
+      } catch {
+        setRegistrationUnits([]);
+        setValue('registration_unit', undefined);
+      }
     };
 
     load();
@@ -161,9 +119,49 @@ const BranchSearch = () => {
     setLoading(true);
     try {
       const filters = getValues();
-      const res = await searchBranches(filters, paginationModel.page, paginationModel.pageSize);
-      setRows(res.data);
-      setRowCount(res.total);
+      const res = await axios.get('/api/membership/branch', {
+        params: {
+          limit: paginationModel.pageSize,
+          offset: paginationModel.page * paginationModel.pageSize,
+          ...(filters.branch_number ? { branch_number: filters.branch_number } : {}),
+          ...(filters.title ? { title: filters.title } : {}),
+          ...(filters.phone ? { phone: filters.phone } : {}),
+          ...(filters.ip ? { ip: filters.ip } : {}),
+          ...(filters.province ? { province_id: filters.province } : {}),
+          ...(filters.registration_unit
+            ? { registration_unit_id: filters.registration_unit }
+            : {}),
+          ...(filters.is_active !== '' ? { is_active: filters.is_active } : {}),
+        },
+        headers: { mode: 'company' },
+      });
+
+      const payload = res?.data ?? {};
+      const data = Array.isArray(payload?.data) ? payload.data : [];
+      const provinceIds = data.map((item) => Number(item.province ?? item.province_id ?? 0));
+      const unitNames = await buildRegistrationUnitNameMap(provinceIds);
+      const provinceNames = Object.fromEntries(provinces.map((p) => [p.id, p.name]));
+
+      const mapped = data.map((item) => {
+        const provinceId = Number(item.province ?? item.province_id ?? 0);
+        const unitId = Number(
+          item.registration_unit ?? item.registration_unit_id ?? item.city ?? 0
+        );
+
+        return {
+          id: item.ID,
+          title: item.title || '-',
+          province: provinceNames[provinceId] || (provinceId > 0 ? String(provinceId) : '-'),
+          registration_unit:
+            unitNames[unitId] || (unitId > 0 ? String(unitId) : '-'),
+          ip: item.ip || '-',
+          phone: item.phone || '-',
+          is_active: Boolean(item.is_active),
+        };
+      });
+
+      setRows(mapped);
+      setRowCount(Number(payload?.total ?? payload?.count ?? mapped.length));
     } catch (error) {
       console.error('Failed to fetch branches:', error);
       setRows([]);
@@ -171,7 +169,7 @@ const BranchSearch = () => {
     } finally {
       setLoading(false);
     }
-  }, [paginationModel, getValues]);
+  }, [paginationModel, getValues, provinces]);
 
   useEffect(() => {
     fetchData();
@@ -191,7 +189,7 @@ const BranchSearch = () => {
     { field: 'id', headerName: 'شناسه', flex: 0.7 },
     { field: 'title', headerName: 'عنوان', flex: 1 },
     { field: 'province', headerName: 'استان', flex: 1 },
-    { field: 'city', headerName: 'شهر', flex: 1 },
+    { field: 'registration_unit', headerName: 'واحد ثبتی', flex: 1.2 },
     { field: 'ip', headerName: 'IP', flex: 1 },
     { field: 'phone', headerName: 'تلفن', flex: 1 },
     {
@@ -200,69 +198,37 @@ const BranchSearch = () => {
       flex: 1,
       renderCell: (params) => (
         <Chip
-          label={params.value ? 'فعال' : 'غیرفعال'}
-          color={params.value ? 'success' : 'error'}
           size="small"
+          label={params.value ? 'فعال' : 'غیرفعال'}
+          color={params.value ? 'success' : 'default'}
         />
       ),
     },
     {
       field: 'actions',
       headerName: 'عملیات',
-      flex: 1.5,
+      flex: 0.8,
+      sortable: false,
       renderCell: (params) => (
-        <>
-          <Tooltip title="ویرایش">
-            <IconButton onClick={() => handleEdit(params.row)}>
-              <Icon icon="mdi:pencil-outline" width="20" />
-            </IconButton>
-          </Tooltip>
-
-          <Tooltip title="حذف (غیرفعال)">
-            <IconButton color="error" disabled>
-              <Icon icon="mdi:delete-outline" width="20" />
-            </IconButton>
-          </Tooltip>
-        </>
+        <Tooltip title="ویرایش">
+          <IconButton size="small" onClick={() => handleEdit(params.row)}>
+            <Icon icon="solar:pen-bold" />
+          </IconButton>
+        </Tooltip>
       ),
     },
   ];
 
   return (
     <>
-      <Card
-        sx={{
-          mb: 3,
-          borderRadius: 3,
-          border: '1px solid',
-          borderColor: 'divider',
-          boxShadow: (theme) => theme.shadows[3],
-          overflow: 'hidden',
-        }}
-      >
-        <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-          <Box
-            sx={{
-              mb: 2.5,
-              px: 2,
-              py: 1.5,
-              borderRadius: 2,
-              bgcolor: 'action.hover',
-              border: '1px solid',
-              borderColor: 'divider',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              cursor: 'pointer',
-            }}
-            onClick={() => setIsSearchOpen((prev) => !prev)}
-          >
-            <Icon
-              icon={isSearchOpen ? 'solar:alt-arrow-down-linear' : 'solar:alt-arrow-left-linear'}
-              width={18}
-            />
-            <Icon icon="solar:filter-linear" width={20} />
-            <Typography variant="h6">فیلتر جستجوی شعب</Typography>
+      <Card sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Typography variant="h5">جستجوی شعب</Typography>
+
+            <Button variant="outlined" onClick={() => setIsSearchOpen((v) => !v)}>
+              {isSearchOpen ? 'بستن فیلترها' : 'نمایش فیلترها'}
+            </Button>
           </Box>
 
           <Collapse in={isSearchOpen}>
@@ -309,51 +275,18 @@ const BranchSearch = () => {
 
                   <Box>
                     <Field.Select
-                      name="city"
-                      label="شهر"
+                      name="registration_unit"
+                      label="واحد ثبتی"
                       disabled={!selectedProvince}
-                      placeholder="انتخاب شهر"
+                      placeholder="انتخاب واحد ثبتی"
                     >
-                      {cities.map((c) => (
-                        <MenuItem key={c.id} value={c.id}>
-                          {c.name}
+                      {registrationUnits.map((u) => (
+                        <MenuItem key={u.id} value={u.id}>
+                          {u.name}
                         </MenuItem>
                       ))}
                     </Field.Select>
                   </Box>
-
-                  {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
-                  <Grid
-                    container
-                    spacing={2}
-                    sx={{
-                      p: { xs: 1, md: 2 },
-                      borderRadius: 2,
-                      border: '1px dashed',
-                      borderColor: 'divider',
-                    }}
-                  >
-                    <Grid item xs={12} md={3}>
-                      <DatePicker
-                        label="از تاریخ"
-                        value={watch('from_date')}
-                        onChange={(v) => setValue('from_date', v)}
-                        format="YYYY/MM/DD"
-                        slotProps={{ textField: { fullWidth: true } }}
-                      />
-                    </Grid>
-
-                    <Grid item xs={12} md={3}>
-                      <DatePicker
-                        label="تا تاریخ"
-                        value={watch('to_date')}
-                        onChange={(v) => setValue('to_date', v)}
-                        format="YYYY/MM/DD"
-                        slotProps={{ textField: { fullWidth: true } }}
-                      />
-                    </Grid>
-                  </Grid>
-                </LocalizationProvider> */}
 
                   <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                     <Typography sx={{ mb: 1 }}>وضعیت:</Typography>
@@ -398,7 +331,7 @@ const BranchSearch = () => {
                     variant="outlined"
                     onClick={() => {
                       reset();
-                      setCities([]);
+                      setRegistrationUnits([]);
                       if (paginationModel.page === 0) {
                         fetchData();
                         return;

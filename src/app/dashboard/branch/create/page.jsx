@@ -1,7 +1,7 @@
 'use client';
 
 import { z as zod } from 'zod';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useRouter } from 'next/navigation';
@@ -12,7 +12,6 @@ import {
   Card,
   CardContent,
   Typography,
-  MenuItem,
   Alert,
   Container,
   Divider,
@@ -27,6 +26,7 @@ import {
 import Autocomplete from '@mui/material/Autocomplete';
 
 import { Form, Field } from 'src/components/hook-form';
+import ProvinceRegistrationUnitFields from 'src/components/location/ProvinceRegistrationUnitFields';
 import axios from 'src/lib/axios';
 import { paths } from 'src/routes/paths';
 
@@ -36,7 +36,7 @@ import { paths } from 'src/routes/paths';
 export const BranchSchema = zod.object({
   title: zod.string().trim().min(1, 'عنوان شعبه الزامی است'),
   province: zod.string().trim().min(1, 'استان الزامی است'),
-  city: zod.string().trim().min(1, 'شهر الزامی است'),
+  registration_unit: zod.string().trim().min(1, 'واحد ثبتی الزامی است'),
   ip: zod
     .string()
     .trim()
@@ -65,34 +65,12 @@ const CreateBranch = () => {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [provinces, setProvinces] = useState([]);
-  const [cities, setCities] = useState([]);
-
-  const fetchProvinces = async () => [
-    { id: 1, name: 'تهران' },
-    { id: 2, name: 'اصفهان' },
-  ];
-
-  const fetchCitiesByProvince = async (provinceId) => {
-    const data = {
-      1: [
-        { id: 10, name: 'تهران' },
-        { id: 11, name: 'اسلامشهر' },
-      ],
-      2: [
-        { id: 20, name: 'اصفهان' },
-        { id: 21, name: 'کاشان' },
-      ],
-    };
-    return data[provinceId] || [];
-  };
-
   const methods = useForm({
     resolver: zodResolver(BranchSchema),
     defaultValues: {
       title: '',
       province: '',
-      city: '',
+      registration_unit: '',
       ip: '',
       description: '',
       address: '',
@@ -104,37 +82,16 @@ const CreateBranch = () => {
 
   const {
     handleSubmit,
-    watch,
-    setValue,
     control,
     formState: { isSubmitting },
   } = methods;
-
-  const selectedProvince = watch('province');
-
-  useEffect(() => {
-    (async () => {
-      const res = await fetchProvinces();
-      setProvinces(res);
-    })();
-  }, []);
-
-  useEffect(() => {
-    if (!selectedProvince) return;
-
-    (async () => {
-      const res = await fetchCitiesByProvince(selectedProvince);
-      setCities(res);
-      setValue('city', '');
-    })();
-  }, [selectedProvince, setValue]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
       const payload = {
         title: data.title,
         province: Number(data.province),
-        city: Number(data.city),
+        registration_unit: Number(data.registration_unit),
         ip: data.ip,
         phone: data.phone,
         address: data.address,
@@ -298,30 +255,7 @@ const CreateBranch = () => {
                     rowGap: 2,
                   }}
                 >
-                  <Box>
-                    <Field.Select name="province" label="استان" placeholder="انتخاب استان">
-                      {provinces.map((p) => (
-                        <MenuItem key={p.id} value={String(p.id)}>
-                          {p.name}
-                        </MenuItem>
-                      ))}
-                    </Field.Select>
-                  </Box>
-
-                  <Box>
-                    <Field.Select
-                      name="city"
-                      label="شهر"
-                      disabled={!selectedProvince}
-                      placeholder="انتخاب شهر"
-                    >
-                      {cities.map((c) => (
-                        <MenuItem key={c.id} value={String(c.id)}>
-                          {c.name}
-                        </MenuItem>
-                      ))}
-                    </Field.Select>
-                  </Box>
+                  <ProvinceRegistrationUnitFields />
                 </Box>
               </Box>
 

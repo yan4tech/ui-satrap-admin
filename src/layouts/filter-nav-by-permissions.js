@@ -1,21 +1,22 @@
+import { userHasAllPermissions, userHasAnyPermission } from 'src/lib/permissions';
+
 /**
- * Filters dashboard nav items by authenticated user_type.
+ * Filters dashboard nav by permission slugs on each item.
  * @param {typeof import('./nav-config-dashboard').navData} navData
- * @param {string} userType
+ * @param {object|null|undefined} user
  */
-export function filterNavByUserType(navData, userType) {
-  const type = String(userType ?? '').trim();
-  if (!type || !Array.isArray(navData)) {
+export function filterNavByPermissions(navData, user) {
+  if (!Array.isArray(navData)) {
     return navData;
   }
 
   const filterItems = (items) =>
     (items || [])
       .map((item) => {
-        if (item.allowedUserTypes?.length && !item.allowedUserTypes.includes(type)) {
+        if (item.requiredPermissions?.length && !userHasAllPermissions(user, item.requiredPermissions)) {
           return null;
         }
-        if (item.deniedUserTypes?.length && item.deniedUserTypes.includes(type)) {
+        if (item.anyPermissions?.length && !userHasAnyPermission(user, item.anyPermissions)) {
           return null;
         }
         if (item.children?.length) {

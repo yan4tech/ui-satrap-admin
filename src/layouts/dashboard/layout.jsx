@@ -30,7 +30,7 @@ import { ContactsPopover } from '../components/contacts-popover';
 import { WorkspacesPopover } from '../components/workspaces-popover';
 import { navData as dashboardNavData } from '../nav-config-dashboard';
 import { filterNavByEntitledServices } from '../filter-nav-by-entitled-services';
-import { filterNavByUserType } from '../filter-nav-by-user-type';
+import { filterNavByPermissions } from '../filter-nav-by-permissions';
 import { useEntitledServices } from 'src/hooks/use-entitled-services';
 import { dashboardLayoutVars, dashboardNavColorVars } from './css-vars';
 import { NotificationsDrawer } from '../components/notifications-drawer';
@@ -52,14 +52,14 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 
   const baseNavData = slotProps?.nav?.data ?? dashboardNavData;
-  const navAfterUserType = filterNavByUserType(baseNavData, user?.user_type);
+  const navAfterPermissions = filterNavByPermissions(baseNavData, user);
   const navData =
     !servicesLoading && isBranchEntitlementActive
-      ? filterNavByEntitledServices(navAfterUserType, {
+      ? filterNavByEntitledServices(navAfterPermissions, {
           active: true,
           processKeys,
         })
-      : navAfterUserType;
+      : navAfterPermissions;
 
   const isNavMini = settings.state.navLayout === 'mini';
   const isNavHorizontal = settings.state.navLayout === 'horizontal';

@@ -1,9 +1,11 @@
 import { paths } from 'src/routes/paths';
 
+import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
+
 const DASHBOARD_ROOT = paths.dashboard.root;
 
-/** مسیرهای مجاز برای مدیر شرکت (فقط اسکوپ شرکت خودش) */
-const COMPANY_ADMIN_ALLOWED_PREFIXES = [
+/** مسیرهای مجاز برای مدیر شرکت (اسکوپ مستأجر) */
+const COMPANY_TENANT_ALLOWED_PREFIXES = [
   DASHBOARD_ROOT,
   paths.dashboard.company.manage,
   `${DASHBOARD_ROOT}/branch`,
@@ -11,15 +13,18 @@ const COMPANY_ADMIN_ALLOWED_PREFIXES = [
 
 /**
  * @param {string} pathname
- * @param {string} userType
+ * @param {object|null|undefined} user
  * @returns {string|null} مسیر جایگزین در صورت عدم دسترسی
  */
-export function getDashboardAccessRedirect(pathname, userType) {
-  const type = String(userType ?? '').trim();
+export function getDashboardAccessRedirect(pathname, user) {
   const path = String(pathname ?? '');
 
-  if (type === 'company_admin') {
-    const allowed = COMPANY_ADMIN_ALLOWED_PREFIXES.some(
+  const isTenantOnly =
+    userHasPermission(user, PERM.ui.companyTenantManage) &&
+    !userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]);
+
+  if (isTenantOnly) {
+    const allowed = COMPANY_TENANT_ALLOWED_PREFIXES.some(
       (prefix) => path === prefix || path.startsWith(`${prefix}/`)
     );
     if (!allowed) {
@@ -28,7 +33,11 @@ export function getDashboardAccessRedirect(pathname, userType) {
     return null;
   }
 
-  if (type === 'company') {
+  const isCentralOnly =
+    userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]) &&
+    !userHasPermission(user, PERM.ui.companyTenantManage);
+
+  if (isCentralOnly) {
     if (path.startsWith(paths.dashboard.company.manage)) {
       return DASHBOARD_ROOT;
     }
@@ -38,10 +47,10 @@ export function getDashboardAccessRedirect(pathname, userType) {
   return null;
 }
 
-export function isCentralOrgUser(userType) {
-  return String(userType ?? '').trim() === 'company';
+export function isCentralOrgUser(user) {
+  return userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]);
 }
 
-export function isCompanyAdminUser(userType) {
-  return String(userType ?? '').trim() === 'company_admin';
+export function isCompanyAdminUser(user) {
+  return userHasPermission(user, PERM.ui.companyTenantManage);
 }

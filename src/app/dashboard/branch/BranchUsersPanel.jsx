@@ -26,6 +26,7 @@ import {
 
 import { fetchRolesOptions } from 'src/app/dashboard/user/user-api';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
+import { userHasAnyPermission } from 'src/lib/permissions';
 
 import { useAuthContext } from 'src/auth/hooks';
 
@@ -55,14 +56,15 @@ export default function BranchUsersPanel({
   const [form, setForm] = useState({ name: '', family: '', mobile: '', role_id: '' });
   const [saving, setSaving] = useState(false);
 
-  const actorType = String(actor?.user_type ?? '').trim();
-  const canManage =
-    actorType === 'company' ||
-    actorType === 'company_admin' ||
-    (actorType === 'branch' &&
-      Number(actor?.branch_id) === Number(branchId) &&
-      String(actor?.role?.slug ?? '') === BRANCH_ADMIN_ROLE_SLUG);
-  const canAssignAdmin = actorType === 'company' || actorType === 'company_admin';
+  const canManage = userHasAnyPermission(actor, [
+    'api.company.central.manage',
+    'api.company.tenant.manage',
+    'api.branch.users.manage',
+  ]);
+  const canAssignAdmin = userHasAnyPermission(actor, [
+    'api.company.central.manage',
+    'api.company.tenant.manage',
+  ]);
 
   const activeCount = countActiveBranchUsers(rows);
   const quotaLabel =

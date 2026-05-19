@@ -8,6 +8,8 @@ import { Box, Typography, CircularProgress } from '@mui/material';
 import { paths } from 'src/routes/paths';
 import { fetchMyCompany } from 'src/lib/company-api';
 
+import { PERM, userHasPermission } from 'src/lib/permissions';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import EditCompanyView from '../edit-company-view';
@@ -18,18 +20,18 @@ export default function CompanyManagePage() {
   const [company, setCompany] = useState(null);
   const [status, setStatus] = useState('loading');
 
-  const userType = String(user?.user_type ?? '').trim();
+  const canManageTenant = userHasPermission(user, PERM.ui.companyTenantManage);
 
   useEffect(() => {
-    if (userType && userType !== 'company_admin') {
+    if (user && !canManageTenant) {
       router.replace(paths.dashboard.root);
     }
-  }, [userType, router]);
+  }, [canManageTenant, router, user]);
 
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      if (userType !== 'company_admin') {
+      if (!canManageTenant) {
         return;
       }
       const data = await fetchMyCompany();
@@ -44,9 +46,9 @@ export default function CompanyManagePage() {
     return () => {
       cancelled = true;
     };
-  }, [userType]);
+  }, [canManageTenant]);
 
-  if (userType && userType !== 'company_admin') {
+  if (user && !canManageTenant) {
     return null;
   }
 

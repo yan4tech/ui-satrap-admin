@@ -53,6 +53,8 @@ import { Form, Field } from 'src/components/hook-form';
 import BranchWorkflowSection from 'src/components/branch/BranchWorkflowSection';
 import ProvinceRegistrationUnitFields from 'src/components/location/ProvinceRegistrationUnitFields';
 
+import { PERM, userHasPermission, userHasAnyPermission } from 'src/lib/permissions';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import BranchUsersPanel from './BranchUsersPanel';
@@ -143,9 +145,8 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
     },
   });
 
-  const userType = String(user?.user_type ?? '').trim();
-  const isCompanyAdmin = userType === 'company_admin';
-  const isCoreAdmin = userType === 'company';
+  const isCompanyAdmin = userHasPermission(user, PERM.ui.companyTenantManage);
+  const isCoreAdmin = userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]);
   const branchId = Number(branchData?.ID ?? branchData?.id ?? 0);
   const adminCompanyId = Number(
     user?.company_id ?? companyId ?? branchData?.company_id ?? branchData?.CompanyID ?? 0

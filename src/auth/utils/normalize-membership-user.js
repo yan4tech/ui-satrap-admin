@@ -2,7 +2,11 @@
  * شکل دادهٔ `GET /api/membership/user/me` را با فیلدهای مورد انتظار UI هم‌راستا می‌کند.
  * نام نمایشی از `name` + `family`؛ در نبود هر دو از موبایل یا ایمیل.
  */
-export function normalizeMembershipUser(raw) {
+/**
+ * @param {object} raw
+ * @param {{ permissions?: string[] }} [meta]
+ */
+export function normalizeMembershipUser(raw, meta) {
   if (!raw || typeof raw !== 'object') return null;
 
   const name = String(raw.name ?? '').trim();
@@ -29,6 +33,12 @@ export function normalizeMembershipUser(raw) {
         ? `role_${raw.role_id}`
         : 'admin';
 
+  const permissions = Array.isArray(meta?.permissions)
+    ? meta.permissions.map((p) => String(p).trim()).filter(Boolean)
+    : Array.isArray(raw.permissions)
+      ? raw.permissions.map((p) => String(p).trim()).filter(Boolean)
+      : [];
+
   return {
     ...raw,
     displayName,
@@ -36,5 +46,6 @@ export function normalizeMembershipUser(raw) {
     mobile,
     photoURL: photoURL || null,
     role,
+    permissions,
   };
 }

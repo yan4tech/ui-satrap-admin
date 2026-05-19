@@ -7,6 +7,7 @@ import axios, { endpoints } from 'src/lib/axios';
 import { clearMembershipUserHeader, setMembershipUserJsonFromObject } from 'src/lib/api-user-header';
 import { normalizeMembershipUser } from 'src/auth/utils';
 import { setApiMode } from 'src/lib/api-mode';
+import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
 
 import { JWT_STORAGE_KEY } from './constant';
 import { AuthContext } from '../auth-context';
@@ -32,8 +33,10 @@ export function AuthProvider({ children }) {
 
         const res = await axios.get(endpoints.auth.me);
 
-        const rawUser = res?.data?.data?.user ?? res?.data?.user;
-        const normalized = normalizeMembershipUser(rawUser);
+        const payload = res?.data?.data ?? res?.data ?? {};
+        const rawUser = payload.user ?? res?.data?.user;
+        const permissionSlugs = payload.permissions ?? rawUser?.permissions ?? [];
+        const normalized = normalizeMembershipUser(rawUser, { permissions: permissionSlugs });
 
         if (!normalized) {
           clearMembershipUserHeader();
@@ -41,10 +44,10 @@ export function AuthProvider({ children }) {
           return;
         }
 
-        setMembershipUserJsonFromObject(rawUser);
-        if (normalized.user_type === 'company') {
+        setMembershipUserJsonFromObject({ ...rawUser, permissions: normalized.permissions });
+        if (userHasAnyPermission(normalized, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate])) {
           setApiMode('central');
-        } else if (normalized.user_type === 'company_admin') {
+        } else if (userHasPermission(normalized, PERM.ui.companyTenantManage)) {
           setApiMode('company');
         }
         setState({ user: { ...normalized, accessToken }, loading: false });

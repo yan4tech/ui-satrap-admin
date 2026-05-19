@@ -6,7 +6,7 @@ import { CONFIG } from 'src/global-config';
 
 import { JWT_STORAGE_KEY } from 'src/auth/context/jwt/constant';
 
-import { getApiRequestMode } from './api-mode';
+import { getApiMode, getApiRequestMode } from './api-mode';
 import { clearMembershipUserHeader } from './api-user-header';
 import { clearBranchIdForApi, getBranchRequestHeaderValue } from './api-branch-header';
 import { isSessionExpiredResponse, extractMembershipErrorMessage } from './membership-errors';
@@ -34,7 +34,11 @@ function applyHeader(config, key, value) {
 }
 
 axiosInstance.interceptors.request.use((config) => {
-  const mode = getApiRequestMode();
+  const url = String(config.url ?? '');
+  // Auth must send the real login mode (central stays central). Post-login APIs use getApiRequestMode().
+  const isAuthLogin =
+    url.includes('/api/membership/auth/submitMobile') || url.includes('/api/membership/auth/submitCode');
+  const mode = isAuthLogin ? getApiMode() : getApiRequestMode();
   if (mode) {
     applyHeader(config, 'mode', mode);
   }

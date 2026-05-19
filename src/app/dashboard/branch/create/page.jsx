@@ -28,6 +28,8 @@ import axios from 'src/lib/axios';
 import { fetchCompaniesOptions, fetchMyCompany } from 'src/lib/company-api';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
 
+import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 import { Form, Field } from 'src/components/hook-form';
@@ -76,9 +78,8 @@ const CreateBranch = () => {
   const [companies, setCompanies] = useState([]);
   const [myCompanyId, setMyCompanyId] = useState(null);
 
-  const userType = String(user?.user_type ?? '').trim();
-  const isCompanyAdmin = userType === 'company_admin';
-  const isCoreAdmin = userType === 'company';
+  const isCompanyAdmin = userHasPermission(user, PERM.ui.companyTenantManage);
+  const isCoreAdmin = userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]);
 
   const methods = useForm({
     resolver: zodResolver(BranchSchema),

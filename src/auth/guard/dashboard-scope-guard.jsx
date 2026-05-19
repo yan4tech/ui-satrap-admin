@@ -23,14 +23,14 @@ export function DashboardScopeGuard({ children }) {
       return;
     }
 
-    const redirect = getDashboardAccessRedirect(pathname, user?.user_type);
+    const redirect = getDashboardAccessRedirect(pathname, user);
     if (redirect && redirect !== pathname) {
       router.replace(redirect);
       return;
     }
 
     setReady(true);
-  }, [loading, pathname, router, user?.user_type]);
+  }, [loading, pathname, router, user]);
 
   if (loading || !ready) {
     return <SplashScreen />;

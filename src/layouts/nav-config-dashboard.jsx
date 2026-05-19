@@ -86,6 +86,7 @@ export const navData = [
         title: 'مدیریت کاربران',
         path: paths.dashboard.user.search,
         icon: ICONS.userMgmt,
+        deniedUserTypes: ['company_admin', 'company_reviewer'],
         children: [
           {
             title: 'کاربر',
@@ -117,9 +118,36 @@ export const navData = [
         ],
       },
       {
+        title: 'مدیریت شرکت',
+        path: paths.dashboard.company.manage,
+        icon: ICONS.banking,
+        allowedUserTypes: ['company_admin'],
+      },
+      {
+        title: 'شعب شرکت',
+        path: paths.dashboard.branch.search,
+        icon: ICONS.branch,
+        allowedUserTypes: ['company_admin'],
+        children: [
+          { title: 'شعبه جدید', path: paths.dashboard.branch.create, icon: ICONS.create },
+          { title: 'لیست شعبات', path: paths.dashboard.branch.search, icon: ICONS.list },
+        ],
+      },
+      {
+        title: 'مدیریت شرکت‌ها',
+        path: paths.dashboard.company.create,
+        icon: ICONS.banking,
+        allowedUserTypes: ['company'],
+        children: [
+          { title: 'شرکت جدید', path: paths.dashboard.company.create, icon: ICONS.create },
+          { title: 'لیست شرکت‌ها', path: paths.dashboard.company.search, icon: ICONS.list },
+        ],
+      },
+      {
         title: 'مدیریت شعبات',
         path: paths.dashboard.branch.create,
         icon: ICONS.branch,
+        allowedUserTypes: ['company'],
         children: [
           { title: 'شعبه جدید', path: paths.dashboard.branch.create, icon: ICONS.create },
           { title: 'لیست شعبات', path: paths.dashboard.branch.search, icon: ICONS.list },
@@ -129,6 +157,7 @@ export const navData = [
         title: 'خدمات',
         path: paths.dashboard.services.list,
         icon: ICONS.services,
+        deniedUserTypes: ['company_admin', 'company_reviewer'],
         children: [
           { title: 'لیست', path: paths.dashboard.services.list, icon: ICONS.list },
           {

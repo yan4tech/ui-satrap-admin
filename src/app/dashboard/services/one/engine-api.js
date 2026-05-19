@@ -1,4 +1,4 @@
-import { getApiMode } from 'src/lib/api-mode';
+import { getApiMode, getApiRequestMode } from 'src/lib/api-mode';
 import { getBranchRequestHeaderValue } from 'src/lib/api-branch-header';
 import { getMembershipUserHeaderString } from 'src/lib/api-user-header';
 import { getSessionBearerAuthorization } from 'src/lib/session-bearer-header';
@@ -101,7 +101,7 @@ function normalizeFetchProcessesResult(envelope) {
 function engineAuthHeaders() {
   const h = {
     user: getMembershipUserHeaderString(),
-    mode: getApiMode(),
+    mode: getApiRequestMode(),
   };
   const auth = getSessionBearerAuthorization();
   if (auth) {
@@ -257,11 +257,12 @@ export function canCurrentClientCompleteTask(task) {
   }
 
   const mode = getApiMode();
+  const requestMode = getApiRequestMode();
   const ad = task.attached_data && typeof task.attached_data === 'object' ? task.attached_data : {};
   const engine = ad.engine && typeof ad.engine === 'object' ? ad.engine : {};
   const hint = ad.ui_actionable_by ?? ad.actionable_by ?? engine.actionable_by ?? engine.ui_actionable_by;
   if (hint === 'branch' || hint === 'company' || hint === 'mobile') {
-    return hint === mode;
+    return hint === requestMode || (hint === 'company' && mode === 'central');
   }
 
   const typeNorm = String(task.type ?? '')
@@ -271,10 +272,10 @@ export function canCurrentClientCompleteTask(task) {
   const isReviewStep = isReviewElementId(task.element_id) || isReviewType;
 
   if (isReviewStep) {
-    return mode === 'company';
+    return requestMode === 'company';
   }
 
-  if (mode === 'company') {
+  if (requestMode === 'company') {
     return false;
   }
   return mode === 'branch' || mode === 'mobile';

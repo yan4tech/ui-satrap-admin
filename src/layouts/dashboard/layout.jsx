@@ -29,6 +29,9 @@ import { LanguagePopover } from '../components/language-popover';
 import { ContactsPopover } from '../components/contacts-popover';
 import { WorkspacesPopover } from '../components/workspaces-popover';
 import { navData as dashboardNavData } from '../nav-config-dashboard';
+import { filterNavByEntitledServices } from '../filter-nav-by-entitled-services';
+import { filterNavByUserType } from '../filter-nav-by-user-type';
+import { useEntitledServices } from 'src/hooks/use-entitled-services';
 import { dashboardLayoutVars, dashboardNavColorVars } from './css-vars';
 import { NotificationsDrawer } from '../components/notifications-drawer';
 import { MainSection, layoutClasses, HeaderSection, LayoutSection } from '../core';
@@ -39,6 +42,8 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
   const theme = useTheme();
 
   const { user } = useAuthContext();
+  const { isBranchEntitlementActive, processKeys, loading: servicesLoading } =
+    useEntitledServices();
 
   const settings = useSettingsContext();
 
@@ -46,7 +51,15 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 
-  const navData = slotProps?.nav?.data ?? dashboardNavData;
+  const baseNavData = slotProps?.nav?.data ?? dashboardNavData;
+  const navAfterUserType = filterNavByUserType(baseNavData, user?.user_type);
+  const navData =
+    !servicesLoading && isBranchEntitlementActive
+      ? filterNavByEntitledServices(navAfterUserType, {
+          active: true,
+          processKeys,
+        })
+      : navAfterUserType;
 
   const isNavMini = settings.state.navLayout === 'mini';
   const isNavHorizontal = settings.state.navLayout === 'horizontal';

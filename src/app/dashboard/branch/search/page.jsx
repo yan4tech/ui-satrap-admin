@@ -157,6 +157,10 @@ const BranchSearch = () => {
           ip: item.ip || '-',
           phone: item.phone || '-',
           is_active: Boolean(item.is_active),
+          max_users: item.max_users ?? 0,
+          active_users: Array.isArray(item.users)
+            ? item.users.filter((u) => u?.active).length
+            : '—',
         };
       });
 
@@ -192,6 +196,8 @@ const BranchSearch = () => {
     { field: 'registration_unit', headerName: 'واحد ثبتی', flex: 1.2 },
     { field: 'ip', headerName: 'IP', flex: 1 },
     { field: 'phone', headerName: 'تلفن', flex: 1 },
+    { field: 'max_users', headerName: 'سقف کاربر', flex: 0.8 },
+    { field: 'active_users', headerName: 'کاربر فعال', flex: 0.8 },
     {
       field: 'is_active',
       headerName: 'وضعیت',

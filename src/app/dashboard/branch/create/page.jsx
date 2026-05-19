@@ -1,34 +1,40 @@
 'use client';
 
 import { z as zod } from 'zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useRouter } from 'next/navigation';
 
 import {
   Box,
-  Button,
   Card,
-  CardContent,
-  Typography,
   Alert,
-  Container,
-  Divider,
   Stack,
-  TextField,
+  Radio,
+  Button,
+  Divider,
+  Container,
+  Typography,
+  RadioGroup,
+  CardContent,
   FormControl,
   FormControlLabel,
-  Radio,
-  RadioGroup,
 } from '@mui/material';
 
-import Autocomplete from '@mui/material/Autocomplete';
+import { paths } from 'src/routes/paths';
+
+import axios from 'src/lib/axios';
+import { fetchCompaniesOptions, fetchMyCompany } from 'src/lib/company-api';
+import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
+
+import { useAuthContext } from 'src/auth/hooks';
 
 import { Form, Field } from 'src/components/hook-form';
+import BranchWorkflowSection from 'src/components/branch/BranchWorkflowSection';
 import ProvinceRegistrationUnitFields from 'src/components/location/ProvinceRegistrationUnitFields';
-import axios from 'src/lib/axios';
-import { paths } from 'src/routes/paths';
+import { affiliationReviewToPayload, BRANCH_AFFILIATION, REVIEW_POLICY } from 'src/lib/branch-workflow';
+import { branchWorkflowZodFields, branchWorkflowSuperRefine } from 'src/lib/branch-workflow-schema';
 
 // --------------------------------------
 // ZOD
@@ -55,16 +61,25 @@ export const BranchSchema = zod.object({
       required_error: 'تعداد کاربران مجاز الزامی است',
     })
     .int('تعداد کاربران باید عدد صحیح باشد')
-    .min(1, 'تعداد کاربران باید حداقل 1 باشد'),
+    .min(0, 'حداقل ۰ (بدون سقف)'),
+  ...branchWorkflowZodFields,
   is_active: zod.boolean(),
-});
+}).superRefine(branchWorkflowSuperRefine);
 
 // --------------------------------------
 
 const CreateBranch = () => {
   const router = useRouter();
+  const { user } = useAuthContext();
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const [companies, setCompanies] = useState([]);
+  const [myCompanyId, setMyCompanyId] = useState(null);
+
+  const userType = String(user?.user_type ?? '').trim();
+  const isCompanyAdmin = userType === 'company_admin';
+  const isCoreAdmin = userType === 'company';
+
   const methods = useForm({
     resolver: zodResolver(BranchSchema),
     defaultValues: {
@@ -77,8 +92,43 @@ const CreateBranch = () => {
       phone: '',
       is_active: false,
       max_users: '',
+      branch_affiliation: isCompanyAdmin ? BRANCH_AFFILIATION.CORPORATE : BRANCH_AFFILIATION.INDEPENDENT,
+      review_policy: REVIEW_POLICY.REQUIRED,
+      company_id: '',
     },
   });
+
+  useEffect(() => {
+    if (!isCoreAdmin) {
+      return;
+    }
+    (async () => {
+      try {
+        setCompanies(await fetchCompaniesOptions());
+      } catch {
+        setCompanies([]);
+      }
+    })();
+  }, [isCoreAdmin]);
+
+  useEffect(() => {
+    if (!isCompanyAdmin) {
+      return;
+    }
+    (async () => {
+      try {
+        const company = await fetchMyCompany();
+        const cid = Number(company?.ID ?? company?.id ?? user?.company_id ?? 0);
+        if (cid > 0) {
+          setMyCompanyId(cid);
+          methods.setValue('branch_affiliation', BRANCH_AFFILIATION.CORPORATE);
+          methods.setValue('company_id', String(cid));
+        }
+      } catch {
+        setMyCompanyId(null);
+      }
+    })();
+  }, [isCompanyAdmin, methods, user?.company_id]);
 
   const {
     handleSubmit,
@@ -98,6 +148,9 @@ const CreateBranch = () => {
         description: data.description || '',
         is_active: data.is_active,
         max_users: Number(data.max_users),
+        ...affiliationReviewToPayload(data.branch_affiliation, data.review_policy, {
+          companyId: data.company_id,
+        }),
       };
       const res = await axios.post('/api/membership/branch', payload, {
         headers: { mode: 'company' },
@@ -111,9 +164,9 @@ const CreateBranch = () => {
           router.push(paths.dashboard.branch.edit(createdId));
         }, 900);
       }
-    } catch {
+    } catch (err) {
       setSuccessMessage(null);
-      setErrorMessage('خطا در ثبت اطلاعات');
+      setErrorMessage(extractMembershipErrorMessage(err, 'خطا در ثبت اطلاعات'));
     }
   });
 
@@ -175,7 +228,12 @@ const CreateBranch = () => {
                   </Box>
 
                   <Box>
-                    <Field.Text name="max_users" label="تعداد کاربران مجاز شعبه" type="number" />
+                    <Field.Text
+                      name="max_users"
+                      label="تعداد کاربران مجاز شعبه"
+                      type="number"
+                      helperText="۰ = بدون سقف"
+                    />
                   </Box>
                   <Box>
                     <Field.Text name="phone" label="شماره تلفن" />
@@ -234,6 +292,14 @@ const CreateBranch = () => {
                   </Box>
                 </Box>
               </Box>
+
+              <BranchWorkflowSection
+                companies={companies}
+                canEditAffiliation={isCoreAdmin}
+                lockAffiliation={isCompanyAdmin ? BRANCH_AFFILIATION.CORPORATE : null}
+                lockCompanyId={isCompanyAdmin && myCompanyId ? myCompanyId : null}
+                hideCompanySelect={isCompanyAdmin}
+              />
 
               <Divider />
 

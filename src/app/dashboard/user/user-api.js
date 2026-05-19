@@ -6,7 +6,9 @@ const LIST_PAGE_SIZE = 100;
 export const USER_TYPE_OPTIONS = [
   { value: 'mobile', label: 'موبایل' },
   { value: 'branch', label: 'شعبه' },
-  { value: 'company', label: 'شرکت' },
+  { value: 'company', label: 'سازمان مرکزی' },
+  { value: 'company_admin', label: 'مدیر شرکت' },
+  { value: 'company_reviewer', label: 'ریویور شرکت' },
 ];
 
 /** MUI Select cannot use '' as a stable value; use this for «همه» and never send it to the API. */
@@ -40,9 +42,12 @@ export async function fetchRolesOptions() {
     .map((item) => ({
       id: normalizeId(item),
       title: item?.title ?? '-',
+      slug: item?.slug ?? '',
     }))
     .filter((item) => item.id > 0);
 }
+
+export const ROLE_SLUG_BRANCH_ADMIN = 'branch-admin';
 
 export async function fetchRoleById(roleId) {
   const id = Number(roleId);

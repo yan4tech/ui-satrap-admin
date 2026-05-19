@@ -33,6 +33,7 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { useEntitledServices } from 'src/hooks/use-entitled-services';
 
 import { Form, Field } from 'src/components/hook-form';
 
@@ -175,6 +176,7 @@ function taskStatusColor(status) {
 
 export default function ServicesListPage() {
   const router = useRouter();
+  const { isBranchEntitlementActive, processKeys } = useEntitledServices();
   const [allRows, setAllRows] = useState([]);
   const [submittedFilters, setSubmittedFilters] = useState(defaultFilters);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -212,7 +214,25 @@ export default function ServicesListPage() {
     void loadProcesses();
   }, [loadProcesses]);
 
+  const definitionOptions = useMemo(() => {
+    if (!isBranchEntitlementActive || processKeys.length === 0) {
+      return DEFINITION_OPTIONS;
+    }
+    return [
+      { value: '', label: 'همه' },
+      ...DEFINITION_OPTIONS.filter((o) => o.value && processKeys.includes(o.value)),
+    ];
+  }, [isBranchEntitlementActive, processKeys]);
+
   const filteredRows = useMemo(() => allRows.filter((row) => {
+      if (
+        isBranchEntitlementActive &&
+        processKeys.length > 0 &&
+        row.definitionKey &&
+        !processKeys.includes(row.definitionKey)
+      ) {
+        return false;
+      }
       if (submittedFilters.processId) {
         const q = submittedFilters.processId.trim();
         if (!String(row.processInstanceId).includes(q)) return false;
@@ -236,7 +256,7 @@ export default function ServicesListPage() {
         if (!String(row.currentElementId).toLowerCase().includes(q)) return false;
       }
       return true;
-    }), [allRows, submittedFilters]);
+    }), [allRows, submittedFilters, isBranchEntitlementActive, processKeys]);
 
   const handleSearch = handleSubmit(() => {
     setSubmittedFilters(getValues());
@@ -476,7 +496,7 @@ export default function ServicesListPage() {
                 </Grid>
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Field.Select name="definitionKey" label="نوع خدمت">
-                    {DEFINITION_OPTIONS.map((item) => (
+                    {definitionOptions.map((item) => (
                       <MenuItem key={item.value || 'all'} value={item.value}>
                         {item.label}
                       </MenuItem>

@@ -6,6 +6,7 @@ import { useMemo, useEffect, useCallback } from 'react';
 import axios, { endpoints } from 'src/lib/axios';
 import { clearMembershipUserHeader, setMembershipUserJsonFromObject } from 'src/lib/api-user-header';
 import { normalizeMembershipUser } from 'src/auth/utils';
+import { setApiMode } from 'src/lib/api-mode';
 
 import { JWT_STORAGE_KEY } from './constant';
 import { AuthContext } from '../auth-context';
@@ -41,6 +42,11 @@ export function AuthProvider({ children }) {
         }
 
         setMembershipUserJsonFromObject(rawUser);
+        if (normalized.user_type === 'company') {
+          setApiMode('central');
+        } else if (normalized.user_type === 'company_admin') {
+          setApiMode('company');
+        }
         setState({ user: { ...normalized, accessToken }, loading: false });
       } else {
         clearMembershipUserHeader();

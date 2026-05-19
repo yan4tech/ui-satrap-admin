@@ -35,11 +35,7 @@ import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
 import axios from 'src/lib/axios';
 
-import {
-  PERMISSION_TYPES,
-  API_METHODS,
-  deletePermission,
-} from 'src/app/dashboard/_lib/access-control-mock';
+import { PERMISSION_TYPES, API_METHODS } from 'src/app/dashboard/_lib/access-control-mock';
 
 const SearchSchema = zod.object({
   title: zod.string().optional(),
@@ -56,6 +52,7 @@ export default function PermissionSearchPage() {
   const [loading, setLoading] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
+  const [errorMessage, setErrorMessage] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const methods = useForm({
@@ -137,11 +134,22 @@ export default function PermissionSearchPage() {
   const closeDeleteDialog = () => setDeleteDialog({ open: false, row: null });
 
   const confirmDelete = () => {
-    if (deleteDialog.row) {
-      deletePermission(deleteDialog.row.id);
-      closeDeleteDialog();
-      fetchData();
-    }
+    if (!deleteDialog.row) return;
+    axios
+      .delete(`/api/membership/ac/permission/${deleteDialog.row.id}`, {
+        headers: { mode: 'company' },
+      })
+      .then(() => {
+        setErrorMessage(null);
+        closeDeleteDialog();
+        fetchData();
+      })
+      .catch((error) => {
+        closeDeleteDialog();
+        setErrorMessage(
+          error?.response?.data?.message || error?.response?.data?.error || 'خطا در حذف دسترسی'
+        );
+      });
   };
 
   const columns = [
@@ -371,6 +379,11 @@ export default function PermissionSearchPage() {
 
       <Card>
         <CardContent>
+          {!!errorMessage && (
+            <DialogContentText color="error" sx={{ mb: 2 }}>
+              {errorMessage}
+            </DialogContentText>
+          )}
           <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={1} sx={{ mb: 2 }}>
             <Typography variant="h5">لیست دسترسی‌ها</Typography>
             <Chip size="small" variant="outlined" color="primary" label={`${rowCount} رکورد`} />

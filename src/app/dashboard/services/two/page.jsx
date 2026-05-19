@@ -1,5 +1,7 @@
 'use client';
 
+import { ServiceEntitlementGuard } from 'src/components/service-entitlement-guard';
+
 import { ServiceWorkflowPage } from '../one/page';
 
 import { startService } from './start-service-api';
@@ -15,6 +17,7 @@ const SERVICE2_DEFINITION_KEY = 'service2';
 
 export default function WorkflowWizard() {
   return (
+    <ServiceEntitlementGuard processKey={SERVICE2_DEFINITION_KEY}>
     <ServiceWorkflowPage
       serviceDefinitionKey={SERVICE2_DEFINITION_KEY}
       serviceTitle="خدمت شماره دو"
@@ -25,5 +28,6 @@ export default function WorkflowWizard() {
       getBpmnElementIdForStepperIndex={getService2BpmnElementIdForStepperIndex}
       getWorkflowRank={getService2WorkflowRank}
     />
+    </ServiceEntitlementGuard>
   );
 }

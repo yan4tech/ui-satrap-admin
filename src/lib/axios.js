@@ -1,9 +1,15 @@
 import axios from 'axios';
 
+import { paths } from 'src/routes/paths';
+
 import { CONFIG } from 'src/global-config';
 
-import { getApiMode } from './api-mode';
-import { getBranchRequestHeaderValue } from './api-branch-header';
+import { JWT_STORAGE_KEY } from 'src/auth/context/jwt/constant';
+
+import { getApiRequestMode } from './api-mode';
+import { clearMembershipUserHeader } from './api-user-header';
+import { clearBranchIdForApi, getBranchRequestHeaderValue } from './api-branch-header';
+import { isSessionExpiredResponse, extractMembershipErrorMessage } from './membership-errors';
 
 // ----------------------------------------------------------------------
 
@@ -28,7 +34,7 @@ function applyHeader(config, key, value) {
 }
 
 axiosInstance.interceptors.request.use((config) => {
-  const mode = getApiMode();
+  const mode = getApiRequestMode();
   if (mode) {
     applyHeader(config, 'mode', mode);
   }
@@ -39,12 +45,36 @@ axiosInstance.interceptors.request.use((config) => {
   return config;
 });
 
+function handleSessionExpired() {
+  if (typeof window === 'undefined') return;
+  try {
+    sessionStorage.removeItem(JWT_STORAGE_KEY);
+    clearMembershipUserHeader();
+    clearBranchIdForApi();
+    delete axiosInstance.defaults.headers.common.Authorization;
+  } catch {
+    // ignore
+  }
+  const signIn = paths.auth.jwt.signIn;
+  const here = `${window.location.pathname}${window.location.search}`;
+  if (!window.location.pathname.startsWith(signIn)) {
+    const next = encodeURIComponent(here);
+    window.location.href = `${signIn}?session=expired&next=${next}`;
+  }
+}
+
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    const message = error?.response?.data?.message || error?.message || 'Something went wrong!';
+    if (isSessionExpiredResponse(error)) {
+      handleSessionExpired();
+    }
+    const message = extractMembershipErrorMessage(error);
     console.error('Axios error:', message);
-    return Promise.reject(new Error(message));
+    const wrapped = new Error(message);
+    wrapped.response = error?.response;
+    wrapped.isSessionExpired = isSessionExpiredResponse(error);
+    return Promise.reject(wrapped);
   }
 );
 

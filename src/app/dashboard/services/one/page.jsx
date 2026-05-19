@@ -26,6 +26,8 @@ import {
   DialogContentText,
 } from '@mui/material';
 
+import { ServiceEntitlementGuard } from 'src/components/service-entitlement-guard';
+
 import StartServiceStep from './StartServiceStep';
 import { startService } from './start-service-api';
 import ServiceOneTaskPanel from './ServiceOneTaskPanel';
@@ -1207,12 +1209,14 @@ export function ServiceWorkflowPage({
 
 export default function WorkflowWizard() {
   return (
-    <ServiceWorkflowPage
-      serviceDefinitionKey={SERVICE1_DEFINITION_KEY}
-      serviceTitle="خدمت شماره یک"
-      startServiceFn={startService}
-      TaskPanelComponent={ServiceOneTaskPanel}
-      StepTaskDetailDialogComponent={ServiceOneStepTaskDetailDialog}
-    />
+    <ServiceEntitlementGuard processKey={SERVICE1_DEFINITION_KEY}>
+      <ServiceWorkflowPage
+        serviceDefinitionKey={SERVICE1_DEFINITION_KEY}
+        serviceTitle="خدمت شماره یک"
+        startServiceFn={startService}
+        TaskPanelComponent={ServiceOneTaskPanel}
+        StepTaskDetailDialogComponent={ServiceOneStepTaskDetailDialog}
+      />
+    </ServiceEntitlementGuard>
   );
 }

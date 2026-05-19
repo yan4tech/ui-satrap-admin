@@ -16,7 +16,7 @@ import ToggleButton from '@mui/material/ToggleButton';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 
 import { paths } from 'src/routes/paths';
-import { useRouter } from 'src/routes/hooks';
+import { useRouter, useSearchParams } from 'src/routes/hooks';
 import { RouterLink } from 'src/routes/components';
 
 import { Form, Field } from 'src/components/hook-form';
@@ -26,7 +26,13 @@ import {
   getBranchIdStored,
   setBranchIdForApi,
 } from 'src/lib/api-branch-header';
-import { API_MODE_LABELS_FA, API_MODE_VALUES, getApiMode, setApiMode } from 'src/lib/api-mode';
+import {
+  API_MODE_LABELS_FA,
+  API_MODE_VALUES,
+  getApiMode,
+  isCompanyTenantLoginMode,
+  setApiMode,
+} from 'src/lib/api-mode';
 
 import { useAuthContext } from '../../hooks';
 import { getErrorMessage } from '../../utils';
@@ -52,12 +58,17 @@ export const SignInSchema = zod.object({
 
 export function JwtSignInView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const { checkUserSession } = useAuthContext();
 
   const [step, setStep] = useState('mobile');
   const [errorMessage, setErrorMessage] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
+  const sessionNotice =
+    searchParams.get('session') === 'expired'
+      ? 'نشست قبلی شما منقضی شده است (احتمالاً از دستگاه دیگری وارد شده‌اید). لطفاً دوباره وارد شوید.'
+      : null;
   const [apiMode, setApiModeState] = useState('mobile');
   const [branchIdInput, setBranchIdInput] = useState('');
 
@@ -130,7 +141,10 @@ export function JwtSignInView() {
         code: data.code,
       });
       await checkUserSession?.();
-      router.push(paths.dashboard.root);
+      const destination = isCompanyTenantLoginMode()
+        ? paths.dashboard.company.manage
+        : paths.dashboard.root;
+      router.push(destination);
       router.refresh();
     } catch (error) {
       console.error(error);
@@ -167,9 +181,11 @@ export function JwtSignInView() {
           ))}
         </ToggleButtonGroup>
         <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, lineHeight: 1.5 }}>
-          قبل از وارد کردن شماره، حالت دسترسی را انتخاب کنید؛ هدر <strong>mode</strong> برای تمام درخواست‌های
-          axios و API موتور روی همین مقدار تنظیم می‌شود. با انتخاب «شعبه»، هدر <strong>branch</strong> هم با
-          شناسهٔ زیر ارسال می‌شود.
+          <strong>سازمان مرکزی:</strong> مدیریت کامل شرکت‌ها، شعبات، خدمات و کاربران.
+          <br />
+          <strong>شرکت:</strong> فقط شعب و کاربران همان شرکت.
+          <br />
+          با انتخاب «شعبه»، هدر <strong>branch</strong> با شناسهٔ زیر ارسال می‌شود.
         </Typography>
       </Box>
 
@@ -276,6 +292,12 @@ export function JwtSignInView() {
         }
         sx={{ textAlign: { xs: 'center', md: 'left' } }}
       />
+
+      {!!sessionNotice && (
+        <Alert severity="warning" sx={{ mb: 3 }}>
+          {sessionNotice}
+        </Alert>
+      )}
 
       {!!successMessage && (
         <Alert severity="success" sx={{ mb: 3 }}>

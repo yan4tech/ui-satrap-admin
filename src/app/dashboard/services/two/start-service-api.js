@@ -1,4 +1,4 @@
-import { getApiMode } from 'src/lib/api-mode';
+import { getApiMode, getApiRequestMode } from 'src/lib/api-mode';
 import { getBranchIdStored, getBranchRequestHeaderValue } from 'src/lib/api-branch-header';
 import { getMembershipUserHeaderString } from 'src/lib/api-user-header';
 import { getSessionBearerAuthorization } from 'src/lib/session-bearer-header';
@@ -19,7 +19,7 @@ export async function startService() {
   const headers = {
     'Content-Type': 'application/json',
     user: userHeader,
-    mode: getApiMode(),
+    mode: getApiRequestMode(),
   };
   const auth = getSessionBearerAuthorization();
   if (auth) {

@@ -62,6 +62,13 @@ export const paths = {
       /** Same screen as edit, read-only (no save). */
       details: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}?view=1`,
     },
+    company: {
+      create: `${ROOTS.DASHBOARD}/company/create`,
+      search: `${ROOTS.DASHBOARD}/company/search`,
+      manage: `${ROOTS.DASHBOARD}/company/manage`,
+      edit: (id) => `${ROOTS.DASHBOARD}/company/edit/${id}`,
+      services: (id) => `${ROOTS.DASHBOARD}/company/${id}/services`,
+    },
     role: {
       create: `${ROOTS.DASHBOARD}/role/create`,
       search: `${ROOTS.DASHBOARD}/role/search`,

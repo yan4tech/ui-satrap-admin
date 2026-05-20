@@ -1,5 +1,9 @@
 import { paths } from 'src/routes/paths';
 
+import {
+  canViewBranchDashboard,
+  canViewCompanyDashboard,
+} from 'src/lib/dashboard-nav-permissions';
 import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
 
 const DASHBOARD_ROOT = paths.dashboard.root;
@@ -8,6 +12,8 @@ const DASHBOARD_ROOT = paths.dashboard.root;
 const COMPANY_TENANT_ALLOWED_PREFIXES = [
   DASHBOARD_ROOT,
   paths.dashboard.company.manage,
+  paths.dashboard.company.overview,
+  paths.dashboard.branch.overview,
   `${DASHBOARD_ROOT}/branch`,
 ];
 
@@ -18,6 +24,22 @@ const COMPANY_TENANT_ALLOWED_PREFIXES = [
  */
 export function getDashboardAccessRedirect(pathname, user) {
   const path = String(pathname ?? '');
+
+  if (
+    (path === paths.dashboard.company.overview ||
+      path.startsWith(`${paths.dashboard.company.overview}/`)) &&
+    !canViewCompanyDashboard(user)
+  ) {
+    return DASHBOARD_ROOT;
+  }
+
+  if (
+    (path === paths.dashboard.branch.overview ||
+      path.startsWith(`${paths.dashboard.branch.overview}/`)) &&
+    !canViewBranchDashboard(user)
+  ) {
+    return DASHBOARD_ROOT;
+  }
 
   const isTenantOnly =
     userHasPermission(user, PERM.ui.companyTenantManage) &&

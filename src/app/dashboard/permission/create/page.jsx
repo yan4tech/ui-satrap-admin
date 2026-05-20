@@ -23,11 +23,11 @@ import {
 
 import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
+import axios from 'src/lib/axios';
 
 import {
   PERMISSION_TYPES,
   API_METHODS,
-  createPermission,
 } from 'src/app/dashboard/_lib/access-control-mock';
 
 const PermissionSchema = zod
@@ -69,6 +69,7 @@ const PermissionSchema = zod
 export default function CreatePermissionPage() {
   const router = useRouter();
   const [errorMessage, setErrorMessage] = useState(null);
+  const [successMessage, setSuccessMessage] = useState(null);
 
   const methods = useForm({
     resolver: zodResolver(PermissionSchema),
@@ -102,10 +103,35 @@ export default function CreatePermissionPage() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       setErrorMessage(null);
-      createPermission(data);
-      router.push(paths.dashboard.permission.search);
-    } catch {
-      setErrorMessage('خطا در ثبت دسترسی');
+      setSuccessMessage(null);
+
+      const payload = {
+        title: data.title,
+        slug: data.permission_type === 'UI' ? (data.slug ?? '') : '',
+        description: data.description ?? '',
+        permission_type: data.permission_type,
+        active: Boolean(data.active),
+        api_path: data.permission_type === 'API' ? (data.api_path ?? '') : '',
+        api_method: data.permission_type === 'API' ? (data.api_method ?? '') : '',
+        process:
+          data.permission_type === 'SERVICE' || data.permission_type === 'PROCESS'
+            ? Number(data.process ?? 0)
+            : 0,
+      };
+
+      await axios.post('/api/membership/ac/permission', payload, {
+        headers: { mode: 'company' },
+      });
+
+      setSuccessMessage('دسترسی با موفقیت ثبت شد. در حال انتقال به لیست دسترسی‌ها...');
+      setTimeout(() => {
+        router.push(paths.dashboard.permission.search);
+      }, 900);
+    } catch (error) {
+      const message =
+        error?.response?.data?.message || error?.response?.data?.error || 'خطا در ثبت دسترسی';
+      setErrorMessage(message);
+      setSuccessMessage(null);
     }
   });
 
@@ -151,6 +177,12 @@ export default function CreatePermissionPage() {
           </Box>
 
           <Divider sx={{ mb: 3 }} />
+
+          {!!successMessage && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {successMessage}
+            </Alert>
+          )}
 
           {!!errorMessage && (
             <Alert severity="error" sx={{ mb: 2 }}>

@@ -56,6 +56,7 @@ export const paths = {
       six: `${ROOTS.DASHBOARD}/group/six`,
     },
     branch: {
+      overview: `${ROOTS.DASHBOARD}/branch/overview`,
       create: `${ROOTS.DASHBOARD}/branch/create`,
       search: `${ROOTS.DASHBOARD}/branch/search`,
       edit: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}`,
@@ -63,6 +64,7 @@ export const paths = {
       details: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}?view=1`,
     },
     company: {
+      overview: `${ROOTS.DASHBOARD}/company/overview`,
       create: `${ROOTS.DASHBOARD}/company/create`,
       search: `${ROOTS.DASHBOARD}/company/search`,
       manage: `${ROOTS.DASHBOARD}/company/manage`,

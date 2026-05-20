@@ -2,6 +2,10 @@ import { paths } from 'src/routes/paths';
 
 import { CONFIG } from 'src/global-config';
 import { PERM } from 'src/lib/permissions';
+import {
+  BRANCH_DASHBOARD_NAV_PERMISSIONS,
+  COMPANY_DASHBOARD_NAV_PERMISSIONS,
+} from 'src/lib/dashboard-nav-permissions';
 
 import { SvgColor } from 'src/components/svg-color';
 
@@ -31,10 +35,22 @@ export const navData = [
     subheader: 'داشبورد',
     items: [
       {
-        title: 'داشبورد',
+        title: 'داشبورد سازمان مرکزی',
         path: paths.dashboard.root,
         icon: ICONS.dashboard,
         requiredPermissions: [PERM.ui.dashboardView],
+      },
+      {
+        title: 'داشبورد شرکت',
+        path: paths.dashboard.company.overview,
+        icon: ICONS.banking,
+        anyPermissions: COMPANY_DASHBOARD_NAV_PERMISSIONS,
+      },
+      {
+        title: 'داشبورد شعبه',
+        path: paths.dashboard.branch.overview,
+        icon: ICONS.branch,
+        anyPermissions: BRANCH_DASHBOARD_NAV_PERMISSIONS,
       },
     ],
   },

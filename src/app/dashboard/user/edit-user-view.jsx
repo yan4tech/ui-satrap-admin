@@ -8,7 +8,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
   Button,
-  ButtonGroup,
   Card,
   CardContent,
   Typography,
@@ -40,7 +39,15 @@ import {
   fetchAssignableRolesOptions,
   fetchRoleById,
   fetchBranchesOptions,
+  fetchCompaniesOptions,
 } from './user-api';
+import { UserScopeFields } from './user-scope-fields';
+import { UserStatusFields } from './user-status-fields';
+import {
+  branchCompanyId,
+  companyIdForPayload,
+  resolveAssignableRoleContext,
+} from './user-scope-utils';
 import { CONFIG } from 'src/global-config';
 
 const UserSchema = zod.object({
@@ -49,6 +56,7 @@ const UserSchema = zod.object({
   email: zod.union([zod.string().email(), zod.literal('')]).optional(),
   mobile: zod.string().min(10),
   role_id: zod.number().min(0),
+  company_id: zod.number().min(0),
   branch_id: zod.number().min(0),
   active: zod.boolean(),
   verified: zod.boolean(),
@@ -63,6 +71,7 @@ export default function EditUserView({ user, readOnly, onSaved }) {
   const [errorMessage, setErrorMessage] = useState(null);
   const [roles, setRoles] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [deleteDocumentIds, setDeleteDocumentIds] = useState([]);
   const [selectedRoleInfo, setSelectedRoleInfo] = useState(null);
@@ -80,6 +89,7 @@ export default function EditUserView({ user, readOnly, onSaved }) {
       email: '',
       mobile: '',
       role_id: 1,
+      company_id: 0,
       branch_id: 0,
       active: true,
       verified: false,
@@ -95,18 +105,25 @@ export default function EditUserView({ user, readOnly, onSaved }) {
   } = methods;
   const selectedRoleId = watch('role_id');
   const selectedBranchId = watch('branch_id');
+  const selectedCompanyId = watch('company_id');
   const activeValue = watch('active');
   const verifiedValue = watch('verified');
   const formValues = watch();
 
+  // فقط هنگام بارگذاری/تعویض رکورد کاربر reset شود — نه با هر بار تغییر roles
+  const loadedUserKey = user
+    ? `${user.id ?? user.ID ?? ''}-${user.updated_at ?? user.UpdatedAt ?? ''}`
+    : '';
+
   useEffect(() => {
-    if (!user) return;
+    if (!user || !loadedUserKey) return;
     reset({
       name: user.name,
       family: user.family,
       email: user.email ?? '',
       mobile: user.mobile,
-      role_id: Number(user.role_id || roles[0]?.id || 1),
+      role_id: Number(user.role_id || 0),
+      company_id: Number(user.company_id ?? user.company?.id ?? user.company?.ID ?? 0),
       branch_id: Number(user.branch_id || 0),
       active: user.active,
       verified: user.verified,
@@ -114,28 +131,58 @@ export default function EditUserView({ user, readOnly, onSaved }) {
     setDocuments(Array.isArray(user.documents) ? user.documents : []);
     setDeleteDocumentIds([]);
     setNewDocuments([{ rowId: Date.now(), title: '', file: null, previewUrl: null }]);
-  }, [user, reset, roles]);
+  }, [loadedUserKey, user, reset]);
 
   useEffect(() => {
     (async () => {
       try {
-        const branchRows = await fetchBranchesOptions();
+        const [branchRows, companyRows] = await Promise.all([
+          fetchBranchesOptions(),
+          fetchCompaniesOptions(),
+        ]);
         setBranches(branchRows);
+        setCompanies(companyRows);
       } catch {
-        setErrorMessage('خطا در دریافت لیست شعب');
+        setErrorMessage('خطا در دریافت لیست شعب یا شرکت‌ها');
       }
     })();
   }, []);
 
   useEffect(() => {
+    const bid = Number(selectedBranchId ?? 0);
+    const cid = Number(selectedCompanyId ?? 0);
+    if (bid > 0) {
+      const branch = branches.find((b) => b.id === bid);
+      const bcid = branchCompanyId(branch);
+      if (bcid > 0 && cid !== bcid) {
+        setValue('company_id', bcid);
+      } else if (bcid === 0 && cid > 0) {
+        setValue('company_id', 0);
+      }
+    }
+  }, [selectedBranchId, selectedCompanyId, branches, setValue]);
+
+  useEffect(() => {
+    const bid = Number(selectedBranchId ?? 0);
+    const cid = Number(selectedCompanyId ?? 0);
+    if (cid > 0 && bid > 0) {
+      const branch = branches.find((b) => b.id === bid);
+      if (branchCompanyId(branch) !== cid) {
+        setValue('branch_id', 0);
+      }
+    }
+  }, [selectedCompanyId, selectedBranchId, branches, setValue]);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        const branchId = Number(selectedBranchId ?? 0);
-        let roleRows = await fetchAssignableRolesOptions({
-          context: branchId > 0 ? 'branch' : '',
-          excludeBranchAdmin: branchId > 0,
-        });
+        let roleRows = await fetchAssignableRolesOptions(
+          resolveAssignableRoleContext({
+            branchId: selectedBranchId,
+            companyId: selectedCompanyId,
+          })
+        );
         const userRoleId = Number(user?.role_id ?? 0);
         if (userRoleId > 0 && !roleRows.some((r) => r.id === userRoleId)) {
           const current = await fetchRoleById(userRoleId);
@@ -155,7 +202,7 @@ export default function EditUserView({ user, readOnly, onSaved }) {
     return () => {
       cancelled = true;
     };
-  }, [selectedBranchId, setValue, selectedRoleId, user?.role_id]);
+  }, [selectedBranchId, selectedCompanyId, setValue, selectedRoleId, user?.role_id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -246,6 +293,7 @@ export default function EditUserView({ user, readOnly, onSaved }) {
           family: data.family || '',
           email: data.email || '',
           verified,
+          company_id: companyIdForPayload(data.company_id),
         },
         validDocuments,
         deleteDocumentIds
@@ -270,6 +318,10 @@ export default function EditUserView({ user, readOnly, onSaved }) {
               <Chip
                 size="small"
                 label={`نقش: ${roles.find((item) => item.id === Number(user.role_id))?.title || '—'}`}
+              />
+              <Chip
+                size="small"
+                label={`شرکت: ${companies.find((item) => item.id === Number(user.company_id))?.title || '—'}`}
               />
               <Chip
                 size="small"
@@ -326,69 +378,20 @@ export default function EditUserView({ user, readOnly, onSaved }) {
                     ))}
                   </Field.Select>
                 </Box>
-                <Box>
-                  <Field.Select name="branch_id" label="شعبه" disabled={readOnly}>
-                    <MenuItem value={0}>بدون شعبه</MenuItem>
-                    {branches.map((b) => (
-                      <MenuItem key={b.id} value={b.id}>
-                        {b.title}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Box>
-                <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-                  <Box
-                    sx={{
-                      display: 'grid',
-                      gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
-                      columnGap: 3,
-                      rowGap: 2,
-                    }}
-                  >
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Typography variant="body2">وضعیت</Typography>
-                      <ButtonGroup>
-                        <Button
-                          color="success"
-                          variant={activeValue ? 'contained' : 'outlined'}
-                          disabled={readOnly}
-                          onClick={() => setValue('active', true)}
-                        >
-                          فعال
-                        </Button>
-                        <Button
-                          color="error"
-                          variant={!activeValue ? 'contained' : 'outlined'}
-                          disabled={readOnly}
-                          onClick={() => setValue('active', false)}
-                        >
-                          غیرفعال
-                        </Button>
-                      </ButtonGroup>
-                    </Stack>
-                    <Stack direction="row" spacing={1.5} alignItems="center">
-                      <Typography variant="body2">تایید شده</Typography>
-                      <ButtonGroup>
-                        <Button
-                          color="success"
-                          variant={verifiedValue ? 'contained' : 'outlined'}
-                          disabled={readOnly || !isVerifiableNow}
-                          onClick={() => setValue('verified', true)}
-                        >
-                          بله
-                        </Button>
-                        <Button
-                          color="error"
-                          variant={!verifiedValue ? 'contained' : 'outlined'}
-                          disabled={readOnly}
-                          onClick={() => setValue('verified', false)}
-                        >
-                          خیر
-                        </Button>
-                      </ButtonGroup>
-                    </Stack>
-                  </Box>
-                </Box>
+                <UserScopeFields
+                  companies={companies}
+                  branches={branches}
+                  companyId={selectedCompanyId}
+                  readOnly={readOnly}
+                />
+                <UserStatusFields
+                  readOnly={readOnly}
+                  activeValue={activeValue}
+                  verifiedValue={verifiedValue}
+                  isVerifiableNow={isVerifiableNow}
+                  onActiveChange={(value) => setValue('active', value)}
+                  onVerifiedChange={(value) => setValue('verified', value)}
+                />
               </Box>
 
               <Box>

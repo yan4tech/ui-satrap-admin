@@ -6,11 +6,13 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
+  Box,
   Card,
   Alert,
+  Chip,
   Stack,
   Button,
-  Divider,
+  Paper,
   Container,
   Typography,
   CardContent,
@@ -19,10 +21,12 @@ import {
 import { updateCompany, updateMyCompany } from 'src/lib/company-api';
 import { paths } from 'src/routes/paths';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
+import { ActiveStatusField } from 'src/components/status/active-status-field';
 
 import { Form, Field } from 'src/components/hook-form';
 
 import CompanyFormSections from './company-form-sections';
+import CompanyPageHeader, { companySectionPaperSx } from './company-page-header';
 import {
   idsFromSelection,
   branchAssignmentsFromSelection,
@@ -58,12 +62,15 @@ export default function EditCompanyView({ companyData, readOnly = false, company
 
   const {
     handleSubmit,
+    setValue,
+    watch,
     formState: { isSubmitting },
   } = methods;
+  const isActive = watch('is_active');
 
   const branchCount = Array.isArray(companyData?.branches) ? companyData.branches.length : null;
-
   const companyFieldsReadOnly = readOnly || companyAdminMode;
+  const showStatusField = !companyAdminMode;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -93,71 +100,140 @@ export default function EditCompanyView({ companyData, readOnly = false, company
     }
   });
 
+  const headerTitle = companyAdminMode ? 'مدیریت شرکت' : 'ویرایش شرکت';
+  const headerSubtitle = companyAdminMode
+    ? 'شعب و سیاست بازبینی زیرمجموعه شرکت خود را مدیریت کنید.'
+    : 'اطلاعات شرکت، وضعیت، خدمات و شعب زیرمجموعه را به‌روزرسانی کنید.';
+
   return (
     <Container maxWidth={false} disableGutters>
-      <Card>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" fontWeight={700}>
-            {companyAdminMode ? 'مدیریت شرکت' : 'ویرایش شرکت'}
-          </Typography>
-          {branchCount != null && (
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-              شعب ثبت‌شده: {branchCount}
-              {Number(companyData?.max_branches) > 0 &&
-                ` / سقف: ${companyData.max_branches}`}
-            </Typography>
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: (theme) => `1px solid ${theme.palette.divider}`,
+          boxShadow: (theme) => theme.customShadows?.z8 || theme.shadows[8],
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+          <CompanyPageHeader
+            title={headerTitle}
+            subtitle={headerSubtitle}
+            badge={readOnly ? 'مشاهده' : companyAdminMode ? 'مدیر شرکت' : 'فرم ویرایش'}
+            icon={companyAdminMode ? 'solar:case-round-bold' : 'solar:pen-new-square-bold'}
+          />
+
+          {(branchCount != null || companyData?.title) && (
+            <Stack direction="row" spacing={1} flexWrap="wrap" sx={{ mb: 2 }}>
+              {companyData?.title && (
+                <Chip size="small" variant="outlined" label={`شرکت: ${companyData.title}`} />
+              )}
+              {branchCount != null && (
+                <Chip
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                  label={
+                    Number(companyData?.max_branches) > 0
+                      ? `شعب: ${branchCount} / ${companyData.max_branches}`
+                      : `شعب: ${branchCount}`
+                  }
+                />
+              )}
+              {showStatusField && (
+                <Chip
+                  size="small"
+                  color={isActive ? 'success' : 'default'}
+                  label={isActive ? 'وضعیت: فعال' : 'وضعیت: غیرفعال'}
+                />
+              )}
+            </Stack>
           )}
-          <Divider sx={{ my: 3 }} />
 
           {!!errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
           {!!successMessage && <Alert severity="success" sx={{ mb: 2 }}>{successMessage}</Alert>}
 
           <Form methods={methods} onSubmit={onSubmit}>
-            <Stack spacing={3} sx={{ maxWidth: 640 }}>
-              <Field.Text name="title" label="عنوان" disabled={companyFieldsReadOnly} />
-              <Field.Text
-                name="description"
-                label="توضیحات"
-                multiline
-                rows={3}
-                disabled={companyFieldsReadOnly}
-              />
-              <Field.Text
-                name="max_branches"
-                label="حداکثر تعداد شعب"
-                type="number"
-                helperText="۰ = بدون سقف"
-                disabled={companyFieldsReadOnly}
-              />
-              <Field.Switch name="is_active" label="فعال" disabled={companyFieldsReadOnly} />
+            <Stack spacing={3}>
+              {!companyAdminMode && (
+                <Paper variant="outlined" sx={companySectionPaperSx}>
+                  <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
+                    اطلاعات پایه
+                  </Typography>
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                      gap: 2.5,
+                    }}
+                  >
+                    <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                      <Field.Text name="title" label="عنوان" disabled={companyFieldsReadOnly} />
+                    </Box>
+                    <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                      <Field.Text
+                        name="description"
+                        label="توضیحات"
+                        multiline
+                        rows={3}
+                        disabled={companyFieldsReadOnly}
+                      />
+                    </Box>
+                    <Field.Text
+                      name="max_branches"
+                      label="حداکثر تعداد شعب"
+                      type="number"
+                      helperText="۰ = بدون سقف"
+                      disabled={companyFieldsReadOnly}
+                    />
+                    {showStatusField && (
+                      <ActiveStatusField
+                        sectionTitle="وضعیت شرکت"
+                        sectionIcon="solar:buildings-2-bold"
+                        title="وضعیت"
+                        hint="شرکت غیرفعال در تخصیص شعب و استفاده از خدمات محدود می‌شود."
+                        icon="solar:buildings-bold"
+                        value={isActive}
+                        onChange={(value) => setValue('is_active', value)}
+                        readOnly={readOnly}
+                        fullWidth
+                      />
+                    )}
+                  </Box>
+                </Paper>
+              )}
 
               {!readOnly && (
-                <CompanyFormSections
-                  companyId={companyId}
-                  branchesReloadKey={branchesReloadKey}
-                  selectedServices={selectedServices}
-                  onServicesChange={setSelectedServices}
-                  selectedBranches={selectedBranches}
-                  onBranchesChange={setSelectedBranches}
-                  branchesOnly={companyAdminMode}
-                  branchEditBasePath={paths.dashboard.branch.edit}
-                />
+                <Paper variant="outlined" sx={companySectionPaperSx}>
+                  <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
+                    {companyAdminMode ? 'شعب شرکت' : 'خدمات و شعب'}
+                  </Typography>
+                  <CompanyFormSections
+                    companyId={companyId}
+                    branchesReloadKey={branchesReloadKey}
+                    selectedServices={selectedServices}
+                    onServicesChange={setSelectedServices}
+                    selectedBranches={selectedBranches}
+                    onBranchesChange={setSelectedBranches}
+                    branchesOnly={companyAdminMode}
+                    branchEditBasePath={paths.dashboard.branch.edit}
+                  />
+                </Paper>
               )}
 
               {companyAdminMode && !readOnly && (
-                <Button
-                  variant="outlined"
-                  href={paths.dashboard.branch.create}
-                  component="a"
-                >
-                  تعریف شعبه جدید
-                </Button>
+                <Stack direction="row" spacing={2}>
+                  <Button variant="outlined" href={paths.dashboard.branch.create} component="a">
+                    تعریف شعبه جدید
+                  </Button>
+                </Stack>
               )}
 
               {!readOnly && (
-                <Button type="submit" variant="contained" loading={isSubmitting}>
-                  ذخیره
-                </Button>
+                <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ pt: 1 }}>
+                  <Button type="submit" variant="contained" size="large" loading={isSubmitting}>
+                    ذخیره تغییرات
+                  </Button>
+                </Stack>
               )}
             </Stack>
           </Form>

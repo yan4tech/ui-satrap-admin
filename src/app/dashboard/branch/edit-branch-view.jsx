@@ -4,6 +4,7 @@ import { z as zod } from 'zod';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
+import { ActiveStatusField } from 'src/components/status/active-status-field';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import Autocomplete from '@mui/material/Autocomplete';
@@ -12,7 +13,6 @@ import {
   Card,
   Alert,
   Stack,
-  Radio,
   Table,
   Paper,
   Button,
@@ -25,11 +25,8 @@ import {
   TableCell,
   TableHead,
   Typography,
-  RadioGroup,
   CardContent,
-  FormControl,
   TableContainer,
-  FormControlLabel,
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
@@ -146,19 +143,28 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
   });
 
   const isCompanyAdmin = userHasPermission(user, PERM.ui.companyTenantManage);
-  const isCoreAdmin = userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]);
+  const canManageCentralBranches = userHasAnyPermission(user, [
+    PERM.ui.companyCentralList,
+    PERM.ui.companyCentralCreate,
+    PERM.ui.companyCentral,
+    PERM.ui.branchCentralList,
+    PERM.ui.branchCentralCreate,
+    PERM.ui.branchCentral,
+    'api.company.central.manage',
+  ]);
+  const isCompanyOnlyAdmin = isCompanyAdmin && !canManageCentralBranches;
   const branchId = Number(branchData?.ID ?? branchData?.id ?? 0);
   const adminCompanyId = Number(
     user?.company_id ?? companyId ?? branchData?.company_id ?? branchData?.CompanyID ?? 0
   );
   const hasCompany =
     Number(companyId ?? branchData?.company_id ?? branchData?.CompanyID ?? 0) > 0;
-  const canEditWorkflow = !readOnly && (isCoreAdmin || isCompanyAdmin);
-  const canEditAffiliation = !readOnly && isCoreAdmin;
+  const canEditWorkflow = !readOnly && (canManageCentralBranches || isCompanyAdmin);
+  const canEditAffiliation = !readOnly && canManageCentralBranches;
   const canEditReviewPolicy =
-    !readOnly && (isCoreAdmin || (isCompanyAdmin && (hasCompany || adminCompanyId > 0)));
-  const lockAffiliation = isCompanyAdmin ? BRANCH_AFFILIATION.CORPORATE : null;
-  const lockCompanyId = isCompanyAdmin && adminCompanyId > 0 ? adminCompanyId : null;
+    !readOnly && (canManageCentralBranches || (isCompanyAdmin && (hasCompany || adminCompanyId > 0)));
+  const lockAffiliation = isCompanyOnlyAdmin ? BRANCH_AFFILIATION.CORPORATE : null;
+  const lockCompanyId = isCompanyOnlyAdmin && adminCompanyId > 0 ? adminCompanyId : null;
   const [branchUsers, setBranchUsers] = useState(branchData?.users || []);
   const maxUsersLimit = Number(branchData?.max_users ?? 0);
   const activeUserCount = countActiveBranchUsers(branchUsers);
@@ -166,11 +172,14 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
   const {
     handleSubmit,
     control,
+    setValue,
+    watch,
     formState: { isSubmitting },
   } = methods;
+  const isActive = watch('is_active');
 
   useEffect(() => {
-    if (isCoreAdmin) {
+    if (canManageCentralBranches) {
       (async () => {
         try {
           setCompanies(await fetchCompaniesOptions());
@@ -179,7 +188,7 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
         }
       })();
     }
-  }, [isCoreAdmin]);
+  }, [canManageCentralBranches]);
 
   useEffect(() => {
     setDocuments(branchData?.documents || []);
@@ -458,54 +467,23 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
                           ? `کاربران فعال: ${activeUserCount} از ${maxUsersLimit}`
                           : `کاربران فعال: ${activeUserCount} (بدون سقف)`
                       }
-                      disabled={readOnly || (isCompanyAdmin && !isCoreAdmin)}
+                      disabled={readOnly || isCompanyOnlyAdmin}
                     />
                   </Box>
                   <Box>
                     <Field.Text name="phone" label="شماره تلفن" />
                   </Box>
-                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
-                    <Controller
-                      name="is_active"
-                      control={control}
-                      render={({ field }) => (
-                        <FormControl
-                          sx={{
-                            width: '100%',
-                            p: 2,
-                            border: '1px solid',
-                            borderColor: 'divider',
-                            borderRadius: 2,
-                          }}
-                        >
-                          <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 1.5 }}>
-                            وضعیت شعبه
-                          </Typography>
-                          <RadioGroup
-                            row
-                            value={field.value ? 'true' : 'false'}
-                            onChange={(event) => field.onChange(event.target.value === 'true')}
-                            sx={{ gap: 3 }}
-                          >
-                            <FormControlLabel
-                              value="true"
-                              control={<Radio size="medium" sx={{ transform: 'scale(1.2)' }} />}
-                              label="فعال"
-                              sx={{
-                                '.MuiFormControlLabel-label': { fontSize: 18, fontWeight: 600 },
-                              }}
-                            />
-                            <FormControlLabel
-                              value="false"
-                              control={<Radio size="medium" sx={{ transform: 'scale(1.2)' }} />}
-                              label="غیرفعال"
-                              sx={{
-                                '.MuiFormControlLabel-label': { fontSize: 18, fontWeight: 600 },
-                              }}
-                            />
-                          </RadioGroup>
-                        </FormControl>
-                      )}
+                  <Box>
+                    <ActiveStatusField
+                      sectionTitle="وضعیت شعبه"
+                      sectionIcon="solar:shop-2-bold"
+                      title="وضعیت"
+                      hint="شعبه غیرفعال در تخصیص کاربر و استفاده از سرویس‌ها محدود می‌شود."
+                      icon="solar:shop-bold"
+                      value={Boolean(isActive)}
+                      onChange={(value) => setValue('is_active', value)}
+                      readOnly={readOnly}
+                      fullWidth
                     />
                   </Box>
                 </Box>
@@ -513,12 +491,12 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
 
               <BranchWorkflowSection
                 companies={companies}
-                readOnly={readOnly || !canEditWorkflow}
+                readOnly={readOnly}
                 canEditAffiliation={canEditAffiliation}
                 canEditReviewPolicy={canEditReviewPolicy}
                 lockAffiliation={lockAffiliation}
                 lockCompanyId={lockCompanyId}
-                hideCompanySelect={isCompanyAdmin}
+                hideCompanySelect={isCompanyOnlyAdmin}
               />
 
               {/* LOCATION */}
@@ -569,7 +547,7 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
                   </Typography>
                 ) : null}
 
-                {isCoreAdmin && companyId ? (
+                {canManageCentralBranches && companyId ? (
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
                     <Button
                       size="small"

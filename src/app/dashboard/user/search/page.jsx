@@ -37,6 +37,7 @@ import {
   deleteUserById,
   fetchRolesOptions,
   fetchBranchesOptions,
+  fetchCompaniesOptions,
   userScopeLabel,
 } from '../user-api';
 
@@ -57,6 +58,7 @@ export default function UserSearchPage() {
   const [rowCount, setRowCount] = useState(0);
   const [roles, setRoles] = useState([]);
   const [branches, setBranches] = useState([]);
+  const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
@@ -91,6 +93,10 @@ export default function UserSearchPage() {
         ...u,
         role_title: roles.find((r) => r.id === Number(u.role_id))?.title || '—',
         branch_title: branches.find((b) => b.id === Number(u.branch_id))?.title || '—',
+        company_title:
+          companies.find((c) => c.id === Number(u.company_id ?? u.company?.id ?? 0))?.title ||
+          u.company?.title ||
+          '—',
         scope_label: userScopeLabel(u),
         }))
       );
@@ -101,17 +107,23 @@ export default function UserSearchPage() {
     } finally {
       setLoading(false);
     }
-  }, [paginationModel, getValues, roles, branches]);
+  }, [paginationModel, getValues, roles, branches, companies]);
 
   useEffect(() => {
     (async () => {
       try {
-        const [roleRows, branchRows] = await Promise.all([fetchRolesOptions(), fetchBranchesOptions()]);
+        const [roleRows, branchRows, companyRows] = await Promise.all([
+          fetchRolesOptions(),
+          fetchBranchesOptions(),
+          fetchCompaniesOptions(),
+        ]);
         setRoles(roleRows);
         setBranches(branchRows);
+        setCompanies(companyRows);
       } catch {
         setRoles([]);
         setBranches([]);
+        setCompanies([]);
       }
     })();
   }, []);
@@ -141,6 +153,7 @@ export default function UserSearchPage() {
       renderCell: (p) => <Chip size="small" label={p.value || '—'} color="primary" variant="outlined" />,
     },
     { field: 'scope_label', headerName: 'حوزه', width: 100 },
+    { field: 'company_title', headerName: 'شرکت', flex: 1 },
     { field: 'branch_title', headerName: 'شعبه', flex: 1 },
     {
       field: 'active',

@@ -66,6 +66,14 @@ export default function BranchUsersPanel({
     'api.company.tenant.manage',
   ]);
 
+  const actorType = userHasAnyPermission(actor, ['api.company.central.manage'])
+    ? 'company'
+    : userHasAnyPermission(actor, ['api.company.tenant.manage'])
+      ? 'company_admin'
+      : Number(actor?.branch_id ?? 0) > 0
+        ? 'branch'
+        : '';
+
   const activeCount = countActiveBranchUsers(rows);
   const quotaLabel =
     maxUsers > 0 ? `${activeCount} / ${maxUsers} کاربر فعال` : `${activeCount} کاربر فعال (بدون سقف)`;

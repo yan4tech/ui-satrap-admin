@@ -116,9 +116,12 @@ export async function fetchBranchesOptions() {
     .map((item) => ({
       id: normalizeId(item),
       title: item?.title ?? '-',
+      company_id: Number(item?.company_id ?? item?.CompanyID ?? 0) || 0,
     }))
     .filter((item) => item.id > 0);
 }
+
+export { fetchCompaniesOptions } from 'src/lib/company-api';
 
 export async function createUser(payload, documents = []) {
   const formData = new FormData();

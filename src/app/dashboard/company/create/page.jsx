@@ -7,11 +7,12 @@ import { useRouter } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import {
+  Box,
   Card,
   Alert,
   Stack,
   Button,
-  Divider,
+  Paper,
   Container,
   Typography,
   CardContent,
@@ -21,10 +22,12 @@ import { paths } from 'src/routes/paths';
 
 import { createCompany } from 'src/lib/company-api';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
+import { ActiveStatusField } from 'src/components/status/active-status-field';
 
 import { Form, Field } from 'src/components/hook-form';
 
 import CompanyFormSections from '../company-form-sections';
+import CompanyPageHeader, { companySectionPaperSx } from '../company-page-header';
 import {
   idsFromSelection,
   branchAssignmentsFromSelection,
@@ -61,8 +64,11 @@ export default function CreateCompanyPage() {
 
   const {
     handleSubmit,
+    setValue,
+    watch,
     formState: { isSubmitting },
   } = methods;
+  const isActive = watch('is_active');
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -89,15 +95,19 @@ export default function CreateCompanyPage() {
 
   return (
     <Container maxWidth={false} disableGutters sx={{ mr: 0 }}>
-      <Card sx={{ borderRadius: 1, border: '1px solid', borderColor: 'divider' }}>
-        <CardContent sx={{ p: 4 }}>
-          <Typography variant="h5" fontWeight={700} sx={{ mb: 1 }}>
-            شرکت جدید
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-            سقف تعداد شعب، خدمات مجاز و شعب زیرمجموعه را در همین فرم تنظیم کنید.
-          </Typography>
-          <Divider sx={{ mb: 3 }} />
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: (theme) => `1px solid ${theme.palette.divider}`,
+          boxShadow: (theme) => theme.customShadows?.z8 || theme.shadows[8],
+        }}
+      >
+        <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+          <CompanyPageHeader
+            title="شرکت جدید"
+            subtitle="سقف شعب، وضعیت، خدمات مجاز و شعب زیرمجموعه را در این فرم تنظیم کنید."
+            badge="فرم ایجاد"
+          />
 
           {!!errorMessage && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -111,27 +121,63 @@ export default function CreateCompanyPage() {
           )}
 
           <Form methods={methods} onSubmit={onSubmit}>
-            <Stack spacing={3} sx={{ maxWidth: 640 }}>
-              <Field.Text name="title" label="عنوان شرکت" />
-              <Field.Text name="description" label="توضیحات" multiline rows={3} />
-              <Field.Text
-                name="max_branches"
-                label="حداکثر تعداد شعب"
-                type="number"
-                helperText="۰ یعنی بدون سقف"
-              />
-              <Field.Switch name="is_active" label="فعال" />
+            <Stack spacing={3}>
+              <Paper variant="outlined" sx={companySectionPaperSx}>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
+                  اطلاعات پایه
+                </Typography>
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
+                    gap: 2.5,
+                  }}
+                >
+                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                    <Field.Text name="title" label="عنوان شرکت" />
+                  </Box>
+                  <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
+                    <Field.Text name="description" label="توضیحات" multiline rows={3} />
+                  </Box>
+                  <Field.Text
+                    name="max_branches"
+                    label="حداکثر تعداد شعب"
+                    type="number"
+                    helperText="۰ یعنی بدون سقف"
+                  />
+                  <ActiveStatusField
+                    sectionTitle="وضعیت شرکت"
+                    sectionIcon="solar:buildings-2-bold"
+                    title="وضعیت"
+                    hint="شرکت غیرفعال در تخصیص شعب و استفاده از خدمات محدود می‌شود."
+                    icon="solar:buildings-bold"
+                    value={isActive}
+                    onChange={(value) => setValue('is_active', value)}
+                    fullWidth
+                  />
+                </Box>
+              </Paper>
 
-              <CompanyFormSections
-                selectedServices={selectedServices}
-                onServicesChange={setSelectedServices}
-                selectedBranches={selectedBranches}
-                onBranchesChange={setSelectedBranches}
-              />
+              <Paper variant="outlined" sx={companySectionPaperSx}>
+                <Typography variant="subtitle1" fontWeight={700} sx={{ mb: 2 }}>
+                  خدمات و شعب
+                </Typography>
+                <CompanyFormSections
+                  selectedServices={selectedServices}
+                  onServicesChange={setSelectedServices}
+                  selectedBranches={selectedBranches}
+                  onBranchesChange={setSelectedBranches}
+                />
+              </Paper>
 
-              <Button type="submit" variant="contained" size="large" loading={isSubmitting}>
-                ثبت شرکت
-              </Button>
+              <Stack direction="row" justifyContent="flex-end" spacing={2} sx={{ pt: 1 }}>
+                <Button variant="outlined" onClick={() => router.back()}>
+                  انصراف
+                </Button>
+                <Button type="submit" variant="contained" size="large" loading={isSubmitting}>
+                  ثبت شرکت
+                </Button>
+              </Stack>
             </Stack>
           </Form>
         </CardContent>

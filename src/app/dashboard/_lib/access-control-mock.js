@@ -10,7 +10,7 @@ const API_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS', 'HEAD']
 
 /** @typedef {{ id: number, title: string, slug: string, description: string, active: boolean, content: string, permission_ids: number[] }} Role */
 
-/** @typedef {{ id: number, name: string, family: string, email: string, mobile: string, role_id: number, branch_id: number, user_type: number, active: boolean, verified: boolean }} User */
+/** @typedef {{ id: number, name: string, family: string, email: string, mobile: string, role_id: number, branch_id: number, company_id?: number, active: boolean, verified: boolean }} User */
 
 /** @type {Permission[]} */
 let permissions = [
@@ -92,7 +92,6 @@ let users = [
     mobile: '09120001111',
     role_id: 1,
     branch_id: 1,
-    user_type: 0,
     active: true,
     verified: true,
   },
@@ -104,7 +103,6 @@ let users = [
     mobile: '09120002222',
     role_id: 2,
     branch_id: 2,
-    user_type: 3,
     active: true,
     verified: false,
   },
@@ -118,14 +116,6 @@ const mockBranches = [
   { id: 1, title: 'شعبه مرکزی تهران' },
   { id: 2, title: 'شعبه اصفهان' },
   { id: 3, title: 'شعبه شیراز' },
-];
-
-export const USER_TYPE_OPTIONS = [
-  { value: 0, label: 'مدیر هسته' },
-  { value: 1, label: 'کاربر هسته' },
-  { value: 2, label: 'مدیر شعبه' },
-  { value: 3, label: 'کاربر شعبه' },
-  { value: 4, label: 'ناظر' },
 ];
 
 export { PERMISSION_TYPES, API_METHODS, mockBranches };
@@ -248,7 +238,6 @@ export function createUser(data) {
     mobile: data.mobile,
     role_id: Number(data.role_id) || 0,
     branch_id: Number(data.branch_id) || 0,
-    user_type: Number(data.user_type) ?? 3,
     active: !!data.active,
     verified: !!data.verified,
   };
@@ -266,7 +255,6 @@ export function updateUser(id, data) {
     id: prev.id,
     role_id: data.role_id !== undefined ? Number(data.role_id) : prev.role_id,
     branch_id: data.branch_id !== undefined ? Number(data.branch_id) : prev.branch_id,
-    user_type: data.user_type !== undefined ? Number(data.user_type) : prev.user_type,
   };
   users = users.map((u) => (u.id === row.id ? row : u));
   return row;
@@ -347,10 +335,10 @@ export function searchUsers(filters, page, pageSize) {
       rows = rows.filter((u) => u.role_id === rid);
     }
   }
-  if (filters.user_type !== undefined && filters.user_type !== '' && filters.user_type !== null) {
-    const ut = Number(filters.user_type);
-    if (Number.isFinite(ut)) {
-      rows = rows.filter((u) => u.user_type === ut);
+  if (filters.branch_id !== undefined && filters.branch_id !== '' && filters.branch_id !== null) {
+    const bid = Number(filters.branch_id);
+    if (Number.isFinite(bid) && bid > 0) {
+      rows = rows.filter((u) => u.branch_id === bid);
     }
   }
   if (filters.active === 'true') rows = rows.filter((u) => u.active);

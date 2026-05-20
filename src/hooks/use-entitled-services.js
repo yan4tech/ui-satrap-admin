@@ -15,11 +15,11 @@ export function useEntitledServices() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const reload = useCallback(async () => {
-    const mode = getApiMode();
-    const userType = String(user?.user_type ?? '').trim();
+  const isBranchScoped =
+    getApiMode() === 'branch' || Number(user?.branch_id ?? 0) > 0;
 
-    if (mode !== 'branch' && userType !== 'branch') {
+  const reload = useCallback(async () => {
+    if (!isBranchScoped) {
       setServices([]);
       setLoading(false);
       setError(null);
@@ -37,7 +37,7 @@ export function useEntitledServices() {
     } finally {
       setLoading(false);
     }
-  }, [user?.user_type]);
+  }, [isBranchScoped]);
 
   useEffect(() => {
     if (authLoading) return;
@@ -58,7 +58,6 @@ export function useEntitledServices() {
     loading: authLoading || loading,
     error,
     reload,
-    isBranchEntitlementActive:
-      getApiMode() === 'branch' || String(user?.user_type ?? '').trim() === 'branch',
+    isBranchEntitlementActive: isBranchScoped,
   };
 }

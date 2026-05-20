@@ -50,7 +50,7 @@ export default function PermissionSearchPage() {
   const [rows, setRows] = useState([]);
   const [rowCount, setRowCount] = useState(0);
   const [loading, setLoading] = useState(false);
-  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+  const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
   const [errorMessage, setErrorMessage] = useState(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -109,7 +109,8 @@ export default function PermissionSearchPage() {
       }));
 
       setRows(mappedRows);
-      setRowCount(Number(payload?.total ?? payload?.count ?? mappedRows.length));
+      const total = Number(payload?.total ?? payload?.count ?? 0);
+      setRowCount(total > 0 ? total : mappedRows.length);
     } catch (error) {
       console.error('Failed to fetch permissions:', error);
       setRows([]);
@@ -397,6 +398,7 @@ export default function PermissionSearchPage() {
             paginationMode="server"
             paginationModel={paginationModel}
             onPaginationModelChange={setPaginationModel}
+            pageSizeOptions={[10, 25, 50, 100]}
             autoHeight
             sx={{
               border: '1px solid',

@@ -48,6 +48,7 @@ export const navData = [
         anyPermissions: [
           PERM.ui.usersList,
           PERM.ui.rolesList,
+          PERM.ui.roleDelegationManage,
           PERM.ui.permissionsList,
         ],
         children: [
@@ -79,6 +80,15 @@ export const navData = [
             children: [
               { title: 'جدید', path: paths.dashboard.permission.create, requiredPermissions: [PERM.ui.permissionsCreate] },
               { title: 'لیست', path: paths.dashboard.permission.search, requiredPermissions: [PERM.ui.permissionsList] },
+            ],
+          },
+          {
+            title: 'انتساب نقش',
+            path: paths.dashboard.delegation.search,
+            icon: ICONS.role,
+            requiredPermissions: [PERM.ui.roleDelegationManage],
+            children: [
+              { title: 'مدیریت delegation', path: paths.dashboard.delegation.search, requiredPermissions: [PERM.ui.roleDelegationManage] },
             ],
           },
         ],

@@ -37,10 +37,9 @@ import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
 import {
   createUser,
-  fetchRolesOptions,
+  fetchAssignableRolesOptions,
   fetchRoleById,
   fetchBranchesOptions,
-  USER_TYPE_OPTIONS,
 } from '../user-api';
 
 const UserSchema = zod.object({
@@ -50,7 +49,6 @@ const UserSchema = zod.object({
   mobile: zod.string().min(10, 'موبایل معتبر وارد کنید'),
   role_id: zod.number().min(0),
   branch_id: zod.number().min(0),
-  user_type: zod.string().optional(),
   active: zod.boolean(),
 });
 
@@ -75,7 +73,6 @@ export default function CreateUserPage() {
       mobile: '',
       role_id: 0,
       branch_id: 0,
-      user_type: USER_TYPE_OPTIONS[0]?.value ?? 'mobile',
       active: true,
     },
   });
@@ -86,28 +83,45 @@ export default function CreateUserPage() {
     watch,
     formState: { isSubmitting },
   } = methods;
-  const userType = watch('user_type');
   const selectedRoleId = watch('role_id');
+  const selectedBranchId = watch('branch_id');
   const activeValue = watch('active');
 
   useEffect(() => {
     (async () => {
       try {
-        const [roleRows, branchRows] = await Promise.all([fetchRolesOptions(), fetchBranchesOptions()]);
-        setRoles(roleRows);
+        const branchRows = await fetchBranchesOptions();
         setBranches(branchRows);
-        if (roleRows[0]?.id) setValue('role_id', roleRows[0].id);
       } catch {
-        setErrorMessage('خطا در دریافت لیست نقش‌ها و شعب');
+        setErrorMessage('خطا در دریافت لیست شعب');
       }
     })();
-  }, [setValue]);
+  }, []);
 
   useEffect(() => {
-    if (userType !== 'branch') {
-      setValue('branch_id', 0);
-    }
-  }, [userType, setValue]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const branchId = Number(selectedBranchId ?? 0);
+        const roleRows = await fetchAssignableRolesOptions({
+          context: branchId > 0 ? 'branch' : '',
+          excludeBranchAdmin: branchId > 0,
+        });
+        if (cancelled) return;
+        setRoles(roleRows);
+        const currentRoleId = Number(selectedRoleId ?? 0);
+        const stillValid = roleRows.some((r) => r.id === currentRoleId);
+        if (!stillValid) {
+          setValue('role_id', roleRows[0]?.id ?? 0);
+        }
+      } catch {
+        if (!cancelled) setErrorMessage('خطا در دریافت نقش‌های قابل انتساب');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBranchId, setValue, selectedRoleId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,7 +159,6 @@ export default function CreateUserPage() {
         ...data,
         name: data.name || '',
         family: data.family || '',
-        user_type: data.user_type || USER_TYPE_OPTIONS[0]?.value || 'mobile',
         email: data.email || '',
       }, validDocuments);
       router.push(paths.dashboard.user.search);
@@ -253,15 +266,6 @@ export default function CreateUserPage() {
                     <Field.Text name="email" label="ایمیل" />
                   </Stack>
                   <Stack>
-                    <Field.Select name="user_type" label="نوع کاربر">
-                      {USER_TYPE_OPTIONS.map((o) => (
-                        <MenuItem key={o.value} value={o.value}>
-                          {o.label}
-                        </MenuItem>
-                      ))}
-                    </Field.Select>
-                  </Stack>
-                  <Stack>
                     <Field.Select name="role_id" label="نقش (Role)">
                       {roles.map((r) => (
                         <MenuItem key={r.id} value={r.id}>
@@ -270,18 +274,16 @@ export default function CreateUserPage() {
                       ))}
                     </Field.Select>
                   </Stack>
-                  {userType === 'branch' && (
-                    <Stack>
-                      <Field.Select name="branch_id" label="شعبه">
-                        <MenuItem value={0}>بدون شعبه</MenuItem>
-                        {branches.map((b) => (
-                          <MenuItem key={b.id} value={b.id}>
-                            {b.title}
-                          </MenuItem>
-                        ))}
-                      </Field.Select>
-                    </Stack>
-                  )}
+                  <Stack>
+                    <Field.Select name="branch_id" label="شعبه">
+                      <MenuItem value={0}>بدون شعبه</MenuItem>
+                      {branches.map((b) => (
+                        <MenuItem key={b.id} value={b.id}>
+                          {b.title}
+                        </MenuItem>
+                      ))}
+                    </Field.Select>
+                  </Stack>
                   <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                     <Box
                       sx={{

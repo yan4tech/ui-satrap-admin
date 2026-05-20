@@ -7,14 +7,11 @@ function normalizeId(value) {
   return Number(value?.ID ?? value?.id ?? 0) || 0;
 }
 
-/** هدرهای درخواست بر اساس نقش کاربر جاری */
+/** هدرهای درخواست بر اساس scope کاربر جاری */
 export function membershipHeadersForUser(user) {
-  const type = String(user?.user_type ?? '').trim();
-  if (type === 'branch') {
-    const branchId = Number(user?.branch_id ?? 0);
-    if (branchId > 0) {
-      setBranchIdForApi(branchId);
-    }
+  const branchId = Number(user?.branch_id ?? 0);
+  if (branchId > 0) {
+    setBranchIdForApi(branchId);
     return { mode: 'branch' };
   }
   return { mode: 'company' };
@@ -62,9 +59,7 @@ export function isBranchAdminUser(row) {
 }
 
 export function countActiveBranchUsers(rows) {
-  return (rows || []).filter(
-    (u) => (u?.active === true || u?.Active === true) && String(u?.user_type ?? '') === 'branch'
-  ).length;
+  return (rows || []).filter((u) => u?.active === true || u?.Active === true).length;
 }
 
 export { normalizeId };

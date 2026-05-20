@@ -24,7 +24,7 @@ import {
   TableContainer,
 } from '@mui/material';
 
-import { fetchRolesOptions } from 'src/app/dashboard/user/user-api';
+import { fetchAssignableRolesOptions } from 'src/app/dashboard/user/user-api';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
 import { userHasAnyPermission } from 'src/lib/permissions';
 
@@ -93,11 +93,11 @@ export default function BranchUsersPanel({
     if (!dialogOpen) return;
     (async () => {
       try {
-        const all = await fetchRolesOptions();
-        const filtered = all.filter(
-          (r) => String(r.slug ?? '').trim() !== BRANCH_ADMIN_ROLE_SLUG
-        );
-        setRoles(filtered.length > 0 ? filtered : all);
+        const rows = await fetchAssignableRolesOptions({
+          context: 'branch',
+          excludeBranchAdmin: true,
+        });
+        setRoles(rows);
       } catch {
         setRoles([]);
       }
@@ -116,7 +116,6 @@ export default function BranchUsersPanel({
           mobile: form.mobile.trim(),
           role_id: Number(form.role_id) || undefined,
           active: true,
-          user_type: 'branch',
           branch_id: branchId,
         },
         actor

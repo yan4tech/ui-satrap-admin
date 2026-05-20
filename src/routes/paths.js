@@ -81,6 +81,9 @@ export const paths = {
       edit: (id) => `${ROOTS.DASHBOARD}/permission/edit/${id}`,
       details: (id) => `${ROOTS.DASHBOARD}/permission/edit/${id}?view=1`,
     },
+    delegation: {
+      search: `${ROOTS.DASHBOARD}/delegation/search`,
+    },
     user: {
       create: `${ROOTS.DASHBOARD}/user/create`,
       search: `${ROOTS.DASHBOARD}/user/search`,

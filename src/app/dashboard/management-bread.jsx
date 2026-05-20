@@ -25,6 +25,14 @@ const SECTIONS = {
     editLabel: 'ویرایش دسترسی',
     detailsLabel: 'جزئیات دسترسی',
   },
+  delegation: {
+    listPath: () => paths.dashboard.delegation.search,
+    sectionLabel: 'انتساب نقش',
+    createLabel: 'delegation جدید',
+    listLabel: 'مدیریت delegation',
+    editLabel: 'ویرایش delegation',
+    detailsLabel: 'جزئیات delegation',
+  },
   user: {
     listPath: () => paths.dashboard.user.search,
     sectionLabel: 'کاربر',
@@ -36,7 +44,7 @@ const SECTIONS = {
 };
 
 /**
- * @param {{ section: 'role' | 'permission' | 'user' }} props
+ * @param {{ section: 'role' | 'permission' | 'user' | 'delegation' }} props
  */
 export function ManagementBread({ section }) {
   const router = useRouter();

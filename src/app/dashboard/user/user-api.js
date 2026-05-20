@@ -3,16 +3,14 @@ import axios from 'src/lib/axios';
 const MODE_HEADERS = { mode: 'company' };
 const LIST_PAGE_SIZE = 100;
 
-export const USER_TYPE_OPTIONS = [
-  { value: 'mobile', label: 'موبایل' },
-  { value: 'branch', label: 'شعبه' },
-  { value: 'company', label: 'سازمان مرکزی' },
-  { value: 'company_admin', label: 'مدیر شرکت' },
-  { value: 'company_reviewer', label: 'ریویور شرکت' },
-];
-
-/** MUI Select cannot use '' as a stable value; use this for «همه» and never send it to the API. */
-export const USER_TYPE_FILTER_ALL = '__all__';
+/** برچسب حوزه کاربر از branch_id / company_id */
+export function userScopeLabel(user) {
+  const branchId = Number(user?.branch_id ?? 0);
+  const companyId = Number(user?.company_id ?? 0);
+  if (branchId > 0) return 'شعبه';
+  if (companyId > 0) return 'شرکت';
+  return 'عمومی';
+}
 
 function normalizeId(value) {
   return Number(value?.ID ?? value?.id ?? 0) || 0;
@@ -39,6 +37,32 @@ export async function fetchRolesOptions() {
   }
 
   return all
+    .map((item) => ({
+      id: normalizeId(item),
+      title: item?.title ?? '-',
+      slug: item?.slug ?? '',
+    }))
+    .filter((item) => item.id > 0);
+}
+
+/**
+ * Roles the logged-in user may assign (role delegation).
+ * @param {{ context?: 'branch'|'company'|'', excludeBranchAdmin?: boolean }} [opts]
+ */
+export async function fetchAssignableRolesOptions(opts = {}) {
+  const params = new URLSearchParams();
+  if (opts.context) params.set('context', opts.context);
+  if (opts.excludeBranchAdmin) params.set('exclude_branch_admin', 'true');
+
+  const qs = params.toString();
+  const url = qs
+    ? `/api/membership/ac/role/assignable?${qs}`
+    : '/api/membership/ac/role/assignable';
+
+  const res = await axios.get(url, { headers: MODE_HEADERS });
+  const rows = Array.isArray(res?.data?.data) ? res.data.data : [];
+
+  return rows
     .map((item) => ({
       id: normalizeId(item),
       title: item?.title ?? '-',
@@ -170,11 +194,6 @@ export async function searchUsers(filters, page, pageSize) {
     branchIdRaw === '' || branchIdRaw == null ? NaN : Number(branchIdRaw);
   if (Number.isFinite(branchIdNum) && branchIdNum > 0) {
     params.set('branch_id', String(branchIdNum));
-  }
-
-  const userType = String(filters.user_type ?? '').trim();
-  if (userType && userType !== USER_TYPE_FILTER_ALL) {
-    params.set('user_type', userType);
   }
 
   if (filters.name) params.set('name', filters.name);

@@ -37,10 +37,9 @@ import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
 import {
   updateUser,
-  fetchRolesOptions,
+  fetchAssignableRolesOptions,
   fetchRoleById,
   fetchBranchesOptions,
-  USER_TYPE_OPTIONS,
 } from './user-api';
 import { CONFIG } from 'src/global-config';
 
@@ -51,7 +50,6 @@ const UserSchema = zod.object({
   mobile: zod.string().min(10),
   role_id: zod.number().min(0),
   branch_id: zod.number().min(0),
-  user_type: zod.string().optional(),
   active: zod.boolean(),
   verified: zod.boolean(),
 });
@@ -83,7 +81,6 @@ export default function EditUserView({ user, readOnly, onSaved }) {
       mobile: '',
       role_id: 1,
       branch_id: 0,
-      user_type: USER_TYPE_OPTIONS[0]?.value ?? 'mobile',
       active: true,
       verified: false,
     },
@@ -96,8 +93,8 @@ export default function EditUserView({ user, readOnly, onSaved }) {
     watch,
     formState: { isSubmitting },
   } = methods;
-  const userType = watch('user_type');
   const selectedRoleId = watch('role_id');
+  const selectedBranchId = watch('branch_id');
   const activeValue = watch('active');
   const verifiedValue = watch('verified');
   const formValues = watch();
@@ -111,7 +108,6 @@ export default function EditUserView({ user, readOnly, onSaved }) {
       mobile: user.mobile,
       role_id: Number(user.role_id || roles[0]?.id || 1),
       branch_id: Number(user.branch_id || 0),
-      user_type: String(user.user_type || USER_TYPE_OPTIONS[0]?.value || 'mobile'),
       active: user.active,
       verified: user.verified,
     });
@@ -123,20 +119,43 @@ export default function EditUserView({ user, readOnly, onSaved }) {
   useEffect(() => {
     (async () => {
       try {
-        const [roleRows, branchRows] = await Promise.all([fetchRolesOptions(), fetchBranchesOptions()]);
-        setRoles(roleRows);
+        const branchRows = await fetchBranchesOptions();
         setBranches(branchRows);
       } catch {
-        setErrorMessage('خطا در دریافت لیست نقش‌ها و شعب');
+        setErrorMessage('خطا در دریافت لیست شعب');
       }
     })();
   }, []);
 
   useEffect(() => {
-    if (userType !== 'branch') {
-      setValue('branch_id', 0);
-    }
-  }, [userType, setValue]);
+    let cancelled = false;
+    (async () => {
+      try {
+        const branchId = Number(selectedBranchId ?? 0);
+        let roleRows = await fetchAssignableRolesOptions({
+          context: branchId > 0 ? 'branch' : '',
+          excludeBranchAdmin: branchId > 0,
+        });
+        const userRoleId = Number(user?.role_id ?? 0);
+        if (userRoleId > 0 && !roleRows.some((r) => r.id === userRoleId)) {
+          const current = await fetchRoleById(userRoleId);
+          if (current?.id) roleRows = [current, ...roleRows];
+        }
+        if (cancelled) return;
+        setRoles(roleRows);
+        const currentRoleId = Number(selectedRoleId ?? 0);
+        const stillValid = roleRows.some((r) => r.id === currentRoleId);
+        if (!stillValid && roleRows[0]?.id) {
+          setValue('role_id', roleRows[0].id);
+        }
+      } catch {
+        if (!cancelled) setErrorMessage('خطا در دریافت نقش‌های قابل انتساب');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedBranchId, setValue, selectedRoleId, user?.role_id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -189,10 +208,8 @@ export default function EditUserView({ user, readOnly, onSaved }) {
     const hasFamily = Boolean(String(data.family ?? '').trim());
     const hasEmail = Boolean(String(data.email ?? '').trim());
     const hasMobile = Boolean(String(data.mobile ?? '').trim());
-    const hasUserType = Boolean(String(data.user_type ?? '').trim());
     const hasRole = Number(data.role_id ?? 0) > 0;
-    const hasBranch = data.user_type !== 'branch' || Number(data.branch_id ?? 0) > 0;
-    return hasName && hasFamily && hasEmail && hasMobile && hasUserType && hasRole && hasBranch;
+    return hasName && hasFamily && hasEmail && hasMobile && hasRole;
   };
   const isVerifiableNow = canBeVerified(formValues);
 
@@ -228,7 +245,6 @@ export default function EditUserView({ user, readOnly, onSaved }) {
           name: data.name || '',
           family: data.family || '',
           email: data.email || '',
-          user_type: data.user_type || USER_TYPE_OPTIONS[0]?.value || 'mobile',
           verified,
         },
         validDocuments,
@@ -302,15 +318,6 @@ export default function EditUserView({ user, readOnly, onSaved }) {
                   <Field.Text name="email" label="ایمیل" disabled={readOnly} />
                 </Box>
                 <Box>
-                  <Field.Select name="user_type" label="نوع کاربر" disabled={readOnly}>
-                    {USER_TYPE_OPTIONS.map((o) => (
-                      <MenuItem key={o.value} value={o.value}>
-                        {o.label}
-                      </MenuItem>
-                    ))}
-                  </Field.Select>
-                </Box>
-                <Box>
                   <Field.Select name="role_id" label="نقش (Role)" disabled={readOnly}>
                     {roles.map((r) => (
                       <MenuItem key={r.id} value={r.id}>
@@ -319,18 +326,16 @@ export default function EditUserView({ user, readOnly, onSaved }) {
                     ))}
                   </Field.Select>
                 </Box>
-                {userType === 'branch' && (
-                  <Box>
-                    <Field.Select name="branch_id" label="شعبه" disabled={readOnly}>
-                      <MenuItem value={0}>بدون شعبه</MenuItem>
-                      {branches.map((b) => (
-                        <MenuItem key={b.id} value={b.id}>
-                          {b.title}
-                        </MenuItem>
-                      ))}
-                    </Field.Select>
-                  </Box>
-                )}
+                <Box>
+                  <Field.Select name="branch_id" label="شعبه" disabled={readOnly}>
+                    <MenuItem value={0}>بدون شعبه</MenuItem>
+                    {branches.map((b) => (
+                      <MenuItem key={b.id} value={b.id}>
+                        {b.title}
+                      </MenuItem>
+                    ))}
+                  </Field.Select>
+                </Box>
                 <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
                   <Box
                     sx={{

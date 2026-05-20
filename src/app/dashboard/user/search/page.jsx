@@ -37,8 +37,7 @@ import {
   deleteUserById,
   fetchRolesOptions,
   fetchBranchesOptions,
-  USER_TYPE_OPTIONS,
-  USER_TYPE_FILTER_ALL,
+  userScopeLabel,
 } from '../user-api';
 
 const SearchSchema = zod.object({
@@ -48,14 +47,9 @@ const SearchSchema = zod.object({
   mobile: zod.string().optional(),
   role_id: zod.union([zod.string(), zod.number()]).optional(),
   branch_id: zod.union([zod.string(), zod.number()]).optional(),
-  user_type: zod.string().optional(),
   active: zod.string().optional(),
   verified: zod.string().optional(),
 });
-
-function userTypeLabel(v) {
-  return USER_TYPE_OPTIONS.find((o) => o.value === v)?.label ?? String(v);
-}
 
 export default function UserSearchPage() {
   const router = useRouter();
@@ -77,7 +71,6 @@ export default function UserSearchPage() {
       mobile: '',
       role_id: '',
       branch_id: '',
-      user_type: USER_TYPE_FILTER_ALL,
       active: '',
       verified: '',
     },
@@ -86,14 +79,6 @@ export default function UserSearchPage() {
   const { handleSubmit, watch, setValue, getValues, reset } = methods;
   const activeVal = watch('active');
   const verifiedVal = watch('verified');
-  const selectedUserType = watch('user_type');
-
-  useEffect(() => {
-    if (selectedUserType !== 'branch') {
-      setValue('branch_id', '');
-    }
-  }, [selectedUserType, setValue]);
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     const f = getValues();
@@ -106,7 +91,7 @@ export default function UserSearchPage() {
         ...u,
         role_title: roles.find((r) => r.id === Number(u.role_id))?.title || '—',
         branch_title: branches.find((b) => b.id === Number(u.branch_id))?.title || '—',
-        user_type_label: userTypeLabel(u.user_type),
+        scope_label: userScopeLabel(u),
         }))
       );
       setRowCount(res.total);
@@ -155,7 +140,7 @@ export default function UserSearchPage() {
       flex: 1,
       renderCell: (p) => <Chip size="small" label={p.value || '—'} color="primary" variant="outlined" />,
     },
-    { field: 'user_type_label', headerName: 'نوع کاربر', width: 120 },
+    { field: 'scope_label', headerName: 'حوزه', width: 100 },
     { field: 'branch_title', headerName: 'شعبه', flex: 1 },
     {
       field: 'active',
@@ -295,27 +280,15 @@ export default function UserSearchPage() {
                     </Field.Select>
                   </Box>
                   <Box>
-                    <Field.Select name="user_type" label="نوع کاربر" placeholder="همه">
-                      <MenuItem value={USER_TYPE_FILTER_ALL}>همه</MenuItem>
-                      {USER_TYPE_OPTIONS.map((o) => (
-                        <MenuItem key={o.value} value={o.value}>
-                          {o.label}
+                    <Field.Select name="branch_id" label="شعبه" placeholder="همه">
+                      <MenuItem value="">همه</MenuItem>
+                      {branches.map((b) => (
+                        <MenuItem key={b.id} value={String(b.id)}>
+                          {b.title}
                         </MenuItem>
                       ))}
                     </Field.Select>
                   </Box>
-                  {selectedUserType === 'branch' && (
-                    <Box>
-                      <Field.Select name="branch_id" label="شعبه" placeholder="همه">
-                        <MenuItem value="">همه</MenuItem>
-                        {branches.map((b) => (
-                          <MenuItem key={b.id} value={String(b.id)}>
-                            {b.title}
-                          </MenuItem>
-                        ))}
-                      </Field.Select>
-                    </Box>
-                  )}
                 </Box>
 
                 <Box

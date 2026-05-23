@@ -6,7 +6,11 @@ export function servicesFromCompany(companyData) {
 }
 
 export function branchesFromCompany(companyData) {
-  const raw = companyData?.branches ?? companyData?.Branches;
+  const raw =
+    companyData?.child_branches ??
+    companyData?.ChildBranches ??
+    companyData?.branches ??
+    companyData?.Branches;
   if (!Array.isArray(raw)) return [];
   return raw
     .map((b) => ({

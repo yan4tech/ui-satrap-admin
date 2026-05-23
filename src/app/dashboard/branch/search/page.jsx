@@ -19,6 +19,13 @@ import {
   Tooltip,
   Stack,
   Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
+  Alert,
+  Snackbar,
 } from '@mui/material';
 
 import { LoadingButton } from '@mui/lab';
@@ -28,6 +35,8 @@ import { Icon } from '@iconify/react';
 import { Form, Field } from 'src/components/hook-form';
 import { paths } from 'src/routes/paths';
 import axios from 'src/lib/axios';
+import { deleteBranch } from 'src/lib/branch-api';
+import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
 import {
   buildRegistrationUnitNameMap,
   fetchProvinces,
@@ -62,6 +71,9 @@ const BranchSearch = () => {
     pageSize: 10,
   });
   const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [deleteDialog, setDeleteDialog] = useState({ open: false, row: null });
+  const [deleting, setDeleting] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
@@ -133,7 +145,6 @@ const BranchSearch = () => {
             : {}),
           ...(filters.is_active !== '' ? { is_active: filters.is_active } : {}),
         },
-        headers: { mode: 'company' },
       });
 
       const payload = res?.data ?? {};
@@ -149,7 +160,7 @@ const BranchSearch = () => {
         );
 
         return {
-          id: item.ID,
+          id: item.ID ?? item.id,
           title: item.title || '-',
           province: provinceNames[provinceId] || (provinceId > 0 ? String(provinceId) : '-'),
           registration_unit:
@@ -189,6 +200,28 @@ const BranchSearch = () => {
 
   const handleEdit = (row) => router.push(paths.dashboard.branch.edit(row.id));
 
+  const closeDeleteDialog = () => setDeleteDialog({ open: false, row: null });
+
+  const confirmDelete = async () => {
+    if (!deleteDialog.row?.id) return;
+    setDeleting(true);
+    try {
+      await deleteBranch(deleteDialog.row.id);
+      closeDeleteDialog();
+      setSnackbar({ open: true, message: 'شعبه با موفقیت حذف شد', severity: 'success' });
+      fetchData();
+    } catch (err) {
+      setSnackbar({
+        open: true,
+        message: extractMembershipErrorMessage(err, 'خطا در حذف شعبه'),
+        severity: 'error',
+      });
+      closeDeleteDialog();
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const columns = [
     { field: 'id', headerName: 'شناسه', flex: 0.7 },
     { field: 'title', headerName: 'عنوان', flex: 1 },
@@ -213,14 +246,25 @@ const BranchSearch = () => {
     {
       field: 'actions',
       headerName: 'عملیات',
-      flex: 0.8,
+      width: 120,
       sortable: false,
       renderCell: (params) => (
-        <Tooltip title="ویرایش">
-          <IconButton size="small" onClick={() => handleEdit(params.row)}>
-            <Icon icon="solar:pen-bold" />
-          </IconButton>
-        </Tooltip>
+        <Stack direction="row" spacing={0.5}>
+          <Tooltip title="ویرایش">
+            <IconButton size="small" onClick={() => handleEdit(params.row)}>
+              <Icon icon="solar:pen-bold" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="حذف">
+            <IconButton
+              size="small"
+              color="error"
+              onClick={() => setDeleteDialog({ open: true, row: params.row })}
+            >
+              <Icon icon="solar:trash-bin-trash-bold" />
+            </IconButton>
+          </Tooltip>
+        </Stack>
       ),
     },
   ];
@@ -360,9 +404,25 @@ const BranchSearch = () => {
 
       <Card>
         <CardContent>
-          <Typography variant="h5" sx={{ mb: 2 }}>
-            لیست شعب
-          </Typography>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              mb: 2,
+            }}
+          >
+            <Typography variant="h5">لیست شعب</Typography>
+            <Tooltip title="نمای درختی شعب">
+              <IconButton
+                color="primary"
+                onClick={() => router.push(paths.dashboard.branch.tree)}
+                aria-label="نمای درختی شعب"
+              >
+                <Icon icon="mdi:file-tree" width={24} />
+              </IconButton>
+            </Tooltip>
+          </Box>
 
           <DataGrid
             rows={rows}
@@ -378,6 +438,39 @@ const BranchSearch = () => {
           />
         </CardContent>
       </Card>
+
+      <Dialog open={deleteDialog.open} onClose={closeDeleteDialog}>
+        <DialogTitle>حذف شعبه</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            آیا از حذف شعبه «{deleteDialog.row?.title || ''}» (شناسه {deleteDialog.row?.id}) اطمینان
+            دارید؟ این عمل قابل بازگشت نیست.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeDeleteDialog} disabled={deleting}>
+            انصراف
+          </Button>
+          <LoadingButton color="error" variant="contained" loading={deleting} onClick={confirmDelete}>
+            حذف
+          </LoadingButton>
+        </DialogActions>
+      </Dialog>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={5000}
+        onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'left' }}
+      >
+        <Alert
+          severity={snackbar.severity}
+          variant="filled"
+          onClose={() => setSnackbar((s) => ({ ...s, open: false }))}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

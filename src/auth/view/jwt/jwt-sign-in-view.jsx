@@ -30,10 +30,8 @@ import {
   API_MODE_LABELS_FA,
   API_MODE_VALUES,
   getApiMode,
-  isCompanyTenantLoginMode,
   setApiMode,
 } from 'src/lib/api-mode';
-
 import { useAuthContext } from '../../hooks';
 import { getErrorMessage } from '../../utils';
 import { FormHead } from '../../components/form-head';
@@ -71,7 +69,6 @@ export function JwtSignInView() {
       : null;
   const [apiMode, setApiModeState] = useState('mobile');
   const [branchIdInput, setBranchIdInput] = useState('');
-
   useEffect(() => {
     const m = getApiMode();
     setApiModeState(m);
@@ -141,9 +138,7 @@ export function JwtSignInView() {
         code: data.code,
       });
       await checkUserSession?.();
-      const destination = isCompanyTenantLoginMode()
-        ? paths.dashboard.company.manage
-        : paths.dashboard.root;
+      const destination = paths.dashboard.root;
       router.push(destination);
       router.refresh();
     } catch (error) {
@@ -181,11 +176,9 @@ export function JwtSignInView() {
           ))}
         </ToggleButtonGroup>
         <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1, lineHeight: 1.5 }}>
-          <strong>سازمان مرکزی:</strong> مدیریت کامل شرکت‌ها، شعبات، خدمات و کاربران.
+          <strong>شعبه:</strong> ورود مدیر شعبه یا شعبه مرکزی با شناسه شعبه.
           <br />
-          <strong>شرکت:</strong> فقط شعب و کاربران همان شرکت.
-          <br />
-          با انتخاب «شعبه»، هدر <strong>branch</strong> با شناسهٔ زیر ارسال می‌شود.
+          با انتخاب «شعبه»، هدر <strong>branch</strong> با شناسه زیر ارسال می‌شود.
         </Typography>
       </Box>
 

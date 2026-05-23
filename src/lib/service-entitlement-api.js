@@ -3,8 +3,6 @@ import { getApiRequestMode } from 'src/lib/api-mode';
 
 const MODE_HEADER = () => ({ mode: getApiRequestMode() });
 
-/** @typedef {{ id: number, title: string, slug?: string, process_key: string, description?: string, is_active?: boolean }} CatalogService */
-
 export function normalizeService(raw) {
   if (!raw || typeof raw !== 'object') return null;
   const id = Number(raw.ID ?? raw.id);
@@ -28,7 +26,6 @@ export function normalizeServiceList(payload) {
   return list.map(normalizeService).filter(Boolean);
 }
 
-/** خدمات مجاز کاربر شعبه (یا تقاطع با نقش) */
 export async function fetchMyBranchServices() {
   const res = await axios.get('/api/membership/user/my-services', {
     headers: MODE_HEADER(),
@@ -36,48 +33,58 @@ export async function fetchMyBranchServices() {
   return normalizeServiceList(res?.data?.data ?? res?.data);
 }
 
-/** کاتالوگ جهانی — ادمین مرکزی */
 export async function fetchServiceCatalog() {
   const res = await axios.get('/api/membership/service', {
-    headers: { mode: 'company' },
+    headers: MODE_HEADER(),
     params: { limit: 100, is_active: true },
   });
   return normalizeServiceList(res?.data);
 }
 
-/** خدمات مجاز یک شرکت */
-export async function fetchCompanyServices(companyId) {
-  const res = await axios.get(`/api/membership/company/${companyId}/services`, {
-    headers: { mode: 'company' },
+async function fetchBranchWithServices(branchId) {
+  const res = await axios.get(`/api/membership/branch/${branchId}`, {
+    headers: MODE_HEADER(),
   });
-  return normalizeServiceList(res?.data);
+  const branch = res?.data ?? {};
+  return normalizeServiceList(branch.services ?? branch.Services);
 }
 
-/** خدمات تخصیص‌یافته به شعبه (مدیر شرکت) */
-export async function fetchBranchServicesForCompany(companyId, branchId) {
-  const res = await axios.get(
-    `/api/membership/company/${companyId}/branches/${branchId}/services`,
-    { headers: { mode: 'company' } }
-  );
-  return normalizeServiceList(res?.data);
+/** خدمات شعبه مرکزی */
+export async function fetchCentralBranchServices(centralBranchId) {
+  return fetchBranchWithServices(centralBranchId);
 }
 
-export async function assignCompanyServices(companyId, serviceIds) {
+/** @deprecated alias */
+export async function fetchCompanyServices(centralBranchId) {
+  return fetchCentralBranchServices(centralBranchId);
+}
+
+/** خدمات زیرشعبه */
+export async function fetchBranchServicesForCompany(centralBranchId, branchId) {
+  return fetchBranchWithServices(branchId);
+}
+
+export async function assignCentralBranchServices(centralBranchId, serviceIds) {
   const res = await axios.put(
-    `/api/membership/company/${companyId}/services`,
+    `/api/membership/branch/${centralBranchId}`,
     { service_ids: serviceIds },
-    { headers: { mode: 'company' } }
+    { headers: MODE_HEADER() }
   );
   return res?.data;
 }
 
-export async function assignBranchServices(companyId, branchId, serviceIds) {
+/** @deprecated alias */
+export async function assignCompanyServices(centralBranchId, serviceIds) {
+  return assignCentralBranchServices(centralBranchId, serviceIds);
+}
+
+export async function assignBranchServices(centralBranchId, branchId, serviceIds) {
   const res = await axios.put(
-    `/api/membership/company/${companyId}/branches/${branchId}/services`,
+    `/api/membership/branch/${branchId}`,
     { service_ids: serviceIds },
-    { headers: { mode: 'company' } }
+    { headers: MODE_HEADER() }
   );
-  return normalizeServiceList(res?.data?.services ?? res?.data);
+  return normalizeServiceList(res?.data?.services ?? res?.data?.Services);
 }
 
 export const PROCESS_KEY_TO_SERVICE_PATH = {

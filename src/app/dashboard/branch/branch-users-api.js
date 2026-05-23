@@ -12,9 +12,8 @@ export function membershipHeadersForUser(user) {
   const branchId = Number(user?.branch_id ?? 0);
   if (branchId > 0) {
     setBranchIdForApi(branchId);
-    return { mode: 'branch' };
   }
-  return { mode: 'company' };
+  return { mode: 'branch' };
 }
 
 export async function fetchBranchUsers(branchId, user) {

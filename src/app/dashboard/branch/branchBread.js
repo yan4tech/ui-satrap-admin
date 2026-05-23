@@ -12,6 +12,7 @@ const BranchBread = () => {
   const getCurrentPageLabel = () => {
     if (pathname?.includes('/dashboard/branch/create')) return 'شعبه جدید';
     if (pathname?.includes('/dashboard/branch/edit/')) return 'ویرایش شعبه';
+    if (pathname?.includes('/dashboard/branch/tree')) return 'درخت شعب';
     return 'لیست شعبات';
   };
 

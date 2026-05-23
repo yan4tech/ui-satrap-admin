@@ -2,12 +2,17 @@
 
 import { useEffect, useState, useCallback } from 'react';
 
-import { getApiMode } from 'src/lib/api-mode';
 import { useAuthContext } from 'src/auth/hooks';
 import { fetchMyBranchServices } from 'src/lib/service-entitlement-api';
 
+function resolveBranchId(user) {
+  const raw = user?.branch_id ?? user?.branchId ?? user?.BranchID ?? 0;
+  const id = Number(raw);
+  return Number.isFinite(id) && id > 0 ? id : 0;
+}
+
 /**
- * خدمات قابل مشاهده/اجرا برای کاربر جاری (در حالت شعبه از my-services).
+ * خدمات قابل مشاهده/اجرا برای کاربر جاری (فقط وقتی به شعبه وصل است از my-services).
  */
 export function useEntitledServices() {
   const { user, loading: authLoading } = useAuthContext();
@@ -15,8 +20,8 @@ export function useEntitledServices() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const isBranchScoped =
-    getApiMode() === 'branch' || Number(user?.branch_id ?? 0) > 0;
+  // مدیران مرکزی (branch_id=0) با mode شعبه وارد می‌شوند؛ فیلتر منو فقط برای کاربر واقعاً شعبه‌ای است.
+  const isBranchScoped = resolveBranchId(user) > 0;
 
   const reload = useCallback(async () => {
     if (!isBranchScoped) {

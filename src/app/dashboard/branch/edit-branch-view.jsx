@@ -42,8 +42,19 @@ import {
   fetchBranchServicesForCompany,
 } from 'src/lib/service-entitlement-api';
 
-import { fetchCompaniesOptions } from 'src/lib/company-api';
-import { affiliationReviewToPayload, branchFormValuesFromBranch, BRANCH_AFFILIATION } from 'src/lib/branch-workflow';
+import { fetchCentralBranchOptions } from 'src/lib/branch-api';
+import {
+  affiliationReviewToPayload,
+  branchAssignmentsFromSelection,
+  branchFormValuesFromBranch,
+  centralBranchFieldsFromAffiliation,
+  isCentralBranchAffiliation,
+  BRANCH_AFFILIATION,
+  REVIEW_POLICY,
+} from 'src/lib/branch-workflow';
+import { getApiRequestMode } from 'src/lib/api-mode';
+import CompanyFormSections from '../company/company-form-sections';
+import { branchesFromCompany, idsFromSelection } from '../company/company-form-utils';
 import { branchWorkflowZodFields, branchWorkflowSuperRefine } from 'src/lib/branch-workflow-schema';
 
 import { Form, Field } from 'src/components/hook-form';
@@ -116,6 +127,10 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
     { rowId: Date.now(), title: '', file: null, previewUrl: null },
   ]);
   const [deleteDocumentIds, setDeleteDocumentIds] = useState([]);
+  const [selectedSubBranches, setSelectedSubBranches] = useState(() =>
+    branchesFromCompany(branchData)
+  );
+  const [subBranchesReloadKey, setSubBranchesReloadKey] = useState(0);
 
   const normalizeIsActive = (value) => value === true || value === 'true' || value === 1;
 
@@ -142,29 +157,35 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
     },
   });
 
+  const isCentralBranch = Boolean(branchData?.is_central ?? branchData?.IsCentral);
+
   const isCompanyAdmin = userHasPermission(user, PERM.ui.companyTenantManage);
   const canManageCentralBranches = userHasAnyPermission(user, [
-    PERM.ui.companyCentralList,
-    PERM.ui.companyCentralCreate,
-    PERM.ui.companyCentral,
     PERM.ui.branchCentralList,
     PERM.ui.branchCentralCreate,
     PERM.ui.branchCentral,
-    'api.company.central.manage',
+    'api.branch.manage',
   ]);
   const isCompanyOnlyAdmin = isCompanyAdmin && !canManageCentralBranches;
   const branchId = Number(branchData?.ID ?? branchData?.id ?? 0);
+  const tenantCentralBranchId = Number(user?.branch_id ?? user?.BranchID ?? 0);
   const adminCompanyId = Number(
-    user?.company_id ?? companyId ?? branchData?.company_id ?? branchData?.CompanyID ?? 0
+    companyId ?? branchData?.parent_branch_id ?? branchData?.ParentBranchID ?? 0
   );
   const hasCompany =
-    Number(companyId ?? branchData?.company_id ?? branchData?.CompanyID ?? 0) > 0;
+    Number(companyId ?? branchData?.parent_branch_id ?? branchData?.ParentBranchID ?? 0) > 0;
   const canEditWorkflow = !readOnly && (canManageCentralBranches || isCompanyAdmin);
   const canEditAffiliation = !readOnly && canManageCentralBranches;
   const canEditReviewPolicy =
     !readOnly && (canManageCentralBranches || (isCompanyAdmin && (hasCompany || adminCompanyId > 0)));
-  const lockAffiliation = isCompanyOnlyAdmin ? BRANCH_AFFILIATION.CORPORATE : null;
-  const lockCompanyId = isCompanyOnlyAdmin && adminCompanyId > 0 ? adminCompanyId : null;
+  const isOwnCentralBranch =
+    isCompanyAdmin && tenantCentralBranchId === branchId && isCentralBranch;
+  const lockAffiliation =
+    isCompanyOnlyAdmin && !isOwnCentralBranch ? BRANCH_AFFILIATION.SUB : null;
+  const lockParentBranchId =
+    isCompanyOnlyAdmin && tenantCentralBranchId > 0 && !isOwnCentralBranch
+      ? tenantCentralBranchId
+      : null;
   const [branchUsers, setBranchUsers] = useState(branchData?.users || []);
   const maxUsersLimit = Number(branchData?.max_users ?? 0);
   const activeUserCount = countActiveBranchUsers(branchUsers);
@@ -177,18 +198,24 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
     formState: { isSubmitting },
   } = methods;
   const isActive = watch('is_active');
+  const branchAffiliation = watch('branch_affiliation');
+  const isCentralAffiliation = isCentralBranchAffiliation(branchAffiliation);
+  const canManageSubBranches =
+    isCentralAffiliation &&
+    (canManageCentralBranches || (isCompanyAdmin && tenantCentralBranchId === branchId));
 
   useEffect(() => {
-    if (canManageCentralBranches) {
-      (async () => {
-        try {
-          setCompanies(await fetchCompaniesOptions());
-        } catch {
-          setCompanies([]);
-        }
-      })();
+    if (!canManageCentralBranches && !canEditWorkflow) {
+      return;
     }
-  }, [canManageCentralBranches]);
+    (async () => {
+      try {
+        setCompanies(await fetchCentralBranchOptions({ excludeBranchId: branchId }));
+      } catch {
+        setCompanies([]);
+      }
+    })();
+  }, [canManageCentralBranches, canEditWorkflow, branchId]);
 
   useEffect(() => {
     setDocuments(branchData?.documents || []);
@@ -207,47 +234,65 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
       services: resolveBranchServiceIds(branchData),
       ...branchFormValuesFromBranch(branchData),
     });
-    const cid = branchData?.company_id ?? branchData?.companyId ?? branchData?.CompanyID;
+    const cid = branchData?.parent_branch_id ?? branchData?.companyId ?? branchData?.ParentBranchID;
     setCompanyId(cid != null && Number(cid) > 0 ? Number(cid) : null);
+    setSelectedSubBranches(branchesFromCompany(branchData));
   }, [branchData, methods]);
 
   useEffect(() => {
     (async () => {
       const branchId = Number(branchData?.ID ?? branchData?.id);
-      const rawCid = companyId ?? branchData?.company_id ?? branchData?.companyId ?? branchData?.CompanyID;
+      const rawCid = companyId ?? branchData?.parent_branch_id ?? branchData?.companyId ?? branchData?.ParentBranchID;
       const cid = rawCid != null && Number(rawCid) > 0 ? Number(rawCid) : null;
       const current = (branchData?.services || [])
         .map((s) => normalizeService(s))
         .filter(Boolean)
         .map((s) => ({ id: s.id, title: s.title }));
 
+      const mergeServiceOptions = (...groups) => {
+        const merged = new Map();
+        groups.flat().forEach((item) => {
+          if (item?.id) merged.set(item.id, { id: item.id, title: item.title });
+        });
+        return Array.from(merged.values());
+      };
+
+      let assigned = [];
+      try {
+        if (branchId) {
+          assigned = await fetchBranchServicesForCompany(cid, branchId);
+        }
+      } catch {
+        assigned = [];
+      }
+
       try {
         let options = [];
         if (isCompanyAdmin && cid) {
           options = await fetchCompanyServices(cid);
-          if (branchId) {
-            const assigned = await fetchBranchServicesForCompany(cid, branchId);
-            if (assigned.length > 0) {
-              methods.setValue(
-                'services',
-                assigned.map((s) => s.id),
-                { shouldDirty: false }
-              );
-            }
-          }
         } else if (cid) {
           options = await fetchCompanyServices(cid);
         } else {
           options = await fetchServiceCatalog();
         }
 
-        const merged = new Map();
-        [...options, ...current].forEach((item) => {
-          if (item?.id) merged.set(item.id, { id: item.id, title: item.title });
-        });
-        setServicesList(Array.from(merged.values()));
+        const assignedIds = assigned.map((s) => s.id);
+        const selectedIds =
+          assignedIds.length > 0 ? assignedIds : resolveBranchServiceIds(branchData);
+        if (selectedIds.length > 0) {
+          methods.setValue('services', selectedIds, { shouldDirty: false });
+        }
+
+        setServicesList(mergeServiceOptions(options, current, assigned));
       } catch {
-        setServicesList(current);
+        const fallbackIds =
+          assigned.length > 0
+            ? assigned.map((s) => s.id)
+            : resolveBranchServiceIds(branchData);
+        if (fallbackIds.length > 0) {
+          methods.setValue('services', fallbackIds, { shouldDirty: false });
+        }
+        setServicesList(mergeServiceOptions(current, assigned));
       }
     })();
   }, [branchData, companyId, isCompanyAdmin, methods]);
@@ -271,7 +316,7 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
       };
 
       const serviceIds = data.services || [];
-      const rawCid = companyId ?? branchData?.company_id ?? branchData?.companyId ?? branchData?.CompanyID;
+      const rawCid = companyId ?? branchData?.parent_branch_id ?? branchData?.companyId ?? branchData?.ParentBranchID;
       const cid = rawCid != null && Number(rawCid) > 0 ? Number(rawCid) : null;
 
       const validNewDocuments = newDocuments.filter((doc) => doc.title.trim() || doc.file);
@@ -293,13 +338,31 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
 
       let branchPayload = isCompanyAdmin && cid ? payload : { ...payload, service_ids: serviceIds };
 
-      if (canEditWorkflow) {
+      if (canEditWorkflow && !isCompanyOnlyAdmin) {
         branchPayload = {
           ...branchPayload,
           ...affiliationReviewToPayload(data.branch_affiliation, data.review_policy, {
-            companyId: data.company_id,
+            parentBranchId: data.parent_branch_id,
           }),
         };
+      } else if (isCompanyOnlyAdmin && canEditReviewPolicy) {
+        branchPayload.review_required = data.review_policy === REVIEW_POLICY.REQUIRED;
+      }
+
+      const isCentralForm = isCentralBranchAffiliation(data.branch_affiliation);
+      const canSaveSubBranches =
+        isCentralForm &&
+        (canManageCentralBranches || (isCompanyAdmin && tenantCentralBranchId === branchId));
+
+      if (canSaveSubBranches) {
+        branchPayload.sub_branch_assignments = branchAssignmentsFromSelection(selectedSubBranches);
+      }
+
+      if (canManageCentralBranches && !isCompanyOnlyAdmin) {
+        Object.assign(
+          branchPayload,
+          centralBranchFieldsFromAffiliation(data.branch_affiliation, data.max_sub_branches)
+        );
       }
       const formData = new FormData();
       formData.append('payload', JSON.stringify(branchPayload));
@@ -310,10 +373,14 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
 
       await axios.put(`/api/membership/branch/${branchId}`, formData, {
         headers: {
-          mode: 'company',
+          mode: getApiRequestMode(),
           'Content-Type': 'multipart/form-data',
         },
       });
+
+      if (canSaveSubBranches) {
+        setSubBranchesReloadKey((k) => k + 1);
+      }
 
       if (onSaved) {
         await onSaved();
@@ -489,15 +556,46 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
                 </Box>
               </Box>
 
-              <BranchWorkflowSection
-                companies={companies}
-                readOnly={readOnly}
-                canEditAffiliation={canEditAffiliation}
-                canEditReviewPolicy={canEditReviewPolicy}
-                lockAffiliation={lockAffiliation}
-                lockCompanyId={lockCompanyId}
-                hideCompanySelect={isCompanyOnlyAdmin}
-              />
+              {canEditWorkflow || isCentralBranch || isCentralAffiliation || isOwnCentralBranch ? (
+                <BranchWorkflowSection
+                  centralBranches={companies}
+                  readOnly={readOnly}
+                  canEditAffiliation={canEditAffiliation && !isOwnCentralBranch}
+                  canEditReviewPolicy={canEditReviewPolicy}
+                  showCentralType={(canManageCentralBranches && !isCompanyOnlyAdmin) || isOwnCentralBranch}
+                  lockAffiliation={lockAffiliation}
+                  lockParentBranchId={lockParentBranchId}
+                  hideParentSelect={false}
+                />
+              ) : null}
+
+              {canManageSubBranches ? (
+                <Box
+                  sx={{
+                    p: { xs: 2, md: 2.5 },
+                    borderRadius: 2.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                  }}
+                >
+                  <Typography fontWeight={700} sx={{ mb: 1 }}>
+                    زیرشعب
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    شعب زیرمجموعه مستقیم این شعبه مرکزی را انتخاب کنید. فقط شعب آزاد یا همین
+                    زیرمجموعه‌ها نمایش داده می‌شوند؛ خود این شعبه و والدهایش در فهرست نیستند.
+                  </Typography>
+                  <CompanyFormSections
+                    parentBranchId={branchId}
+                    branchesReloadKey={subBranchesReloadKey}
+                    selectedBranches={selectedSubBranches}
+                    onBranchesChange={setSelectedSubBranches}
+                    disabled={readOnly}
+                    branchesOnly
+                    branchEditBasePath="/dashboard/branch/edit"
+                  />
+                </Box>
+              ) : null}
 
               {/* LOCATION */}
               <Box
@@ -543,19 +641,7 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
 
                 {isCompanyAdmin && companyId ? (
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                    فقط خدمات مجاز شرکت قابل انتخاب است.
-                  </Typography>
-                ) : null}
-
-                {canManageCentralBranches && companyId ? (
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                    <Button
-                      size="small"
-                      variant="text"
-                      onClick={() => router.push(paths.dashboard.company.edit(companyId))}
-                    >
-                      مدیریت خدمات مجاز شرکت
-                    </Button>
+                    فقط خدمات مجاز شعبه مرکزی قابل انتخاب است.
                   </Typography>
                 ) : null}
 
@@ -568,6 +654,7 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
                       disabled={readOnly}
                       options={servicesList}
                       getOptionLabel={(o) => o.title}
+                      isOptionEqualToValue={(a, b) => a.id === b.id}
                       value={servicesList.filter((s) => field.value?.includes(s.id))}
                       onChange={(_, value) => field.onChange(value.map((v) => v.id))}
                       filterSelectedOptions

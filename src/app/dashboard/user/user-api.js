@@ -1,14 +1,14 @@
 import axios from 'src/lib/axios';
 
-const MODE_HEADERS = { mode: 'company' };
+import { getApiRequestMode } from 'src/lib/api-mode';
+
+const modeHeaders = () => ({ mode: getApiRequestMode() });
 const LIST_PAGE_SIZE = 100;
 
-/** برچسب حوزه کاربر از branch_id / company_id */
+/** برچسب حوزه کاربر از branch_id */
 export function userScopeLabel(user) {
   const branchId = Number(user?.branch_id ?? 0);
-  const companyId = Number(user?.company_id ?? 0);
   if (branchId > 0) return 'شعبه';
-  if (companyId > 0) return 'شرکت';
   return 'عمومی';
 }
 
@@ -24,7 +24,7 @@ export async function fetchRolesOptions() {
   while (hasMore) {
     const res = await axios.get('/api/membership/ac/role', {
       headers: {
-        ...MODE_HEADERS,
+        ...modeHeaders(),
         limit: String(LIST_PAGE_SIZE),
         offset: String(offset),
       },
@@ -47,7 +47,7 @@ export async function fetchRolesOptions() {
 
 /**
  * Roles the logged-in user may assign (role delegation).
- * @param {{ context?: 'branch'|'company'|'', excludeBranchAdmin?: boolean }} [opts]
+ * @param {{ context?: 'branch'|'', excludeBranchAdmin?: boolean }} [opts]
  */
 export async function fetchAssignableRolesOptions(opts = {}) {
   const params = new URLSearchParams();
@@ -59,7 +59,7 @@ export async function fetchAssignableRolesOptions(opts = {}) {
     ? `/api/membership/ac/role/assignable?${qs}`
     : '/api/membership/ac/role/assignable';
 
-  const res = await axios.get(url, { headers: MODE_HEADERS });
+  const res = await axios.get(url, { headers: modeHeaders() });
   const rows = Array.isArray(res?.data?.data) ? res.data.data : [];
 
   return rows
@@ -78,7 +78,7 @@ export async function fetchRoleById(roleId) {
   if (!Number.isFinite(id) || id < 1) return null;
 
   const res = await axios.get(`/api/membership/ac/role/${id}`, {
-    headers: MODE_HEADERS,
+    headers: modeHeaders(),
   });
   const item = res?.data?.data;
   if (!item) return null;
@@ -103,7 +103,7 @@ export async function fetchBranchesOptions() {
         limit: LIST_PAGE_SIZE,
         offset,
       },
-      headers: MODE_HEADERS,
+      headers: modeHeaders(),
     });
 
     const rows = Array.isArray(res?.data?.data) ? res.data.data : [];
@@ -116,12 +116,9 @@ export async function fetchBranchesOptions() {
     .map((item) => ({
       id: normalizeId(item),
       title: item?.title ?? '-',
-      company_id: Number(item?.company_id ?? item?.CompanyID ?? 0) || 0,
     }))
     .filter((item) => item.id > 0);
 }
-
-export { fetchCompaniesOptions } from 'src/lib/company-api';
 
 export async function createUser(payload, documents = []) {
   const formData = new FormData();
@@ -134,7 +131,7 @@ export async function createUser(payload, documents = []) {
 
   const res = await axios.post('/api/membership/admin/', formData, {
     headers: {
-      ...MODE_HEADERS,
+      ...modeHeaders(),
       'Content-Type': 'multipart/form-data',
     },
   });
@@ -166,7 +163,7 @@ export async function updateUser(userId, payload, documents = [], deleteDocument
 
   const res = await axios.put(`/api/membership/admin/${userId}`, formData, {
     headers: {
-      ...MODE_HEADERS,
+      ...modeHeaders(),
       'Content-Type': 'multipart/form-data',
     },
   });
@@ -176,7 +173,7 @@ export async function updateUser(userId, payload, documents = [], deleteDocument
 
 export async function fetchUserById(userId) {
   const res = await axios.get(`/api/membership/admin/findById/${userId}`, {
-    headers: MODE_HEADERS,
+    headers: modeHeaders(),
   });
   const payload = res?.data;
   if (!payload) return null;
@@ -185,7 +182,7 @@ export async function fetchUserById(userId) {
 
 export async function deleteUserById(userId) {
   await axios.delete(`/api/membership/admin/${userId}`, {
-    headers: MODE_HEADERS,
+    headers: modeHeaders(),
   });
 }
 
@@ -212,7 +209,7 @@ export async function searchUsers(filters, page, pageSize) {
 
   const res = await axios.post(url, {}, {
     headers: {
-      ...MODE_HEADERS,
+      ...modeHeaders(),
       limit: String(pageSize),
       offset: String(page * pageSize),
     },

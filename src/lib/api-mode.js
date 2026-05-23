@@ -1,10 +1,8 @@
 /** مقادیر مجاز حالت ورود / session (هدر `mode` برای auth) */
-export const API_MODE_VALUES = ['mobile', 'central', 'company', 'branch'];
+export const API_MODE_VALUES = ['mobile', 'branch'];
 
 export const API_MODE_LABELS_FA = {
   mobile: 'موبایل',
-  central: 'سازمان مرکزی',
-  company: 'شرکت',
   branch: 'شعبه',
 };
 
@@ -12,14 +10,13 @@ export const API_MODE_STORAGE_KEY = 'api_request_mode';
 
 const DEFAULT_MODE = 'mobile';
 
-/** برچسب فارسی برای یک مقدار `mode` (یا مقدار پیش‌فرض در صورت نامعتبر بودن) */
+/** برچسب فارسی برای یک مقدار `mode` */
 export function getApiModeLabelFa(mode) {
   const m =
     mode && typeof mode === 'string' && API_MODE_VALUES.includes(mode) ? mode : DEFAULT_MODE;
   return API_MODE_LABELS_FA[m] ?? m;
 }
 
-/** حالت ذخیره‌شده پس از انتخاب در صفحه ورود */
 export function getApiMode() {
   if (typeof window === 'undefined') {
     return DEFAULT_MODE;
@@ -29,40 +26,47 @@ export function getApiMode() {
     if (v && API_MODE_VALUES.includes(v)) {
       return v;
     }
+    if (v === 'company' || v === 'central') {
+      return 'branch';
+    }
   } catch {
-    // حالت خصوصی / غیرقابل دسترس
+    // ignore
   }
   return DEFAULT_MODE;
 }
 
-/**
- * مقدار هدر `mode` برای درخواست‌های API پس از ورود.
- * سازمان مرکزی و شرکت هر دو از هدر company برای سرویس membership استفاده می‌کنند.
- */
+/** مقدار هدر `mode` برای درخواست‌های API پس از ورود */
 export function getApiRequestMode() {
-  const mode = getApiMode();
-  if (mode === 'central') {
-    return 'company';
-  }
-  return mode;
+  return getApiMode();
 }
 
 export function setApiMode(mode) {
   if (typeof window === 'undefined') return;
-  if (!API_MODE_VALUES.includes(mode)) return;
+  const normalized = mode === 'company' || mode === 'central' ? 'branch' : mode;
+  if (!API_MODE_VALUES.includes(normalized)) return;
   try {
-    window.sessionStorage.setItem(API_MODE_STORAGE_KEY, mode);
+    window.sessionStorage.setItem(API_MODE_STORAGE_KEY, normalized);
   } catch {
     // ignore
   }
 }
 
-/** آیا کاربر با حالت سازمان مرکزی وارد شده است؟ */
-export function isCentralLoginMode() {
-  return getApiMode() === 'central';
+/** مدیر شعبه (شامل شعبه مرکزی) — با mode شعبه وارد می‌شود */
+export function isBranchDashboardLoginMode() {
+  return getApiMode() === 'branch';
 }
 
-/** آیا کاربر با حالت شرکت (مدیر شرکت) وارد شده است؟ */
+/** @deprecated use isBranchDashboardLoginMode */
+export function isCentralBranchTenantLoginMode() {
+  return isBranchDashboardLoginMode();
+}
+
+/** @deprecated use isBranchDashboardLoginMode */
 export function isCompanyTenantLoginMode() {
-  return getApiMode() === 'company';
+  return isBranchDashboardLoginMode();
+}
+
+/** @deprecated removed — central org login merged into branch mode */
+export function isCentralLoginMode() {
+  return false;
 }

@@ -58,6 +58,7 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
       ? filterNavByEntitledServices(navAfterPermissions, {
           active: true,
           processKeys,
+          user,
         })
       : navAfterPermissions;
 

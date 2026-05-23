@@ -2,10 +2,7 @@ import { paths } from 'src/routes/paths';
 
 import { CONFIG } from 'src/global-config';
 import { PERM } from 'src/lib/permissions';
-import {
-  BRANCH_DASHBOARD_NAV_PERMISSIONS,
-  COMPANY_DASHBOARD_NAV_PERMISSIONS,
-} from 'src/lib/dashboard-nav-permissions';
+import { BRANCH_DASHBOARD_NAV_PERMISSIONS } from 'src/lib/dashboard-nav-permissions';
 
 import { SvgColor } from 'src/components/svg-color';
 
@@ -28,6 +25,16 @@ const ICONS = {
   banking: icon('ic-banking'),
 };
 
+const BRANCH_MANAGE_PERMISSIONS = [
+  PERM.ui.branchCentralList,
+  PERM.ui.branchCentralCreate,
+  PERM.ui.branchCentral,
+  PERM.ui.branchTenantList,
+  PERM.ui.branchTenantCreate,
+  PERM.ui.branchTenant,
+  PERM.ui.companyTenantManage,
+];
+
 // ----------------------------------------------------------------------
 
 export const navData = [
@@ -39,12 +46,6 @@ export const navData = [
         path: paths.dashboard.root,
         icon: ICONS.dashboard,
         requiredPermissions: [PERM.ui.dashboardView],
-      },
-      {
-        title: 'داشبورد شرکت',
-        path: paths.dashboard.company.overview,
-        icon: ICONS.banking,
-        anyPermissions: COMPANY_DASHBOARD_NAV_PERMISSIONS,
       },
       {
         title: 'داشبورد شعبه',
@@ -110,39 +111,21 @@ export const navData = [
         ],
       },
       {
-        title: 'مدیریت شرکت',
-        path: paths.dashboard.company.manage,
-        icon: ICONS.banking,
-        requiredPermissions: [PERM.ui.companyTenantManage],
-      },
-      {
-        title: 'شعب شرکت',
+        title: 'مدیریت شعبات',
         path: paths.dashboard.branch.search,
         icon: ICONS.branch,
-        anyPermissions: [PERM.ui.branchTenantList, PERM.ui.branchTenantCreate],
+        anyPermissions: BRANCH_MANAGE_PERMISSIONS,
         children: [
-          { title: 'شعبه جدید', path: paths.dashboard.branch.create, requiredPermissions: [PERM.ui.branchTenantCreate] },
-          { title: 'لیست شعبات', path: paths.dashboard.branch.search, requiredPermissions: [PERM.ui.branchTenantList] },
-        ],
-      },
-      {
-        title: 'مدیریت شرکت‌ها',
-        path: paths.dashboard.company.create,
-        icon: ICONS.banking,
-        anyPermissions: [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate],
-        children: [
-          { title: 'شرکت جدید', path: paths.dashboard.company.create, requiredPermissions: [PERM.ui.companyCentralCreate] },
-          { title: 'لیست شرکت‌ها', path: paths.dashboard.company.search, requiredPermissions: [PERM.ui.companyCentralList] },
-        ],
-      },
-      {
-        title: 'مدیریت شعبات',
-        path: paths.dashboard.branch.create,
-        icon: ICONS.branch,
-        anyPermissions: [PERM.ui.branchCentralList, PERM.ui.branchCentralCreate],
-        children: [
-          { title: 'شعبه جدید', path: paths.dashboard.branch.create, requiredPermissions: [PERM.ui.branchCentralCreate] },
-          { title: 'لیست شعبات', path: paths.dashboard.branch.search, requiredPermissions: [PERM.ui.branchCentralList] },
+          {
+            title: 'شعبه جدید',
+            path: paths.dashboard.branch.create,
+            anyPermissions: [PERM.ui.branchCentralCreate, PERM.ui.branchTenantCreate],
+          },
+          {
+            title: 'لیست شعبات',
+            path: paths.dashboard.branch.search,
+            anyPermissions: [PERM.ui.branchCentralList, PERM.ui.branchTenantList, PERM.ui.companyTenantManage],
+          },
         ],
       },
       {

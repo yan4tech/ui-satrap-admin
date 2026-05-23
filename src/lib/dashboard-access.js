@@ -1,41 +1,30 @@
 import { paths } from 'src/routes/paths';
 
-import {
-  canViewBranchDashboard,
-  canViewCompanyDashboard,
-} from 'src/lib/dashboard-nav-permissions';
+import { canViewBranchDashboard } from 'src/lib/dashboard-nav-permissions';
 import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
 
 const DASHBOARD_ROOT = paths.dashboard.root;
 
-/** مسیرهای مجاز برای مدیر شرکت (اسکوپ مستأجر) */
-const COMPANY_TENANT_ALLOWED_PREFIXES = [
-  DASHBOARD_ROOT,
-  paths.dashboard.company.manage,
-  paths.dashboard.company.overview,
-  paths.dashboard.branch.overview,
-  `${DASHBOARD_ROOT}/branch`,
-];
+/** مسیر ویرایش شعبه مرکزی برای مدیر مستأجر (شعبه متصل به کاربر) */
+export function tenantCentralBranchPath(user) {
+  const id = Number(user?.branch_id ?? user?.BranchID ?? 0);
+  if (id > 0) {
+    return paths.dashboard.branch.edit(id);
+  }
+  return paths.dashboard.branch.search;
+}
 
-/**
- * @param {string} pathname
- * @param {object|null|undefined} user
- * @returns {string|null} مسیر جایگزین در صورت عدم دسترسی
- */
+/** مسیرهای مجاز برای مدیر شعبه مرکزی (مستأجر) */
+function tenantAllowedPrefixes(user) {
+  const editPath = tenantCentralBranchPath(user);
+  return [DASHBOARD_ROOT, paths.dashboard.branch.overview, paths.dashboard.branch.search, paths.dashboard.branch.create, editPath, `${DASHBOARD_ROOT}/branch`];
+}
+
 export function getDashboardAccessRedirect(pathname, user) {
   const path = String(pathname ?? '');
 
   if (
-    (path === paths.dashboard.company.overview ||
-      path.startsWith(`${paths.dashboard.company.overview}/`)) &&
-    !canViewCompanyDashboard(user)
-  ) {
-    return DASHBOARD_ROOT;
-  }
-
-  if (
-    (path === paths.dashboard.branch.overview ||
-      path.startsWith(`${paths.dashboard.branch.overview}/`)) &&
+    (path === paths.dashboard.branch.overview || path.startsWith(`${paths.dashboard.branch.overview}/`)) &&
     !canViewBranchDashboard(user)
   ) {
     return DASHBOARD_ROOT;
@@ -43,36 +32,37 @@ export function getDashboardAccessRedirect(pathname, user) {
 
   const isTenantOnly =
     userHasPermission(user, PERM.ui.companyTenantManage) &&
-    !userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]);
+    !userHasAnyPermission(user, [PERM.ui.branchCentralList, PERM.ui.branchCentralCreate]);
 
   if (isTenantOnly) {
-    const allowed = COMPANY_TENANT_ALLOWED_PREFIXES.some(
+    const home = tenantCentralBranchPath(user);
+    if (path === DASHBOARD_ROOT || path === `${DASHBOARD_ROOT}/`) {
+      return home;
+    }
+    if (path === paths.dashboard.branch.centralManage || path.startsWith(`${paths.dashboard.branch.centralManage}/`)) {
+      return home;
+    }
+    const allowed = tenantAllowedPrefixes(user).some(
       (prefix) => path === prefix || path.startsWith(`${prefix}/`)
     );
     if (!allowed) {
-      return paths.dashboard.company.manage;
+      return home;
     }
     return null;
   }
 
-  const isCentralOnly =
-    userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]) &&
-    !userHasPermission(user, PERM.ui.companyTenantManage);
-
-  if (isCentralOnly) {
-    if (path.startsWith(paths.dashboard.company.manage)) {
-      return DASHBOARD_ROOT;
-    }
-    return null;
+  if (path === paths.dashboard.branch.centralManage || path.startsWith(`${paths.dashboard.branch.centralManage}/`)) {
+    return paths.dashboard.branch.search;
   }
 
   return null;
 }
 
-export function isCentralOrgUser(user) {
-  return userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]);
+export function isCentralBranchTenantUser(user) {
+  return userHasPermission(user, PERM.ui.companyTenantManage);
 }
 
+/** @deprecated */
 export function isCompanyAdminUser(user) {
-  return userHasPermission(user, PERM.ui.companyTenantManage);
+  return isCentralBranchTenantUser(user);
 }

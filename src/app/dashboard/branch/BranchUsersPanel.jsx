@@ -57,22 +57,20 @@ export default function BranchUsersPanel({
   const [saving, setSaving] = useState(false);
 
   const canManage = userHasAnyPermission(actor, [
-    'api.company.central.manage',
+    'api.branch.manage',
     'api.company.tenant.manage',
     'api.branch.users.manage',
   ]);
   const canAssignAdmin = userHasAnyPermission(actor, [
-    'api.company.central.manage',
+    'api.branch.manage',
     'api.company.tenant.manage',
   ]);
 
-  const actorType = userHasAnyPermission(actor, ['api.company.central.manage'])
-    ? 'company'
-    : userHasAnyPermission(actor, ['api.company.tenant.manage'])
-      ? 'company_admin'
-      : Number(actor?.branch_id ?? 0) > 0
-        ? 'branch'
-        : '';
+  const actorType = userHasAnyPermission(actor, ['api.company.tenant.manage'])
+    ? 'company_admin'
+    : Number(actor?.branch_id ?? 0) > 0
+      ? 'branch'
+      : '';
 
   const activeCount = countActiveBranchUsers(rows);
   const quotaLabel =

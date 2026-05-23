@@ -1,13 +1,9 @@
 'use client';
 
-import { useMemo } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { MenuItem, TextField } from '@mui/material';
+import { Box, MenuItem, TextField } from '@mui/material';
 
-import {
-  branchCompanyId,
-  filterBranchesForCompany,
-} from './user-scope-utils';
+const EMPTY_BRANCH_LABEL = 'بدون شعبه';
 
 /** MUI Select treats numeric 0 as empty; use '' for "none" in the UI. */
 function scopeFieldToSelectValue(value) {
@@ -21,83 +17,81 @@ function scopeSelectToFieldValue(raw) {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-function ScopeSelect({ name, label, disabled, children }) {
+function ScopeSelect({ name, label, disabled, emptyLabel, options = [] }) {
   const { control } = useFormContext();
 
   return (
     <Controller
       name={name}
       control={control}
-      render={({ field, fieldState: { error } }) => (
-        <TextField
-          select
-          fullWidth
-          name={field.name}
-          label={label}
-          disabled={disabled}
-          error={!!error}
-          helperText={error?.message}
-          value={scopeFieldToSelectValue(field.value)}
-          onChange={(event) => {
-            field.onChange(scopeSelectToFieldValue(event.target.value));
-          }}
-          onBlur={field.onBlur}
-          ref={field.ref}
-          slotProps={{
-            select: {
-              displayEmpty: true,
-              MenuProps: {
-                slotProps: {
-                  paper: { sx: [{ maxHeight: 220 }] },
+      render={({ field, fieldState: { error } }) => {
+        const selectValue = scopeFieldToSelectValue(field.value);
+
+        return (
+          <TextField
+            select
+            fullWidth
+            name={field.name}
+            label={label}
+            disabled={disabled}
+            error={!!error}
+            helperText={error?.message}
+            value={selectValue}
+            onChange={(event) => {
+              field.onChange(scopeSelectToFieldValue(event.target.value));
+            }}
+            onBlur={field.onBlur}
+            inputRef={field.ref}
+            slotProps={{
+              inputLabel: { shrink: true },
+              select: {
+                displayEmpty: true,
+                renderValue: (selected) => {
+                  if (!selected) {
+                    return (
+                      <Box component="span" sx={{ color: 'text.secondary' }}>
+                        {emptyLabel}
+                      </Box>
+                    );
+                  }
+                  const match = options.find((opt) => String(opt.value) === String(selected));
+                  return match?.label ?? selected;
+                },
+                MenuProps: {
+                  slotProps: {
+                    paper: { sx: { maxHeight: 220 } },
+                  },
                 },
               },
-            },
-          }}
-        >
-          {children}
-        </TextField>
-      )}
+            }}
+          >
+            <MenuItem value="">{emptyLabel}</MenuItem>
+            {options.map((opt) => (
+              <MenuItem key={opt.value} value={String(opt.value)}>
+                {opt.label}
+              </MenuItem>
+            ))}
+          </TextField>
+        );
+      }}
     />
   );
 }
 
-/**
- * Company + branch selectors for user create/edit forms.
- */
-export function UserScopeFields({
-  companies = [],
-  branches = [],
-  companyId = 0,
-  readOnly = false,
-}) {
-  const cid = Number(companyId ?? 0);
-  const visibleBranches = useMemo(
-    () => filterBranchesForCompany(branches, cid),
-    [branches, cid]
-  );
+/** Branch selector for user create/edit forms. */
+export function UserScopeFields({ branches = [], readOnly = false }) {
+  const branchOptions = branches.map((b) => ({
+    value: b.id,
+    label: b.title,
+  }));
 
   return (
-    <>
-      <ScopeSelect name="company_id" label="شرکت" disabled={readOnly}>
-        <MenuItem value="">بدون شرکت</MenuItem>
-        {companies.map((c) => (
-          <MenuItem key={c.id} value={String(c.id)}>
-            {c.title}
-          </MenuItem>
-        ))}
-      </ScopeSelect>
-      <ScopeSelect name="branch_id" label="شعبه" disabled={readOnly}>
-        <MenuItem value="">بدون شعبه</MenuItem>
-        {visibleBranches.map((b) => {
-          const bcid = branchCompanyId(b);
-          const suffix = bcid > 0 && cid <= 0 ? ' (شعبه شرکت)' : bcid <= 0 ? ' (مستقل)' : '';
-          return (
-            <MenuItem key={b.id} value={String(b.id)}>
-              {`${b.title}${suffix}`}
-            </MenuItem>
-          );
-        })}
-      </ScopeSelect>
-    </>
+    <ScopeSelect
+      name="branch_id"
+      label="شعبه"
+      disabled={readOnly}
+      emptyLabel={EMPTY_BRANCH_LABEL}
+      options={branchOptions}
+    />
   );
 }

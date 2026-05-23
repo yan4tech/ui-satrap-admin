@@ -25,7 +25,7 @@ import {
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/lib/axios';
-import { fetchCompaniesOptions, fetchMyCompany } from 'src/lib/company-api';
+import { fetchCentralBranchOptions, fetchMyCentralBranch } from 'src/lib/branch-api';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
 
 import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
@@ -35,8 +35,16 @@ import { useAuthContext } from 'src/auth/hooks';
 import { Form, Field } from 'src/components/hook-form';
 import BranchWorkflowSection from 'src/components/branch/BranchWorkflowSection';
 import ProvinceRegistrationUnitFields from 'src/components/location/ProvinceRegistrationUnitFields';
-import { affiliationReviewToPayload, BRANCH_AFFILIATION, REVIEW_POLICY } from 'src/lib/branch-workflow';
+import {
+  affiliationReviewToPayload,
+  branchAssignmentsFromSelection,
+  centralBranchFieldsFromAffiliation,
+  isCentralBranchAffiliation,
+  BRANCH_AFFILIATION,
+  REVIEW_POLICY,
+} from 'src/lib/branch-workflow';
 import { branchWorkflowZodFields, branchWorkflowSuperRefine } from 'src/lib/branch-workflow-schema';
+import CompanyFormSections from '../../company/company-form-sections';
 
 // --------------------------------------
 // ZOD
@@ -77,9 +85,14 @@ const CreateBranch = () => {
   const [successMessage, setSuccessMessage] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [myCompanyId, setMyCompanyId] = useState(null);
+  const [selectedSubBranches, setSelectedSubBranches] = useState([]);
 
   const isCompanyAdmin = userHasPermission(user, PERM.ui.companyTenantManage);
-  const isCoreAdmin = userHasAnyPermission(user, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate]);
+  const isCoreAdmin = userHasAnyPermission(user, [
+    PERM.ui.branchCentralList,
+    PERM.ui.branchCentralCreate,
+    PERM.ui.branchCentral,
+  ]);
 
   const methods = useForm({
     resolver: zodResolver(BranchSchema),
@@ -93,9 +106,10 @@ const CreateBranch = () => {
       phone: '',
       is_active: false,
       max_users: '',
-      branch_affiliation: isCompanyAdmin ? BRANCH_AFFILIATION.CORPORATE : BRANCH_AFFILIATION.INDEPENDENT,
+      branch_affiliation: isCompanyAdmin ? BRANCH_AFFILIATION.SUB : BRANCH_AFFILIATION.INDEPENDENT,
       review_policy: REVIEW_POLICY.REQUIRED,
-      company_id: '',
+      parent_branch_id: '',
+      max_sub_branches: 0,
     },
   });
 
@@ -105,7 +119,7 @@ const CreateBranch = () => {
     }
     (async () => {
       try {
-        setCompanies(await fetchCompaniesOptions());
+        setCompanies(await fetchCentralBranchOptions());
       } catch {
         setCompanies([]);
       }
@@ -118,24 +132,29 @@ const CreateBranch = () => {
     }
     (async () => {
       try {
-        const company = await fetchMyCompany();
-        const cid = Number(company?.ID ?? company?.id ?? user?.company_id ?? 0);
-        if (cid > 0) {
-          setMyCompanyId(cid);
-          methods.setValue('branch_affiliation', BRANCH_AFFILIATION.CORPORATE);
-          methods.setValue('company_id', String(cid));
+        const central = await fetchMyCentralBranch();
+        const pid = Number(central?.ID ?? central?.id ?? user?.branch_id ?? 0);
+        if (pid > 0) {
+          setMyCompanyId(pid);
+          methods.setValue('branch_affiliation', BRANCH_AFFILIATION.SUB);
+          methods.setValue('parent_branch_id', String(pid));
         }
       } catch {
         setMyCompanyId(null);
       }
     })();
-  }, [isCompanyAdmin, methods, user?.company_id]);
+  }, [isCompanyAdmin, methods, user?.branch_id]);
 
   const {
     handleSubmit,
     control,
+    watch,
     formState: { isSubmitting },
   } = methods;
+
+  const branchAffiliation = watch('branch_affiliation');
+  const isCentralAffiliation = isCentralBranchAffiliation(branchAffiliation);
+  const showSubBranches = isCoreAdmin && isCentralAffiliation;
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -149,18 +168,31 @@ const CreateBranch = () => {
         description: data.description || '',
         is_active: data.is_active,
         max_users: Number(data.max_users),
+        ...(isCoreAdmin
+          ? centralBranchFieldsFromAffiliation(data.branch_affiliation, data.max_sub_branches)
+          : {}),
         ...affiliationReviewToPayload(data.branch_affiliation, data.review_policy, {
-          companyId: data.company_id,
+          parentBranchId: data.parent_branch_id,
         }),
       };
-      const res = await axios.post('/api/membership/branch', payload, {
-        headers: { mode: 'company' },
-      });
-      const createdId = res?.data?.ID;
+      const res = await axios.post('/api/membership/branch', payload);
+      const createdId = Number(res?.data?.ID ?? res?.data?.id ?? 0);
+      const isCentralForm = isCentralBranchAffiliation(data.branch_affiliation);
+
+      if (createdId > 0 && isCentralForm && isCoreAdmin) {
+        const updatePayload = {
+          ...centralBranchFieldsFromAffiliation(data.branch_affiliation, data.max_sub_branches),
+          sub_branch_assignments: branchAssignmentsFromSelection(selectedSubBranches),
+        };
+        await axios.put(`/api/membership/branch/${createdId}`, updatePayload, {
+          headers: { 'Content-Type': 'application/json' },
+        });
+      }
+
       setErrorMessage(null);
       setSuccessMessage('شعبه با موفقیت ثبت شد. در حال انتقال به صفحه ویرایش...');
 
-      if (createdId) {
+      if (createdId > 0) {
         setTimeout(() => {
           router.push(paths.dashboard.branch.edit(createdId));
         }, 900);
@@ -295,12 +327,38 @@ const CreateBranch = () => {
               </Box>
 
               <BranchWorkflowSection
-                companies={companies}
+                centralBranches={companies}
                 canEditAffiliation={isCoreAdmin}
-                lockAffiliation={isCompanyAdmin ? BRANCH_AFFILIATION.CORPORATE : null}
-                lockCompanyId={isCompanyAdmin && myCompanyId ? myCompanyId : null}
-                hideCompanySelect={isCompanyAdmin}
+                showCentralType={isCoreAdmin}
+                lockAffiliation={isCompanyAdmin ? BRANCH_AFFILIATION.SUB : null}
+                lockParentBranchId={isCompanyAdmin && myCompanyId ? myCompanyId : null}
+                hideParentSelect={isCompanyAdmin}
               />
+
+              {showSubBranches ? (
+                <Box
+                  sx={{
+                    p: { xs: 2, md: 2.5 },
+                    borderRadius: 2.5,
+                    border: '1px solid',
+                    borderColor: 'divider',
+                    backgroundColor: 'background.paper',
+                  }}
+                >
+                  <Typography fontWeight={700} sx={{ mb: 1 }}>
+                    زیرشعب
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                    شعب زیرمجموعه این شعبه مرکزی را انتخاب کنید. پس از ثبت، تخصیص‌ها ذخیره
+                    می‌شوند.
+                  </Typography>
+                  <CompanyFormSections
+                    selectedBranches={selectedSubBranches}
+                    onBranchesChange={setSelectedSubBranches}
+                    branchesOnly
+                  />
+                </Box>
+              ) : null}
 
               <Divider />
 

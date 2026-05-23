@@ -18,7 +18,17 @@ import {
 import { fetchAssignableBranches } from 'src/lib/branch-api';
 import { fetchServiceCatalog } from 'src/lib/service-entitlement-api';
 
+function resolveBranchEditHref(branchEditBasePath, branchId) {
+  if (!branchEditBasePath || !branchId) return null;
+  if (typeof branchEditBasePath === 'function') {
+    return branchEditBasePath(branchId);
+  }
+  const base = String(branchEditBasePath).replace(/\/+$/, '');
+  return `${base}/${branchId}`;
+}
+
 export default function CompanyFormSections({
+  parentBranchId = null,
   companyId = null,
   branchesReloadKey = 0,
   selectedServices,
@@ -36,10 +46,13 @@ export default function CompanyFormSections({
   const loadOptions = useCallback(async () => {
     const [services, branches] = await Promise.all([
       fetchServiceCatalog(),
-      fetchAssignableBranches({ companyId: companyId || undefined }),
+      fetchAssignableBranches({
+        parentBranchId: parentBranchId || companyId || undefined,
+        excludeBranchId: parentBranchId || companyId || undefined,
+      }),
     ]);
     return { services, branches };
-  }, [companyId]);
+  }, [parentBranchId, companyId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,13 +77,17 @@ export default function CompanyFormSections({
     };
   }, [loadOptions, branchesReloadKey]);
 
+  const excludeBranchId = Number(parentBranchId || companyId || 0) || 0;
+
   const branchAutocompleteOptions = useMemo(() => {
     const merged = new Map();
     [...branchOptions, ...(selectedBranches ?? [])].forEach((item) => {
       if (item?.id) merged.set(item.id, item);
     });
-    return Array.from(merged.values());
-  }, [branchOptions, selectedBranches]);
+    return Array.from(merged.values()).filter(
+      (item) => !excludeBranchId || item.id !== excludeBranchId
+    );
+  }, [branchOptions, selectedBranches, excludeBranchId]);
 
   if (loading) {
     return (
@@ -111,9 +128,10 @@ export default function CompanyFormSections({
           شعب زیرمجموعه
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          فقط شعب قابل تخصیص (بدون شرکت دیگر) یا شعب همین شرکت نمایش داده می‌شوند. برای هر شعبه
-          می‌توانید بازبینی فرم را فعال یا غیرفعال کنید؛ در صورت غیرفعال، بازبینی در فرایند
-          خودکار انجام می‌شود.
+          فقط شعب آزاد (بدون والد مرکزی دیگر) یا شعب مستقیم همین شعبه مرکزی نمایش داده می‌شوند.
+          شعبه در حال ویرایش و والدهای آن در فهرست نیستند تا ساختار درختی حفظ شود. شعبه مرکزی
+          می‌تواند زیرمجموعه شعبه مرکزی دیگر باشد. برای هر شعبه می‌توانید بازبینی فرم را فعال یا
+          غیرفعال کنید.
         </Typography>
         <Autocomplete
           multiple
@@ -157,7 +175,7 @@ export default function CompanyFormSections({
                     <Button
                       size="small"
                       variant="text"
-                      href={branchEditBasePath(branch.id)}
+                      href={resolveBranchEditHref(branchEditBasePath, branch.id)}
                       component="a"
                     >
                       ویرایش / فعال‌سازی

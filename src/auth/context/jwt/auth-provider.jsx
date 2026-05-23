@@ -7,6 +7,7 @@ import axios, { endpoints } from 'src/lib/axios';
 import { clearMembershipUserHeader, setMembershipUserJsonFromObject } from 'src/lib/api-user-header';
 import { normalizeMembershipUser } from 'src/auth/utils';
 import { setApiMode } from 'src/lib/api-mode';
+import { getBranchIdStored, setBranchIdForApi } from 'src/lib/api-branch-header';
 import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
 
 import { JWT_STORAGE_KEY } from './constant';
@@ -45,10 +46,18 @@ export function AuthProvider({ children }) {
         }
 
         setMembershipUserJsonFromObject({ ...rawUser, permissions: normalized.permissions });
-        if (userHasAnyPermission(normalized, [PERM.ui.companyCentralList, PERM.ui.companyCentralCreate])) {
-          setApiMode('central');
-        } else if (userHasPermission(normalized, PERM.ui.companyTenantManage)) {
-          setApiMode('company');
+        const bid = normalized.branch_id ?? normalized.branchId ?? normalized.BranchID;
+        const isDashboardUser =
+          userHasAnyPermission(normalized, [
+            PERM.ui.branchCentralList,
+            PERM.ui.branchCentralCreate,
+            PERM.ui.companyTenantManage,
+          ]) || (bid != null && Number(bid) > 0);
+        if (isDashboardUser) {
+          setApiMode('branch');
+          if (!getBranchIdStored() && bid != null && Number(bid) > 0) {
+            setBranchIdForApi(String(bid));
+          }
         }
         setState({ user: { ...normalized, accessToken }, loading: false });
       } else {

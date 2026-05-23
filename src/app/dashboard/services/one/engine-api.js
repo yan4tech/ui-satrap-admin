@@ -262,7 +262,7 @@ export function canCurrentClientCompleteTask(task) {
   const engine = ad.engine && typeof ad.engine === 'object' ? ad.engine : {};
   const hint = ad.ui_actionable_by ?? ad.actionable_by ?? engine.actionable_by ?? engine.ui_actionable_by;
   if (hint === 'branch' || hint === 'company' || hint === 'mobile') {
-    return hint === requestMode || (hint === 'company' && mode === 'central');
+    return hint === requestMode || (hint === 'company' && mode === 'branch');
   }
 
   const typeNorm = String(task.type ?? '')

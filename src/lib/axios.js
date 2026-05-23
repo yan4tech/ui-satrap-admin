@@ -35,7 +35,7 @@ function applyHeader(config, key, value) {
 
 axiosInstance.interceptors.request.use((config) => {
   const url = String(config.url ?? '');
-  // Auth must send the real login mode (central stays central). Post-login APIs use getApiRequestMode().
+  // Auth and post-login APIs use the same dashboard mode (branch / mobile).
   const isAuthLogin =
     url.includes('/api/membership/auth/submitMobile') || url.includes('/api/membership/auth/submitCode');
   const mode = isAuthLogin ? getApiMode() : getApiRequestMode();

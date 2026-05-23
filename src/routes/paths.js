@@ -59,17 +59,19 @@ export const paths = {
       overview: `${ROOTS.DASHBOARD}/branch/overview`,
       create: `${ROOTS.DASHBOARD}/branch/create`,
       search: `${ROOTS.DASHBOARD}/branch/search`,
+      tree: `${ROOTS.DASHBOARD}/branch/tree`,
       edit: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}`,
-      /** Same screen as edit, read-only (no save). */
       details: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}?view=1`,
+      centralManage: `${ROOTS.DASHBOARD}/branch/central/manage`,
     },
+    /** @deprecated company removed — use branch.centralManage / branch.* */
     company: {
-      overview: `${ROOTS.DASHBOARD}/company/overview`,
-      create: `${ROOTS.DASHBOARD}/company/create`,
-      search: `${ROOTS.DASHBOARD}/company/search`,
-      manage: `${ROOTS.DASHBOARD}/company/manage`,
-      edit: (id) => `${ROOTS.DASHBOARD}/company/edit/${id}`,
-      services: (id) => `${ROOTS.DASHBOARD}/company/${id}/services`,
+      overview: `${ROOTS.DASHBOARD}/branch/search`,
+      manage: `${ROOTS.DASHBOARD}/branch/search`,
+      create: `${ROOTS.DASHBOARD}/branch/create`,
+      search: `${ROOTS.DASHBOARD}/branch/search`,
+      edit: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}`,
+      services: (id) => `${ROOTS.DASHBOARD}/branch/edit/${id}`,
     },
     role: {
       create: `${ROOTS.DASHBOARD}/role/create`,

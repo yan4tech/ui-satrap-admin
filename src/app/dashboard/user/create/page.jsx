@@ -39,13 +39,11 @@ import {
   fetchAssignableRolesOptions,
   fetchRoleById,
   fetchBranchesOptions,
-  fetchCompaniesOptions,
 } from '../user-api';
 import { UserScopeFields } from '../user-scope-fields';
 import { UserStatusFields } from '../user-status-fields';
 import {
-  branchCompanyId,
-  companyIdForPayload,
+  branchIdForPayload,
   resolveAssignableRoleContext,
 } from '../user-scope-utils';
 
@@ -55,7 +53,6 @@ const UserSchema = zod.object({
   email: zod.union([zod.string().email(), zod.literal('')]).optional(),
   mobile: zod.string().min(10, 'موبایل معتبر وارد کنید'),
   role_id: zod.number().min(0),
-  company_id: zod.number().min(0),
   branch_id: zod.number().min(0),
   active: zod.boolean(),
 });
@@ -64,7 +61,6 @@ export default function CreateUserPage() {
   const router = useRouter();
   const [roles, setRoles] = useState([]);
   const [branches, setBranches] = useState([]);
-  const [companies, setCompanies] = useState([]);
   const [selectedRoleInfo, setSelectedRoleInfo] = useState(null);
   const [roleInfoLoading, setRoleInfoLoading] = useState(false);
   const [roleDetailsOpen, setRoleDetailsOpen] = useState(false);
@@ -81,7 +77,6 @@ export default function CreateUserPage() {
       email: '',
       mobile: '',
       role_id: 0,
-      company_id: 0,
       branch_id: 0,
       active: true,
     },
@@ -95,48 +90,17 @@ export default function CreateUserPage() {
   } = methods;
   const selectedRoleId = watch('role_id');
   const selectedBranchId = watch('branch_id');
-  const selectedCompanyId = watch('company_id');
   const activeValue = watch('active');
 
   useEffect(() => {
     (async () => {
       try {
-        const [branchRows, companyRows] = await Promise.all([
-          fetchBranchesOptions(),
-          fetchCompaniesOptions(),
-        ]);
-        setBranches(branchRows);
-        setCompanies(companyRows);
+        setBranches(await fetchBranchesOptions());
       } catch {
-        setErrorMessage('خطا در دریافت لیست شعب یا شرکت‌ها');
+        setErrorMessage('خطا در دریافت لیست شعب');
       }
     })();
   }, []);
-
-  useEffect(() => {
-    const bid = Number(selectedBranchId ?? 0);
-    const cid = Number(selectedCompanyId ?? 0);
-    if (bid > 0) {
-      const branch = branches.find((b) => b.id === bid);
-      const bcid = branchCompanyId(branch);
-      if (bcid > 0 && cid !== bcid) {
-        setValue('company_id', bcid);
-      } else if (bcid === 0 && cid > 0) {
-        setValue('company_id', 0);
-      }
-    }
-  }, [selectedBranchId, selectedCompanyId, branches, setValue]);
-
-  useEffect(() => {
-    const bid = Number(selectedBranchId ?? 0);
-    const cid = Number(selectedCompanyId ?? 0);
-    if (cid > 0 && bid > 0) {
-      const branch = branches.find((b) => b.id === bid);
-      if (branchCompanyId(branch) !== cid) {
-        setValue('branch_id', 0);
-      }
-    }
-  }, [selectedCompanyId, selectedBranchId, branches, setValue]);
 
   useEffect(() => {
     let cancelled = false;
@@ -145,7 +109,6 @@ export default function CreateUserPage() {
         const roleRows = await fetchAssignableRolesOptions(
           resolveAssignableRoleContext({
             branchId: selectedBranchId,
-            companyId: selectedCompanyId,
           })
         );
         if (cancelled) return;
@@ -162,7 +125,7 @@ export default function CreateUserPage() {
     return () => {
       cancelled = true;
     };
-  }, [selectedBranchId, selectedCompanyId, setValue, selectedRoleId]);
+  }, [selectedBranchId, setValue, selectedRoleId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -196,12 +159,22 @@ export default function CreateUserPage() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       setErrorMessage(null);
+      const roleSlug = String(selectedRoleInfo?.slug ?? '').trim();
+      if (
+        (roleSlug === 'company-admin' ||
+          roleSlug === 'company-reviewer' ||
+          roleSlug === 'branch-admin') &&
+        Number(data.branch_id) <= 0
+      ) {
+        setErrorMessage('برای این نقش، انتخاب شعبه الزامی است.');
+        return;
+      }
       await createUser({
         ...data,
         name: data.name || '',
         family: data.family || '',
         email: data.email || '',
-        company_id: companyIdForPayload(data.company_id),
+        branch_id: branchIdForPayload(data.branch_id),
       }, validDocuments);
       router.push(paths.dashboard.user.search);
     } catch {
@@ -316,11 +289,7 @@ export default function CreateUserPage() {
                       ))}
                     </Field.Select>
                   </Stack>
-                  <UserScopeFields
-                    companies={companies}
-                    branches={branches}
-                    companyId={selectedCompanyId}
-                  />
+                  <UserScopeFields branches={branches} />
                   <UserStatusFields
                     showVerified={false}
                     activeValue={activeValue}

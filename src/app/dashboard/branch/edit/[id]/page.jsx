@@ -7,6 +7,7 @@ import { Box, CircularProgress, Typography } from '@mui/material';
 
 import EditBranchView from '../../edit-branch-view';
 import axios from 'src/lib/axios';
+import { getApiRequestMode } from 'src/lib/api-mode';
 
 async function fetchBranchById(rawId) {
   const id = Number(rawId);
@@ -14,7 +15,7 @@ async function fetchBranchById(rawId) {
 
   try {
     const res = await axios.get(`/api/membership/branch/${id}`, {
-      headers: { mode: 'company' },
+      headers: { mode: getApiRequestMode() },
     });
     return res?.data || null;
   } catch {

@@ -19,9 +19,42 @@ export function normalizeBranchTreeNode(raw) {
     is_central: Boolean(raw?.is_central ?? raw?.IsCentral),
     is_active: Boolean(raw?.is_active ?? raw?.IsActive ?? true),
     review_required: reviewRequired,
+    open_review_tasks: Number(raw?.open_review_tasks ?? raw?.OpenReviewTasks ?? 0) || 0,
+    open_continue_tasks: Number(raw?.open_continue_tasks ?? raw?.OpenContinueTasks ?? 0) || 0,
     parent_branch_id: branchParentId(raw),
     max_users: Number(raw?.max_users ?? raw?.MaxUsers ?? 0) || 0,
   };
+}
+
+/** Map branch_id -> { review_tasks, continue_tasks } from engine API payload. */
+export function branchOpenTaskCountsToMap(payload) {
+  const root = payload?.data ?? payload ?? {};
+  const counts = root.counts ?? root.Counts ?? {};
+  const map = new Map();
+  if (!counts || typeof counts !== 'object') return map;
+
+  Object.entries(counts).forEach(([key, raw]) => {
+    const branchId = Number(raw?.branch_id ?? raw?.BranchID ?? key) || 0;
+    if (branchId < 1) return;
+    map.set(branchId, {
+      review_tasks: Number(raw?.review_tasks ?? raw?.ReviewTasks ?? 0) || 0,
+      continue_tasks: Number(raw?.continue_tasks ?? raw?.ContinueTasks ?? 0) || 0,
+    });
+  });
+  return map;
+}
+
+export function mergeBranchOpenTaskCounts(nodes, countsByBranchId) {
+  if (!countsByBranchId?.size) return nodes;
+  return nodes.map((node) => {
+    const c = countsByBranchId.get(node.id);
+    if (!c) return node;
+    return {
+      ...node,
+      open_review_tasks: c.review_tasks,
+      open_continue_tasks: c.continue_tasks,
+    };
+  });
 }
 
 export function normalizeTreeUser(raw) {

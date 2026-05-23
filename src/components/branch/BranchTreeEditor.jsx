@@ -421,6 +421,24 @@ function TreeNodeRow({
               color={node.review_required ? 'warning' : 'secondary'}
               variant="soft"
             />
+            {node.open_review_tasks > 0 ? (
+              <Chip
+                size="small"
+                icon={<Icon icon="mdi:clipboard-text-search-outline" width={14} />}
+                label={`بازبینی: ${node.open_review_tasks}`}
+                color="error"
+                variant="soft"
+              />
+            ) : null}
+            {node.open_continue_tasks > 0 ? (
+              <Chip
+                size="small"
+                icon={<Icon icon="mdi:play-circle-outline" width={14} />}
+                label={`ادامه: ${node.open_continue_tasks}`}
+                color="primary"
+                variant="soft"
+              />
+            ) : null}
           </Stack>
         </Box>
       </Box>
@@ -506,6 +524,20 @@ function TreeLegend() {
       />
       <Chip size="small" label="تایید شده" color="info" variant="soft" />
       <Chip size="small" label="تایید نشده" color="warning" variant="soft" />
+      <Chip
+        size="small"
+        icon={<Icon icon="mdi:clipboard-text-search-outline" width={14} />}
+        label="تسک بازبینی"
+        color="error"
+        variant="soft"
+      />
+      <Chip
+        size="small"
+        icon={<Icon icon="mdi:play-circle-outline" width={14} />}
+        label="تسک ادامه فرایند"
+        color="primary"
+        variant="soft"
+      />
     </Stack>
   );
 }

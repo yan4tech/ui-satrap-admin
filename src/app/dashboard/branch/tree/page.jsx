@@ -22,11 +22,14 @@ import {
   fetchBranchesForTree,
   moveUserToBranch,
 } from 'src/lib/branch-api';
+import { fetchBranchOpenTaskCounts } from 'src/app/dashboard/services/one/engine-api';
 import {
+  branchOpenTaskCountsToMap,
   cloneParentMap,
   cloneUsersByBranchMap,
   collectParentChanges,
   collectUserBranchChanges,
+  mergeBranchOpenTaskCounts,
   normalizeBranchTreeNode,
   orderParentChanges,
   parentMapFromNodes,
@@ -53,7 +56,15 @@ export default function BranchTreePage() {
     setLoadError('');
     try {
       const rows = await fetchBranchesForTree();
-      const normalized = rows.map(normalizeBranchTreeNode).filter(Boolean);
+      let normalized = rows.map(normalizeBranchTreeNode).filter(Boolean);
+      const branchIds = normalized.map((n) => n.id);
+      try {
+        const countsPayload = await fetchBranchOpenTaskCounts(branchIds);
+        const countsMap = branchOpenTaskCountsToMap({ data: countsPayload });
+        normalized = mergeBranchOpenTaskCounts(normalized, countsMap);
+      } catch (countsErr) {
+        console.warn('branch tree task counts:', countsErr);
+      }
       const map = parentMapFromNodes(normalized);
       const usersMap = usersByBranchFromRawRows(rows);
       setNodes(normalized);

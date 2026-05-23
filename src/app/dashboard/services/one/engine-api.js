@@ -198,6 +198,23 @@ export function pickRepresentativeTaskForProcessRow(tasks) {
   return pickFallbackLatestTouchTask(tasks);
 }
 
+/** شمارش تسک‌های باز (CREATED) به ازای شعبه برای درخت شعب */
+export async function fetchBranchOpenTaskCounts(branchIds = []) {
+  const q = new URLSearchParams();
+  const ids = (branchIds || []).map((id) => Number(id)).filter((id) => id > 0);
+  if (ids.length > 0) {
+    q.set('branch_ids', ids.join(','));
+  }
+  const qs = q.toString();
+  const url = `${ENGINE_BASE_URL}/api/engine/service/branch-open-task-counts${qs ? `?${qs}` : ''}`;
+  const res = await fetch(url, {
+    headers: engineAuthHeaders(),
+  });
+  const data = await parseJson(res);
+  assertEngineSuccess(res, data, 'دریافت شمارش تسک‌های شعب ناموفق بود.');
+  return data?.data ?? data;
+}
+
 export async function fetchProcesses(params = {}) {
   const q = new URLSearchParams();
   if (params.limit != null) q.set('limit', String(params.limit));

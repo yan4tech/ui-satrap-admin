@@ -324,6 +324,13 @@ export function ServiceWorkflowPage({
     }
     setProcessFinished(false);
     setUiStep(getStepperIndexForElementId(t.element_id));
+    const el = String(t.element_id ?? '').trim().toLowerCase();
+    if (
+      (el === 'review1' || el === 'review2' || el === 'centralreviewform2') &&
+      String(t.status ?? '').toUpperCase() === 'CREATED'
+    ) {
+      setFormPhaseComplete(false);
+    }
   }, [getStepperIndexForElementId, getWorkflowRank, stepperLabels.length]);
 
   const loadTasks = useCallback(

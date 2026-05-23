@@ -1,5 +1,5 @@
 import { getApiMode, getApiRequestMode } from 'src/lib/api-mode';
-import { getBranchRequestHeaderValue } from 'src/lib/api-branch-header';
+import { getBranchIdStored, getBranchRequestHeaderValue } from 'src/lib/api-branch-header';
 import { getMembershipUserHeaderString } from 'src/lib/api-user-header';
 import { getSessionBearerAuthorization } from 'src/lib/session-bearer-header';
 
@@ -240,9 +240,48 @@ export function pickActiveUserFacingTask(tasksMap) {
     const ra = getService1WorkflowRank(a.element_id);
     const rb = getService1WorkflowRank(b.element_id);
     if (rb !== ra) return rb - ra;
-    return (a.ID ?? 0) - (b.ID ?? 0);
+    return (b.ID ?? 0) - (a.ID ?? 0);
   });
   return eligible[0] ?? null;
+}
+
+/** تسک باز (CREATED) برای یک element — برای بازبینی سلسله‌مراتبی جدیدترین ID */
+export function pickOpenTaskForElement(tasksMap, elementId) {
+  if (!tasksMap || !elementId) return null;
+  const want = normEl(elementId);
+  const list = Object.values(tasksMap).filter(
+    (t) =>
+      t &&
+      normEl(t.element_id) === want &&
+      (t.status == null || OPEN_STATUSES.has(normalizeTaskStatus(t.status))),
+  );
+  if (list.length === 0) return null;
+  return list.sort((a, b) => (b.ID ?? 0) - (a.ID ?? 0))[0];
+}
+
+export function taskReviewBranchId(task) {
+  if (!task || typeof task !== 'object') return 0;
+  const direct = Number(task.branch_id ?? task.BranchID ?? 0);
+  if (direct > 0) return direct;
+  const ad = task.attached_data && typeof task.attached_data === 'object' ? task.attached_data : {};
+  const step = ad[task.element_id] && typeof ad[task.element_id] === 'object' ? ad[task.element_id] : ad;
+  const engine = step.engine && typeof step.engine === 'object' ? step.engine : {};
+  return Number(step.review_level_branch_id ?? engine.review_branch_id ?? 0) || 0;
+}
+
+export function hierarchicalReviewLevelLabel(task) {
+  const ad = task?.attached_data && typeof task.attached_data === 'object' ? task.attached_data : {};
+  const step =
+    task?.element_id && ad[task.element_id] && typeof ad[task.element_id] === 'object'
+      ? ad[task.element_id]
+      : ad;
+  const order = Number(step.review_level_order ?? 0);
+  const branchId = Number(step.review_level_branch_id ?? taskReviewBranchId(task) ?? 0);
+  if (!order && !branchId) return '';
+  const parts = [];
+  if (order > 0) parts.push(`سطح ${order}`);
+  if (branchId > 0) parts.push(`شعبه ${branchId}`);
+  return parts.join(' · ');
 }
 
 /**
@@ -272,6 +311,11 @@ export function canCurrentClientCompleteTask(task) {
   const isReviewStep = isReviewElementId(task.element_id) || isReviewType;
 
   if (isReviewStep) {
+    const reviewBranch = taskReviewBranchId(task);
+    const myBranch = Number(getBranchRequestHeaderValue() ?? getBranchIdStored() ?? 0);
+    if (reviewBranch > 0 && myBranch > 0 && reviewBranch === myBranch) {
+      return true;
+    }
     return requestMode === 'company';
   }
 
@@ -310,7 +354,8 @@ export function pickLatestTaskForElement(tasksMap, elementId) {
 }
 
 function isDoneStatus(status) {
-  return String(status || '').toUpperCase() === 'DONE';
+  const s = String(status || '').toUpperCase();
+  return s === 'DONE' || s === 'COMPLETED' || s === 'COMPLETE';
 }
 
 /** آخرین تسک DONE یک element (برای خواندن نظر بررسی از attached_data) */
@@ -422,7 +467,16 @@ function parseReviewNodeFeedback(node, fallbackStatus = 'pending') {
 }
 
 /** برای نمایش بلوک «نتیجه بررسی» در پر کردن فرم ۱ بعد از اصلاح */
-export function buildForm1ReviewStateFromTasksMap(tasksMap) {
+export function buildForm1ReviewStateFromTasksMap(tasksMap, options = {}) {
+  const { activeTask = null } = options;
+  const openReview =
+    activeTask && normEl(activeTask.element_id) === 'review1'
+      ? activeTask
+      : pickOpenTaskForElement(tasksMap, 'review1');
+  if (openReview) {
+    return { status: 'pending', comment: '' };
+  }
+
   const doneReview = pickLatestDoneTaskForElement(tasksMap, 'review1');
   if (doneReview) {
     const r = parseAttachedDataForReviewFeedback(doneReview.attached_data);
@@ -460,7 +514,19 @@ function pickLatestDoneCentralForm2ReviewTask(tasksMap) {
 }
 
 /** برای نمایش بلوک بررسی در پر کردن فرم ۲ */
-export function buildForm2ReviewStateFromTasksMap(tasksMap) {
+export function buildForm2ReviewStateFromTasksMap(tasksMap, options = {}) {
+  const { activeTask = null } = options;
+  const openReview2 =
+    activeTask &&
+    (normEl(activeTask.element_id) === 'review2' ||
+      normEl(activeTask.element_id) === 'centralreviewform2')
+      ? activeTask
+      : pickOpenTaskForElement(tasksMap, 'review2') ||
+        pickOpenTaskForElement(tasksMap, 'centralReviewForm2');
+  if (openReview2) {
+    return { status: 'pending', comment: '' };
+  }
+
   const doneCentral = pickLatestDoneCentralForm2ReviewTask(tasksMap);
   if (doneCentral) {
     const r = parseAttachedDataForReviewFeedback(doneCentral.attached_data);

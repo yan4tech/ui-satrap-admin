@@ -153,24 +153,24 @@ export default function ServiceThreeTaskPanel(props) {
   useEffect(() => {
     const map = tasksIdMap && typeof tasksIdMap === 'object' ? tasksIdMap : null;
     if (!map) return;
-    if (elKey === 'form1') return void setForm1Review(buildForm1ReviewStateFromTasksMap(map));
+    if (elKey === 'form1') return void setForm1Review(buildForm1ReviewStateFromTasksMap(map, { activeTask: task }));
     if (elKey === 'review1' && task?.ID != null && lastHydratedReview1TaskId.current !== task.ID) {
       lastHydratedReview1TaskId.current = task.ID;
-      setForm1Review(buildForm1ReviewStateFromTasksMap(map));
+      setForm1Review(buildForm1ReviewStateFromTasksMap(map, { activeTask: task }));
     }
   }, [elKey, task?.ID, tasksIdMap]);
 
   useEffect(() => {
     const map = tasksIdMap && typeof tasksIdMap === 'object' ? tasksIdMap : null;
     if (!map) return;
-    if (elKey === 'form2') return void setForm2Review(buildForm2ReviewStateFromTasksMap(map));
+    if (elKey === 'form2') return void setForm2Review(buildForm2ReviewStateFromTasksMap(map, { activeTask: task }));
     if (
       (elKey === 'centralreviewform2' || elKey === 'review2') &&
       task?.ID != null &&
       lastHydratedCentral2TaskId.current !== task.ID
     ) {
       lastHydratedCentral2TaskId.current = task.ID;
-      setForm2Review(buildForm2ReviewStateFromTasksMap(map));
+      setForm2Review(buildForm2ReviewStateFromTasksMap(map, { activeTask: task }));
     }
   }, [elKey, task?.ID, tasksIdMap]);
 

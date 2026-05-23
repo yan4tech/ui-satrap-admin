@@ -11,11 +11,14 @@ export function branchParentId(raw) {
 export function normalizeBranchTreeNode(raw) {
   const id = branchNodeId(raw);
   if (id < 1) return null;
+  const reviewRequired =
+    raw?.review_required !== false && raw?.ReviewRequired !== false;
   return {
     id,
     title: String(raw?.title ?? raw?.Title ?? '').trim() || `شعبه ${id}`,
     is_central: Boolean(raw?.is_central ?? raw?.IsCentral),
     is_active: Boolean(raw?.is_active ?? raw?.IsActive ?? true),
+    review_required: reviewRequired,
     parent_branch_id: branchParentId(raw),
     max_users: Number(raw?.max_users ?? raw?.MaxUsers ?? 0) || 0,
   };

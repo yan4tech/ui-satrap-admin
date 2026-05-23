@@ -415,6 +415,12 @@ function TreeNodeRow({
               color={node.is_active ? 'success' : 'default'}
               variant="soft"
             />
+            <Chip
+              size="small"
+              label={node.review_required ? 'بازبینی اجباری' : 'بدون بازبینی'}
+              color={node.review_required ? 'warning' : 'secondary'}
+              variant="soft"
+            />
           </Stack>
         </Box>
       </Box>

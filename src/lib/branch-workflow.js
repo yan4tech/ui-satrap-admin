@@ -53,6 +53,7 @@ export const REVIEW_PARTY_LABELS = {
   auto: 'بدون بازبینی (خودکار)',
   central: 'بازبینی شعبه مرکزی والد',
   parent_branch: 'بازبینی شعبه مرکزی',
+  hierarchical: 'بازبینی سلسله‌مراتبی (چند سطح)',
   company: 'بازبینی شعبه مرکزی',
 };
 

@@ -7,6 +7,7 @@ import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import {
   buildForm1ReviewStateFromTasksMap,
   buildForm2ReviewStateFromTasksMap,
+  hierarchicalReviewLevelLabel,
   sanitizeValuesForEngineJson,
 } from './engine-api';
 import { isReviewElementId } from './service1-step-config';
@@ -180,32 +181,32 @@ export default function ServiceOneTaskPanel({
     if (!map) return;
 
     if (elKey === 'form1') {
-      setForm1Review(buildForm1ReviewStateFromTasksMap(map));
+      setForm1Review(buildForm1ReviewStateFromTasksMap(map, { activeTask: task }));
       return;
     }
     if (elKey === 'review1' && task?.ID != null) {
       if (lastHydratedReview1TaskId.current !== task.ID) {
         lastHydratedReview1TaskId.current = task.ID;
-        setForm1Review(buildForm1ReviewStateFromTasksMap(map));
+        setForm1Review(buildForm1ReviewStateFromTasksMap(map, { activeTask: task }));
       }
     }
-  }, [elKey, task?.ID, tasksIdMap]);
+  }, [elKey, task, task?.ID, tasksIdMap]);
 
   useEffect(() => {
     const map = tasksIdMap && typeof tasksIdMap === 'object' ? tasksIdMap : null;
     if (!map) return;
 
     if (elKey === 'form2') {
-      setForm2Review(buildForm2ReviewStateFromTasksMap(map));
+      setForm2Review(buildForm2ReviewStateFromTasksMap(map, { activeTask: task }));
       return;
     }
     if ((elKey === 'centralreviewform2' || elKey === 'review2') && task?.ID != null) {
       if (lastHydratedCentral2TaskId.current !== task.ID) {
         lastHydratedCentral2TaskId.current = task.ID;
-        setForm2Review(buildForm2ReviewStateFromTasksMap(map));
+        setForm2Review(buildForm2ReviewStateFromTasksMap(map, { activeTask: task }));
       }
     }
-  }, [elKey, task?.ID, tasksIdMap]);
+  }, [elKey, task, task?.ID, tasksIdMap]);
 
   const formMethods = useForm({
     defaultValues: {
@@ -249,6 +250,7 @@ export default function ServiceOneTaskPanel({
   }
 
   const isReview = isReviewElementId(elKey);
+  const reviewLevelHint = isReview ? hierarchicalReviewLevelLabel(task) : '';
   /** فوتر دکمه‌های «تایید بررسی / رد» فقط برای مراحلی غیر از تایید اطلاعات اولیه و تایید نقشه برداری */
   const showOuterReviewFooter =
     isReview && elKey !== 'review1' && elKey !== 'centralreviewform2' && elKey !== 'review2';
@@ -345,6 +347,11 @@ export default function ServiceOneTaskPanel({
               این مرحله را کاربر دیگری (مثلاً شعبه یا شرکت) در سامانه انجام می‌دهد؛ تا آن زمان فرم
               و دکمهٔ ثبت غیرفعال است.
             </Typography>
+          </Alert>
+        ) : null}
+        {reviewLevelHint ? (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            بازبینی سلسله‌مراتبی: {reviewLevelHint}
           </Alert>
         ) : null}
         {inner}

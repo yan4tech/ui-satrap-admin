@@ -7,6 +7,7 @@ import { Alert, Box, Button, Stack, Typography } from '@mui/material';
 import {
   buildForm1ReviewStateFromTasksMap,
   buildForm2ReviewStateFromTasksMap,
+  canCurrentClientCompleteTask,
   hierarchicalReviewLevelLabel,
   sanitizeValuesForEngineJson,
 } from './engine-api';
@@ -158,7 +159,7 @@ export default function ServiceOneTaskPanel({
   submitting,
   submitError,
   interactionLocked = false,
-  waitForOtherUser = false,
+  waitForOtherUser: _waitForOtherUser = false,
   finalSubmitDisabled = false,
 }) {
   const el = task?.element_id;
@@ -336,12 +337,13 @@ export default function ServiceOneTaskPanel({
       );
   }
 
-  const bodyLocked = interactionLocked || waitForOtherUser;
+  const canCompleteThisTask = canCurrentClientCompleteTask(task);
+  const bodyLocked = interactionLocked || !canCompleteThisTask;
 
   return (
     <FormProvider {...formMethods}>
       <Box sx={bodyLocked ? { pointerEvents: 'none', opacity: 0.72 } : undefined}>
-        {waitForOtherUser && !interactionLocked ? (
+        {!canCompleteThisTask && !interactionLocked ? (
           <Alert severity="warning" sx={{ mb: 2 }} variant="outlined">
             <Typography variant="body2">
               این مرحله را کاربر دیگری (مثلاً شعبه یا شرکت) در سامانه انجام می‌دهد؛ تا آن زمان فرم

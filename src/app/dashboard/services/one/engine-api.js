@@ -276,12 +276,22 @@ export function pickOpenTaskForElement(tasksMap, elementId) {
   return list.sort((a, b) => (b.ID ?? 0) - (a.ID ?? 0))[0];
 }
 
+function stepAttachedBlock(task) {
+  const ad = task?.attached_data && typeof task.attached_data === 'object' ? task.attached_data : {};
+  const el = normEl(task?.element_id);
+  if (el && ad[el] && typeof ad[el] === 'object') return ad[el];
+  return ad;
+}
+
+function myBranchIdForAccess() {
+  return Number(getBranchRequestHeaderValue() ?? getBranchIdStored() ?? 0);
+}
+
 export function taskReviewBranchId(task) {
   if (!task || typeof task !== 'object') return 0;
   const direct = Number(task.branch_id ?? task.BranchID ?? 0);
   if (direct > 0) return direct;
-  const ad = task.attached_data && typeof task.attached_data === 'object' ? task.attached_data : {};
-  const step = ad[task.element_id] && typeof ad[task.element_id] === 'object' ? ad[task.element_id] : ad;
+  const step = stepAttachedBlock(task);
   const engine = step.engine && typeof step.engine === 'object' ? step.engine : {};
   return Number(step.review_level_branch_id ?? engine.review_branch_id ?? 0) || 0;
 }
@@ -315,28 +325,49 @@ export function canCurrentClientCompleteTask(task) {
   const mode = getApiMode();
   const requestMode = getApiRequestMode();
   const ad = task.attached_data && typeof task.attached_data === 'object' ? task.attached_data : {};
-  const engine = ad.engine && typeof ad.engine === 'object' ? ad.engine : {};
-  const hint = ad.ui_actionable_by ?? ad.actionable_by ?? engine.actionable_by ?? engine.ui_actionable_by;
-  if (hint === 'branch' || hint === 'company' || hint === 'mobile') {
-    return hint === requestMode || (hint === 'company' && mode === 'branch');
-  }
+  const step = stepAttachedBlock(task);
+  const engine =
+    (step.engine && typeof step.engine === 'object' ? step.engine : null) ||
+    (ad.engine && typeof ad.engine === 'object' ? ad.engine : {});
+  const hint =
+    step.ui_actionable_by ??
+    step.actionable_by ??
+    engine.ui_actionable_by ??
+    engine.actionable_by ??
+    ad.ui_actionable_by ??
+    ad.actionable_by;
 
   const typeNorm = String(task.type ?? '')
     .trim()
     .replace(/\s+/g, '');
   const isReviewType = typeNorm === 'SERVICE_REVIEW' || typeNorm === 'ServiceReview';
   const isReviewStep = isReviewElementId(task.element_id) || isReviewType;
+  const myBranch = myBranchIdForAccess();
+  const taskBranch = Number(task.branch_id ?? task.BranchID ?? 0);
 
   if (isReviewStep) {
     const reviewBranch = taskReviewBranchId(task);
-    const myBranch = Number(getBranchRequestHeaderValue() ?? getBranchIdStored() ?? 0);
+    if (hint === 'branch' && requestMode === 'branch') {
+      if (reviewBranch > 0 && myBranch > 0) return reviewBranch === myBranch;
+      return myBranch > 0;
+    }
     if (reviewBranch > 0 && myBranch > 0 && reviewBranch === myBranch) {
       return true;
     }
-    return requestMode === 'company';
+    return requestMode === 'company' || (hint === 'company' && mode === 'branch');
+  }
+
+  if (hint === 'branch' || hint === 'company' || hint === 'mobile') {
+    if (hint === 'branch' && requestMode === 'branch' && taskBranch > 0 && myBranch > 0 && taskBranch !== myBranch) {
+      return false;
+    }
+    return hint === requestMode || (hint === 'company' && mode === 'branch');
   }
 
   if (requestMode === 'company') {
+    return false;
+  }
+  if (taskBranch > 0 && myBranch > 0 && taskBranch !== myBranch) {
     return false;
   }
   return mode === 'branch' || mode === 'mobile';

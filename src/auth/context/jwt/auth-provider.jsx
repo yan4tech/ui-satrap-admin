@@ -49,9 +49,12 @@ export function AuthProvider({ children }) {
         const bid = normalized.branch_id ?? normalized.branchId ?? normalized.BranchID;
         const isDashboardUser =
           userHasAnyPermission(normalized, [
+            PERM.ui.dashboardView,
             PERM.ui.branchCentralList,
             PERM.ui.branchCentralCreate,
-            PERM.ui.companyTenantManage,
+            PERM.ui.branchTenantList,
+            PERM.ui.branchTenantCreate,
+            PERM.ui.usersList,
           ]) || (bid != null && Number(bid) > 0);
         if (isDashboardUser) {
           setApiMode('branch');

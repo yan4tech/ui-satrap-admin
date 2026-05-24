@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 
-import { varAlpha } from 'minimal-shared/utils';
 import { useBoolean } from 'minimal-shared/hooks';
 
 import Box from '@mui/material/Box';
+import Stack from '@mui/material/Stack';
 import Link from '@mui/material/Link';
 import Avatar from '@mui/material/Avatar';
 import Drawer from '@mui/material/Drawer';
@@ -37,14 +37,62 @@ import { SignOutButton } from './sign-out-button';
 
 // ----------------------------------------------------------------------
 
-function getAccountModeBadgeText() {
+function pickRoleTitle(user) {
+  return String(user?.roleTitle ?? user?.role?.title ?? user?.Role?.Title ?? '').trim();
+}
+
+function pickBranchTitle(user) {
+  return String(user?.branchTitle ?? user?.branch?.title ?? user?.Branch?.Title ?? '').trim();
+}
+
+/** @returns {{ key: string, prefix: string, label: string, color: string }[]} */
+function buildAccountProfileTags(user) {
   const mode = getApiMode();
-  const label = getApiModeLabelFa(mode);
-  if (mode !== 'branch') {
-    return label;
+  const tags = [
+    {
+      key: 'mode',
+      prefix: 'حالت',
+      label: getApiModeLabelFa(mode),
+      color: 'info',
+    },
+  ];
+
+  if (mode === 'branch') {
+    const branchId =
+      getBranchIdStored() ||
+      (user?.branch_id != null ? String(user.branch_id) : '') ||
+      (user?.branchId != null ? String(user.branchId) : '');
+    const branchTitle = pickBranchTitle(user);
+
+    if (branchId) {
+      tags.push({
+        key: 'branch-id',
+        prefix: 'شناسه شعبه',
+        label: branchId,
+        color: 'warning',
+      });
+    }
+    if (branchTitle) {
+      tags.push({
+        key: 'branch-name',
+        prefix: 'اسم شعبه',
+        label: branchTitle,
+        color: 'success',
+      });
+    }
   }
-  const branchId = getBranchIdStored();
-  return `${label} · شناسه شعبه: ${branchId || '—'}`;
+
+  const roleTitle = pickRoleTitle(user);
+  if (roleTitle) {
+    tags.push({
+      key: 'role',
+      prefix: 'نقش',
+      label: roleTitle,
+      color: 'secondary',
+    });
+  }
+
+  return tags;
 }
 
 // ----------------------------------------------------------------------
@@ -59,12 +107,53 @@ export function AccountDrawer({ data = [], sx, ...other }) {
 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 
-  const [modeBadgeText, setModeBadgeText] = useState(getAccountModeBadgeText);
+  const profileTags = useMemo(
+    () => (open ? buildAccountProfileTags(user) : []),
+    [open, user],
+  );
 
-  useEffect(() => {
-    if (!open) return;
-    setModeBadgeText(getAccountModeBadgeText());
-  }, [open]);
+  const renderProfileTags = () => (
+    <Stack
+      direction="row"
+      flexWrap="wrap"
+      useFlexGap
+      spacing={0.75}
+      justifyContent="center"
+      sx={{ mt: 1.5, px: 2, width: 1, maxWidth: 280 }}
+    >
+      {profileTags.map((tag) => (
+        <Label
+          key={tag.key}
+          color={tag.color}
+          variant="soft"
+          sx={{
+            height: 'auto',
+            minHeight: 24,
+            py: 0.5,
+            px: 1,
+            maxWidth: 1,
+            whiteSpace: 'normal',
+            textAlign: 'center',
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              typography: 'caption',
+              fontWeight: 700,
+              lineHeight: 1.45,
+              display: 'inline-block',
+            }}
+          >
+            <Box component="span" sx={{ opacity: 0.85, fontWeight: 600 }}>
+              {tag.prefix}:{' '}
+            </Box>
+            {tag.label}
+          </Box>
+        </Label>
+      ))}
+    </Stack>
+  );
 
   const renderAvatar = () => (
     <AnimateBorder
@@ -175,14 +264,7 @@ export function AccountDrawer({ data = [], sx, ...other }) {
           >
             {renderAvatar()}
 
-            <Label color="info" variant="soft" sx={{ mt: 1.5, maxWidth: 1, px: 1.25 }}>
-              <Box
-                component="span"
-                sx={{ typography: 'caption', fontWeight: 700, textAlign: 'center', lineHeight: 1.45 }}
-              >
-                Mode: {modeBadgeText}
-              </Box>
-            </Label>
+            {profileTags.length > 0 ? renderProfileTags() : null}
 
             <Typography variant="subtitle1" noWrap sx={{ mt: 1.5 }}>
               {displayName}

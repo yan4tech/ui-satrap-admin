@@ -215,10 +215,9 @@ export default function EditUserView({ user, readOnly, onSaved }) {
   const canBeVerified = (data) => {
     const hasName = Boolean(String(data.name ?? '').trim());
     const hasFamily = Boolean(String(data.family ?? '').trim());
-    const hasEmail = Boolean(String(data.email ?? '').trim());
-    const hasMobile = Boolean(String(data.mobile ?? '').trim());
+    const hasMobile = String(data.mobile ?? '').trim().length >= 10;
     const hasRole = Number(data.role_id ?? 0) > 0;
-    return hasName && hasFamily && hasEmail && hasMobile && hasRole;
+    return hasName && hasFamily && hasMobile && hasRole;
   };
   const isVerifiableNow = canBeVerified(formValues);
 

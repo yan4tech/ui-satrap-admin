@@ -84,8 +84,8 @@ export function UserStatusFields({
               title="تأیید هویت"
               hint={
                 isVerifiableNow
-                  ? 'پس از تکمیل اطلاعات الزامی قابل تأیید است.'
-                  : 'ابتدا نام، نام خانوادگی، ایمیل، موبایل و نقش را کامل کنید.'
+                  ? 'وضعیت تأیید هویت کاربر را مشخص کنید.'
+                  : 'ابتدا نام، نام خانوادگی، موبایل و نقش را کامل کنید.'
               }
               icon="solar:verified-check-bold"
               value={verifiedValue}
@@ -110,7 +110,7 @@ export function UserStatusFields({
 
         {showVerified && !isVerifiableNow && !readOnly && (
           <Alert severity="info" variant="outlined" sx={{ mt: 2, borderRadius: 2 }}>
-            برای فعال‌کردن «تأیید شده»، فیلدهای نام، نام خانوادگی، ایمیل، موبایل و نقش را تکمیل کنید.
+            برای فعال‌کردن «تأیید شده»، فیلدهای نام، نام خانوادگی، موبایل و نقش را تکمیل کنید.
           </Alert>
         )}
       </Paper>

@@ -26,12 +26,17 @@ export function normalizeMembershipUser(raw, meta) {
   const photoURL =
     raw.photoURL ?? raw.photo_url ?? raw.avatar ?? raw.avatar_url ?? raw.AvatarURL ?? null;
 
+  const roleTitle = String(raw.role?.title ?? raw.Role?.Title ?? '').trim();
+  const branchTitle = String(raw.branch?.title ?? raw.Branch?.Title ?? '').trim();
+
   const role =
-    raw.role != null && String(raw.role).trim() !== ''
+    raw.role != null && typeof raw.role === 'string' && String(raw.role).trim() !== ''
       ? String(raw.role).trim()
-      : raw.role_id != null
-        ? `role_${raw.role_id}`
-        : 'admin';
+      : raw.role?.slug
+        ? String(raw.role.slug).trim()
+        : raw.role_id != null
+          ? `role_${raw.role_id}`
+          : 'admin';
 
   const permissions = Array.isArray(meta?.permissions)
     ? meta.permissions.map((p) => String(p).trim()).filter(Boolean)
@@ -46,6 +51,8 @@ export function normalizeMembershipUser(raw, meta) {
     mobile,
     photoURL: photoURL || null,
     role,
+    roleTitle: roleTitle || null,
+    branchTitle: branchTitle || null,
     permissions,
   };
 }

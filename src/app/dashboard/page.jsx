@@ -155,9 +155,9 @@ export default function Page() {
       <Stack spacing={3}>
         <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" spacing={2}>
           <Box>
-            <Typography variant="h4">داشبورد سازمان مرکزی</Typography>
+            <Typography variant="h4">داشبورد شعبه مرکزی</Typography>
             <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
-              نمای کلی وضعیت کل سامانه، عملکرد سرویس‌ها و فعالیت‌های اخیر در سطح ملی
+              نمای کلی عملکرد شعبه مرکزی، شعب زیرمجموعه و خدمات فعال در سطح سازمان
             </Typography>
           </Box>
           <Button

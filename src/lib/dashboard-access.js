@@ -1,6 +1,6 @@
 import { paths } from 'src/routes/paths';
 
-import { canViewBranchDashboard } from 'src/lib/dashboard-nav-permissions';
+import { canViewBranchDashboard, canViewBranchUserDashboard } from 'src/lib/dashboard-nav-permissions';
 import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
 
 const DASHBOARD_ROOT = paths.dashboard.root;
@@ -17,7 +17,15 @@ export function tenantCentralBranchPath(user) {
 /** مسیرهای مجاز برای مدیر شعبه مرکزی (مستأجر) */
 function tenantAllowedPrefixes(user) {
   const editPath = tenantCentralBranchPath(user);
-  return [DASHBOARD_ROOT, paths.dashboard.branch.overview, paths.dashboard.branch.search, paths.dashboard.branch.create, editPath, `${DASHBOARD_ROOT}/branch`];
+  return [
+    DASHBOARD_ROOT,
+    paths.dashboard.branch.overview,
+    paths.dashboard.branch.userOverview,
+    paths.dashboard.branch.search,
+    paths.dashboard.branch.create,
+    editPath,
+    `${DASHBOARD_ROOT}/branch`,
+  ];
 }
 
 export function getDashboardAccessRedirect(pathname, user) {
@@ -27,7 +35,16 @@ export function getDashboardAccessRedirect(pathname, user) {
     (path === paths.dashboard.branch.overview || path.startsWith(`${paths.dashboard.branch.overview}/`)) &&
     !canViewBranchDashboard(user)
   ) {
-    return DASHBOARD_ROOT;
+    return canViewBranchUserDashboard(user)
+      ? paths.dashboard.branch.userOverview
+      : DASHBOARD_ROOT;
+  }
+
+  if (
+    (path === paths.dashboard.branch.userOverview || path.startsWith(`${paths.dashboard.branch.userOverview}/`)) &&
+    !canViewBranchUserDashboard(user)
+  ) {
+    return canViewBranchDashboard(user) ? paths.dashboard.branch.overview : DASHBOARD_ROOT;
   }
 
   const isTenantOnly =

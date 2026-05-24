@@ -50,6 +50,8 @@ export function AuthProvider({ children }) {
         const isDashboardUser =
           userHasAnyPermission(normalized, [
             PERM.ui.dashboardView,
+            PERM.ui.dashboardBranchView,
+            PERM.ui.dashboardBranchUserView,
             PERM.ui.branchCentralList,
             PERM.ui.branchCentralCreate,
             PERM.ui.branchTenantList,

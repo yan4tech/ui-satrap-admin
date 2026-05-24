@@ -6,6 +6,7 @@ export const PERM = {
     dashboardView: 'ui.dashboard.view',
     dashboardCompanyView: 'ui.dashboard.company.view',
     dashboardBranchView: 'ui.dashboard.branch.view',
+    dashboardBranchUserView: 'ui.dashboard.branch.user.view',
     usersList: 'ui.users.list',
     usersCreate: 'ui.users.create',
     rolesList: 'ui.roles.list',

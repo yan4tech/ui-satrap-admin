@@ -57,6 +57,7 @@ export const paths = {
     },
     branch: {
       overview: `${ROOTS.DASHBOARD}/branch/overview`,
+      userOverview: `${ROOTS.DASHBOARD}/branch/user`,
       create: `${ROOTS.DASHBOARD}/branch/create`,
       search: `${ROOTS.DASHBOARD}/branch/search`,
       tree: `${ROOTS.DASHBOARD}/branch/tree`,

@@ -1,6 +1,6 @@
 import { paths } from 'src/routes/paths';
 
-import { canViewBranchDashboard } from 'src/lib/dashboard-nav-permissions';
+import { canViewBranchDashboard, canViewBranchUserDashboard } from 'src/lib/dashboard-nav-permissions';
 import { userHasAllPermissions, userHasAnyPermission } from 'src/lib/permissions';
 
 /**
@@ -17,6 +17,9 @@ export function filterNavByPermissions(navData, user) {
     (items || [])
       .map((item) => {
         if (item.path === paths.dashboard.branch.overview && !canViewBranchDashboard(user)) {
+          return null;
+        }
+        if (item.path === paths.dashboard.branch.userOverview && !canViewBranchUserDashboard(user)) {
           return null;
         }
         if (item.requiredPermissions?.length && !userHasAllPermissions(user, item.requiredPermissions)) {

@@ -150,6 +150,25 @@ export function resolveBranchKindFromBranch(branch) {
     : BRANCH_KIND.INDEPENDENT_REVIEW;
 }
 
+/** شناسه شعبهٔ والد برای محدود کردن فهرست خدمات قابل انتخاب (زیرمجموعهٔ مستقیم). */
+export function resolveServiceConstraintParentBranchId({
+  branchAffiliation,
+  parentBranchId,
+  branchData,
+  companyId,
+}) {
+  if (branchAffiliation === BRANCH_AFFILIATION.INDEPENDENT) {
+    return null;
+  }
+  const fromForm = Number(parentBranchId);
+  if (Number.isFinite(fromForm) && fromForm > 0) {
+    return fromForm;
+  }
+  const raw = companyId ?? branchData?.parent_branch_id ?? branchData?.ParentBranchID;
+  const fromData = Number(raw);
+  return Number.isFinite(fromData) && fromData > 0 ? fromData : null;
+}
+
 export function branchAssignmentsFromSelection(branches) {
   return (branches ?? [])
     .map((b) => ({

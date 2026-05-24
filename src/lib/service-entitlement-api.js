@@ -54,6 +54,15 @@ export async function fetchCentralBranchServices(centralBranchId) {
   return fetchBranchWithServices(centralBranchId);
 }
 
+/** فهرست خدمات قابل انتخاب: زیرمجموعهٔ والد → فقط خدمات والد؛ در غیر این صورت کاتالوگ کامل. */
+export async function fetchBranchServiceOptionCatalog(parentBranchId) {
+  const pid = Number(parentBranchId);
+  if (Number.isFinite(pid) && pid > 0) {
+    return fetchCentralBranchServices(pid);
+  }
+  return fetchServiceCatalog();
+}
+
 /** @deprecated alias */
 export async function fetchCompanyServices(centralBranchId) {
   return fetchCentralBranchServices(centralBranchId);

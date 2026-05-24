@@ -36,9 +36,8 @@ import { CONFIG } from 'src/global-config';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
 import {
   normalizeService,
-  fetchServiceCatalog,
   assignBranchServices,
-  fetchCompanyServices,
+  fetchBranchServiceOptionCatalog,
   fetchBranchServicesForCompany,
 } from 'src/lib/service-entitlement-api';
 
@@ -49,6 +48,7 @@ import {
   branchFormValuesFromBranch,
   centralBranchFieldsFromAffiliation,
   isCentralBranchAffiliation,
+  resolveServiceConstraintParentBranchId,
   BRANCH_AFFILIATION,
   REVIEW_POLICY,
 } from 'src/lib/branch-workflow';
@@ -199,7 +199,14 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
   } = methods;
   const isActive = watch('is_active');
   const branchAffiliation = watch('branch_affiliation');
+  const watchedParentBranchId = watch('parent_branch_id');
   const isCentralAffiliation = isCentralBranchAffiliation(branchAffiliation);
+  const serviceConstraintParentId = resolveServiceConstraintParentBranchId({
+    branchAffiliation,
+    parentBranchId: watchedParentBranchId,
+    branchData,
+    companyId,
+  });
   const canManageSubBranches =
     isCentralAffiliation &&
     (canManageCentralBranches || (isCompanyAdmin && tenantCentralBranchId === branchId));
@@ -242,8 +249,12 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
   useEffect(() => {
     (async () => {
       const branchId = Number(branchData?.ID ?? branchData?.id);
-      const rawCid = companyId ?? branchData?.parent_branch_id ?? branchData?.companyId ?? branchData?.ParentBranchID;
-      const cid = rawCid != null && Number(rawCid) > 0 ? Number(rawCid) : null;
+      const constraintParentId = resolveServiceConstraintParentBranchId({
+        branchAffiliation,
+        parentBranchId: watchedParentBranchId,
+        branchData,
+        companyId,
+      });
       const current = (branchData?.services || [])
         .map((s) => normalizeService(s))
         .filter(Boolean)
@@ -260,30 +271,39 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
       let assigned = [];
       try {
         if (branchId) {
-          assigned = await fetchBranchServicesForCompany(cid, branchId);
+          assigned = await fetchBranchServicesForCompany(constraintParentId, branchId);
         }
       } catch {
         assigned = [];
       }
 
       try {
-        let options = [];
-        if (isCompanyAdmin && cid) {
-          options = await fetchCompanyServices(cid);
-        } else if (cid) {
-          options = await fetchCompanyServices(cid);
-        } else {
-          options = await fetchServiceCatalog();
-        }
+        const options = await fetchBranchServiceOptionCatalog(constraintParentId);
+        const mergedOptions = mergeServiceOptions(options, current, assigned);
+        const allowedIds = new Set(mergedOptions.map((s) => s.id));
 
         const assignedIds = assigned.map((s) => s.id);
-        const selectedIds =
+        const initialIds =
           assignedIds.length > 0 ? assignedIds : resolveBranchServiceIds(branchData);
+        const selectedIds = constraintParentId
+          ? initialIds.filter((id) => allowedIds.has(id))
+          : initialIds;
+
         if (selectedIds.length > 0) {
           methods.setValue('services', selectedIds, { shouldDirty: false });
+        } else if (constraintParentId) {
+          methods.setValue('services', [], { shouldDirty: false });
         }
 
-        setServicesList(mergeServiceOptions(options, current, assigned));
+        const formIds = methods.getValues('services') || [];
+        const trimmedFormIds = constraintParentId
+          ? formIds.filter((id) => allowedIds.has(id))
+          : formIds;
+        if (trimmedFormIds.length !== formIds.length) {
+          methods.setValue('services', trimmedFormIds, { shouldDirty: true });
+        }
+
+        setServicesList(mergedOptions);
       } catch {
         const fallbackIds =
           assigned.length > 0
@@ -295,7 +315,7 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
         setServicesList(mergeServiceOptions(current, assigned));
       }
     })();
-  }, [branchData, companyId, isCompanyAdmin, methods]);
+  }, [branchData, companyId, branchAffiliation, watchedParentBranchId, methods]);
 
   const onSubmit = handleSubmit(async (data) => {
     try {
@@ -639,9 +659,10 @@ export default function EditBranch({ branchData, onSaved, readOnly = false }) {
                   انتخاب خدمات شعبه
                 </Typography>
 
-                {isCompanyAdmin && companyId ? (
+                {serviceConstraintParentId ? (
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                    فقط خدمات مجاز شعبه مرکزی قابل انتخاب است.
+                    این شعبه زیرمجموعهٔ شعبهٔ والد است؛ فقط خدماتی که به شعبهٔ والد تخصیص
+                    داده شده‌اند قابل انتخاب هستند و نمی‌توانید خدماتی فراتر از آن ارائه دهید.
                   </Typography>
                 ) : null}
 

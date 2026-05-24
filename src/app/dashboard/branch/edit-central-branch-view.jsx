@@ -46,6 +46,9 @@ export default function EditCentralBranchView({ branchData, tenantAdminMode = fa
   const [branchesReloadKey, setBranchesReloadKey] = useState(0);
 
   const branchId = branchData?.ID ?? branchData?.id;
+  const servicesParentBranchId = Number(
+    branchData?.parent_branch_id ?? branchData?.ParentBranchID ?? 0
+  );
 
   const methods = useForm({
     resolver: zodResolver(CentralBranchSchema),
@@ -117,6 +120,7 @@ export default function EditCentralBranchView({ branchData, tenantAdminMode = fa
               )}
               <CompanyFormSections
                 parentBranchId={branchId}
+                servicesParentBranchId={servicesParentBranchId > 0 ? servicesParentBranchId : null}
                 branchesReloadKey={branchesReloadKey}
                 selectedServices={selectedServices}
                 onServicesChange={setSelectedServices}

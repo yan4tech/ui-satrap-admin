@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 
 import { fetchAssignableBranches } from 'src/lib/branch-api';
-import { fetchServiceCatalog } from 'src/lib/service-entitlement-api';
+import { fetchBranchServiceOptionCatalog } from 'src/lib/service-entitlement-api';
 
 function resolveBranchEditHref(branchEditBasePath, branchId) {
   if (!branchEditBasePath || !branchId) return null;
@@ -30,6 +30,8 @@ function resolveBranchEditHref(branchEditBasePath, branchId) {
 export default function CompanyFormSections({
   parentBranchId = null,
   companyId = null,
+  /** والد برای محدودیت خدمات (مثلاً شعبه مرکزی تو در تو) */
+  servicesParentBranchId = null,
   branchesReloadKey = 0,
   selectedServices,
   onServicesChange,
@@ -44,15 +46,16 @@ export default function CompanyFormSections({
   const [loading, setLoading] = useState(true);
 
   const loadOptions = useCallback(async () => {
+    const servicesParentId = Number(servicesParentBranchId) || 0;
     const [services, branches] = await Promise.all([
-      fetchServiceCatalog(),
+      fetchBranchServiceOptionCatalog(servicesParentId > 0 ? servicesParentId : null),
       fetchAssignableBranches({
         parentBranchId: parentBranchId || companyId || undefined,
         excludeBranchId: parentBranchId || companyId || undefined,
       }),
     ]);
     return { services, branches };
-  }, [parentBranchId, companyId]);
+  }, [parentBranchId, companyId, servicesParentBranchId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -106,7 +109,9 @@ export default function CompanyFormSections({
           تخصیص خدمات به شرکت
         </Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          شعبات زیرمجموعه فقط می‌توانند خدمات انتخاب‌شده در اینجا را دریافت کنند.
+          {Number(servicesParentBranchId) > 0
+            ? 'فقط خدمات تخصیص‌یافته به شعبهٔ والد در اینجا قابل انتخاب است. شعبات زیرمجموعه نیز فقط از همین مجموعه می‌توانند انتخاب کنند.'
+            : 'شعبات زیرمجموعه فقط می‌توانند خدمات انتخاب‌شده در اینجا را دریافت کنند.'}
         </Typography>
         <Autocomplete
           multiple

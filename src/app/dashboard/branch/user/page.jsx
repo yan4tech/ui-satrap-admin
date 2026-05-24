@@ -1,23 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import {
-  Box,
-  Card,
-  Chip,
-  Grid,
-  List,
-  Stack,
-  Button,
-  Avatar,
-  Divider,
-  ListItem,
-  Typography,
-  CardHeader,
-  LinearProgress,
-  ListItemText,
-  ListItemAvatar,
-} from '@mui/material';
+import { Grid } from '@mui/material';
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
 import { useAuthContext } from 'src/auth/hooks';
@@ -27,6 +11,11 @@ import { DashboardPageShell } from '../../_components/dashboard-page-shell';
 import { KpiGrid } from '../../_components/kpi-grid';
 import { HorizontalBarsCard } from '../../_components/horizontal-bars-card';
 import { ServiceBreakdownCards } from '../../_components/service-breakdown-cards';
+import { InfoBanner } from '../../_components/info-banner';
+import { PulseStatCards } from '../../_components/pulse-stat-cards';
+import { InboxQueueCard } from '../../_components/inbox-queue-card';
+import { TimelineCard } from '../../_components/timeline-card';
+import { WeeklyGoalCard } from '../../_components/weekly-goal-card';
 import { toFaDigits } from '../../_components/to-fa-digits';
 
 const BRANCH_CONTEXT = {
@@ -116,9 +105,24 @@ const myInbox = [
 ];
 
 const branchPulse = [
-  { label: 'صف کل شعبه', value: BRANCH_CONTEXT.queueTotal, hint: 'برای اولویت‌بندی کار خودتان' },
-  { label: 'همکاران آنلاین', value: BRANCH_CONTEXT.teamOnline, hint: 'امکان ارجاع سریع' },
-  { label: 'میانگین شعبه (تکمیل روز)', value: 23, hint: 'شما امروز ۵ مورد انجام دادید' },
+  {
+    label: 'صف کل شعبه',
+    value: BRANCH_CONTEXT.queueTotal,
+    hint: 'برای اولویت‌بندی کار خودتان',
+    icon: 'solar:inbox-bold-duotone',
+  },
+  {
+    label: 'همکاران آنلاین',
+    value: BRANCH_CONTEXT.teamOnline,
+    hint: 'امکان ارجاع سریع',
+    icon: 'solar:users-group-two-rounded-bold-duotone',
+  },
+  {
+    label: 'میانگین شعبه (تکمیل روز)',
+    value: 23,
+    hint: 'شما امروز ۵ مورد انجام دادید',
+    icon: 'solar:chart-2-bold-duotone',
+  },
 ];
 
 const myTimeline = [
@@ -127,9 +131,6 @@ const myTimeline = [
   { title: 'یادداشت روی REQ-4798', subtitle: '۱ ساعت پیش', icon: 'solar:notes-bold-duotone' },
   { title: 'تکمیل REQ-4791', subtitle: '۲ ساعت پیش', icon: 'solar:archive-check-bold-duotone' },
 ];
-
-const priorityColor = { high: 'error', medium: 'warning', low: 'default' };
-const priorityLabel = { high: 'فوری', medium: 'متوسط', low: 'عادی' };
 
 function displayName(user) {
   const name = [user?.name, user?.family].filter(Boolean).join(' ').trim();
@@ -157,77 +158,46 @@ export default function BranchUserDashboardPage() {
     [user]
   );
 
+  const goalActions = serviceLinks.map((link) => ({
+    component: RouterLink,
+    href: link.path,
+    variant: 'outlined',
+    children: link.label,
+  }));
+
   return (
     <DashboardPageShell
       title={`داشبورد کاربر شعبه — ${fullName}`}
       subtitle={`${roleTitle} · ${BRANCH_CONTEXT.name} (${BRANCH_CONTEXT.code}) · فقط آمار و کارهای مرتبط با شما`}
+      badge="کاربر عملیاتی"
+      accent="info"
     >
-      <Card
-        sx={{
-          borderRadius: 2,
-          border: '1px solid',
-          borderColor: 'divider',
-          overflow: 'hidden',
-        }}
-      >
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          alignItems={{ xs: 'flex-start', md: 'center' }}
-          justifyContent="space-between"
-          spacing={2}
-          sx={{
-            p: 2.5,
-            background: (theme) =>
-              `linear-gradient(135deg, ${theme.palette.info.lighter} 0%, ${theme.palette.background.paper} 55%)`,
-          }}
-        >
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Avatar sx={{ width: 56, height: 56, bgcolor: 'info.main', color: 'info.contrastText' }}>
-              {fullName.charAt(0)}
-            </Avatar>
-            <Box>
-              <Typography variant="h6">{fullName}</Typography>
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                {roleTitle} · صندوق شخصی: {toFaDigits(7)} مورد · آخرین فعالیت ۱۰ دقیقه پیش
-              </Typography>
-            </Box>
-          </Stack>
-          <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-            <Chip icon={<Iconify icon="solar:buildings-2-bold-duotone" width={18} />} label={BRANCH_CONTEXT.name} />
-            <Chip color="warning" variant="soft" label={`${toFaDigits(2)} کار فوری`} />
-            <Chip color="success" variant="soft" label="هدف روز: ۸ تکمیل" />
-          </Stack>
-        </Stack>
-      </Card>
+      <InfoBanner
+        accent="info"
+        title={fullName}
+        subtitle={`${roleTitle} · صندوق شخصی: ${toFaDigits(7)} مورد · آخرین فعالیت ۱۰ دقیقه پیش`}
+        avatarLetter={fullName.charAt(0)}
+        chips={[
+          {
+            icon: <Iconify icon="solar:buildings-2-bold-duotone" width={18} />,
+            label: BRANCH_CONTEXT.name,
+          },
+          { label: `${toFaDigits(2)} کار فوری`, color: 'warning', variant: 'soft' },
+          { label: 'هدف روز: ۸ تکمیل', color: 'success', variant: 'soft' },
+        ]}
+      />
 
       <KpiGrid items={myKpis} />
 
-      <Grid container spacing={2}>
-        {branchPulse.map((item) => (
-          <Grid key={item.label} size={{ xs: 12, sm: 4 }}>
-            <Card sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
-              <Stack spacing={0.5} sx={{ p: 2.5 }}>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  {item.label}
-                </Typography>
-                <Typography variant="h4" sx={{ fontWeight: 800 }}>
-                  {toFaDigits(item.value)}
-                </Typography>
-                <Typography variant="caption" sx={{ color: 'text.secondary' }}>
-                  {item.hint}
-                </Typography>
-              </Stack>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      <PulseStatCards items={branchPulse} />
 
-      <ServiceBreakdownCards services={myServiceBreakdown} />
+      <ServiceBreakdownCards services={myServiceBreakdown} sectionTitle="کارهای من به تفکیک خدمت" />
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 4 }}>
           <HorizontalBarsCard
             title="فعالیت من در ۷ روز اخیر"
+            subheader="تعداد رسیدگی روزانه"
             items={weeklyMine.map((value, index) => ({
               label: `روز ${index + 1}`,
               value,
@@ -239,84 +209,28 @@ export default function BranchUserDashboardPage() {
           <HorizontalBarsCard title="ترکیب وضعیت کارهای من" items={myStatusMix} />
         </Grid>
         <Grid size={{ xs: 12, md: 4 }}>
-          <Card sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
-            <CardHeader title="پیشرفت هدف هفتگی" subheader="۱۹ از ۲۵ تکمیل — ۷۶٪" />
-            <Stack spacing={2} sx={{ px: 2.5, pb: 2.5 }}>
-              <LinearProgress variant="determinate" value={76} sx={{ height: 10, borderRadius: 99 }} />
-              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                با ۶ تکمیل دیگر به هدف هفتگی می‌رسید. ۲ مورد فوری در صف مانده‌اند.
-              </Typography>
-              {serviceLinks.length > 0 ? (
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
-                  {serviceLinks.map((link) => (
-                    <Button
-                      key={link.path}
-                      component={RouterLink}
-                      href={link.path}
-                      size="small"
-                      variant="outlined"
-                    >
-                      {link.label}
-                    </Button>
-                  ))}
-                </Stack>
-              ) : null}
-            </Stack>
-          </Card>
+          <WeeklyGoalCard
+            title="پیشرفت هدف هفتگی"
+            subheader="۱۹ از ۲۵ تکمیل"
+            progress={76}
+            description="با ۶ تکمیل دیگر به هدف هفتگی می‌رسید. ۲ مورد فوری در صف مانده‌اند."
+            actions={goalActions}
+          />
         </Grid>
       </Grid>
 
       <Grid container spacing={2}>
         <Grid size={{ xs: 12, md: 7 }}>
-          <Card sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
-            <CardHeader title="صندوق ورودی من" subheader="درخواست‌هایی که منتظر اقدام شما هستند" />
-            <List sx={{ py: 0 }}>
-              {myInbox.map((item, index) => (
-                <Box key={item.id}>
-                  <ListItem
-                    sx={{ py: 1.5 }}
-                    secondaryAction={
-                      <Stack direction="row" spacing={1} alignItems="center">
-                        <Chip size="small" label={item.wait} variant="outlined" />
-                        <Chip
-                          size="small"
-                          label={priorityLabel[item.priority]}
-                          color={priorityColor[item.priority]}
-                        />
-                      </Stack>
-                    }
-                  >
-                    <ListItemText
-                      primary={`${item.id} — ${item.service}`}
-                      secondary={`متقاضی: ${item.applicant} · مرحله: ${item.step}`}
-                      secondaryTypographyProps={{ sx: { mt: 0.5 } }}
-                    />
-                  </ListItem>
-                  {index < myInbox.length - 1 && <Divider component="li" />}
-                </Box>
-              ))}
-            </List>
-          </Card>
+          <InboxQueueCard
+            title="صندوق ورودی من"
+            subheader="درخواست‌هایی که منتظر اقدام شما هستند"
+            items={myInbox}
+            showAction
+            actionLabel="شروع رسیدگی"
+          />
         </Grid>
         <Grid size={{ xs: 12, md: 5 }}>
-          <Card sx={{ border: '1px solid', borderColor: 'divider', height: '100%' }}>
-            <CardHeader title="خط زمان من" />
-            <List sx={{ py: 0 }}>
-              {myTimeline.map((entry, index) => (
-                <Box key={entry.title}>
-                  <ListItem>
-                    <ListItemAvatar>
-                      <Avatar sx={{ bgcolor: 'grey.100', color: 'info.main' }}>
-                        <Iconify icon={entry.icon} width={22} />
-                      </Avatar>
-                    </ListItemAvatar>
-                    <ListItemText primary={entry.title} secondary={entry.subtitle} />
-                  </ListItem>
-                  {index < myTimeline.length - 1 && <Divider component="li" variant="inset" />}
-                </Box>
-              ))}
-            </List>
-          </Card>
+          <TimelineCard title="خط زمان من" entries={myTimeline} />
         </Grid>
       </Grid>
     </DashboardPageShell>

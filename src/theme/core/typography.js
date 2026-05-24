@@ -1,8 +1,8 @@
-import { pxToRem, setFont } from 'minimal-shared/utils';
+import { pxToRem } from 'minimal-shared/utils';
 
 import { createTheme } from '@mui/material/styles';
 
-import { themeConfig } from '../theme-config';
+import { fontFamilyPrimary } from '../font-family';
 
 // ----------------------------------------------------------------------
 
@@ -32,8 +32,8 @@ function responsiveFontSizes(sizes) {
 
 // ----------------------------------------------------------------------
 
-const primaryFont = setFont(themeConfig.fontFamily.primary);
-const secondaryFont = setFont(themeConfig.fontFamily.secondary);
+const primaryFont = fontFamilyPrimary;
+const secondaryFont = fontFamilyPrimary;
 
 const baseTypography = {
   fontFamily: primaryFont,

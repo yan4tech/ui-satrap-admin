@@ -1,16 +1,9 @@
 /** **************************************
-* Fonts: app
+* Fonts: loaded via next/font in src/theme/fonts.js (Vazirmatn)
 *************************************** */
-@import '@fontsource-variable/public-sans';
-
-@import '@fontsource/barlow/400.css';
-@import '@fontsource/barlow/500.css';
-@import '@fontsource/barlow/600.css';
-@import '@fontsource/barlow/700.css';
-@import '@fontsource/barlow/800.css';
 
 /** **************************************
-* Fonts: options
+* Fonts: options (settings drawer only)
 *************************************** */
 @import '@fontsource-variable/dm-sans';
 @import '@fontsource-variable/inter';
@@ -36,6 +29,7 @@ body,
   flex: 1 1 auto;
   min-height: 100%;
   flex-direction: column;
+  font-family: var(--font-vazirmatn), Tahoma, Arial, sans-serif;
 }
 img {
   max-width: 100%;

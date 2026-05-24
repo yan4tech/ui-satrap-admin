@@ -4,6 +4,7 @@ import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
 
 import { CONFIG } from 'src/global-config';
 import { themeConfig, ThemeProvider, primary as primaryColor } from 'src/theme';
+import { vazirmatn } from 'src/theme/fonts';
 import { MuiCacheProvider } from 'src/components/mui/cache-provider';
 
 import { ProgressBar } from 'src/components/progress-bar';
@@ -52,8 +53,13 @@ export default async function RootLayout({ children }) {
   const appConfig = await getAppConfig();
 
   return (
-    <html lang="en" dir={appConfig.dir} suppressHydrationWarning>
-      <body>
+    <html
+      lang="fa"
+      dir={appConfig.dir}
+      className={`${vazirmatn.variable} ${vazirmatn.className}`}
+      suppressHydrationWarning
+    >
+      <body className={vazirmatn.className}>
         <InitColorSchemeScript
           modeStorageKey={themeConfig.modeStorageKey}
           attribute={themeConfig.cssVariables.colorSchemeSelector}

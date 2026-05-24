@@ -1,5 +1,7 @@
 import { cookies } from 'next/headers';
 
+import { themeConfig } from 'src/theme/theme-config';
+
 import { defaultSettings, SETTINGS_STORAGE_KEY } from './settings-config';
 
 // ----------------------------------------------------------------------
@@ -13,5 +15,9 @@ export async function detectSettings(storageKey = SETTINGS_STORAGE_KEY) {
     ? { ...defaultSettings, ...JSON.parse(settingsStore.value) }
     : defaultSettings;
 
-  return { ...merged, direction: 'rtl' };
+  return {
+    ...merged,
+    direction: 'rtl',
+    fontFamily: themeConfig.fontFamily.primary,
+  };
 }

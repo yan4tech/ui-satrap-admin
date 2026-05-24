@@ -1,5 +1,6 @@
-import { setFont, hexToRgbChannel, createPaletteChannel } from 'minimal-shared/utils';
+import { hexToRgbChannel, createPaletteChannel } from 'minimal-shared/utils';
 
+import { fontFamilyPrimary } from '../font-family';
 import { primaryColorPresets } from './color-presets';
 import { createShadowColor } from '../core/custom-shadows';
 
@@ -13,12 +14,7 @@ import { createShadowColor } from '../core/custom-shadows';
  */
 
 export function applySettingsToTheme(theme, settingsState) {
-  const {
-    direction,
-    fontFamily,
-    contrast = 'default',
-    primaryColor = 'default',
-  } = settingsState ?? {};
+  const { direction, contrast = 'default', primaryColor = 'default' } = settingsState ?? {};
 
   const isDefaultContrast = contrast === 'default';
   const isDefaultPrimaryColor = primaryColor === 'default';
@@ -72,7 +68,10 @@ export function applySettingsToTheme(theme, settingsState) {
     },
     typography: {
       ...theme.typography,
-      fontFamily: setFont(fontFamily),
+      fontFamily: fontFamilyPrimary,
+      h1: { ...theme.typography.h1, fontFamily: fontFamilyPrimary },
+      h2: { ...theme.typography.h2, fontFamily: fontFamilyPrimary },
+      h3: { ...theme.typography.h3, fontFamily: fontFamilyPrimary },
     },
   };
 }

@@ -5,6 +5,8 @@ import { getCookie, getStorage } from 'minimal-shared/utils';
 import { useMemo, useState, useEffect, useCallback } from 'react';
 import { useCookies, useLocalStorage } from 'minimal-shared/hooks';
 
+import { themeConfig } from 'src/theme/theme-config';
+
 import { SettingsContext } from './settings-context';
 import { SETTINGS_STORAGE_KEY } from '../settings-config';
 
@@ -19,7 +21,11 @@ export function SettingsProvider({
   const isCookieEnabled = !!cookieSettings;
   const useStorage = isCookieEnabled ? useCookies : useLocalStorage;
   const initialSettings = isCookieEnabled
-    ? { ...cookieSettings, direction: 'rtl' }
+    ? {
+        ...cookieSettings,
+        direction: 'rtl',
+        fontFamily: themeConfig.fontFamily.primary,
+      }
     : defaultSettings;
   const getStorageValue = isCookieEnabled ? getCookie : getStorage;
 
@@ -59,7 +65,8 @@ export function SettingsProvider({
 
   useEffect(() => {
     setField('direction', 'rtl');
-    // Intentionally once after hydration so browser cookie cannot restore `ltr`.
+    setField('fontFamily', themeConfig.fontFamily.primary);
+    // Intentionally once after hydration so browser cookie cannot restore `ltr`/old fonts.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

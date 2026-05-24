@@ -17,6 +17,7 @@ import {
   NoSsr,
   Stack,
   Button,
+  ButtonGroup,
   Dialog,
   Tooltip,
   Collapse,
@@ -43,6 +44,7 @@ import {
   writeService1TasksSnapshot,
   parseEngineProcessRejectState,
   pickRepresentativeTaskForProcessRow,
+  taskReviewBranchId,
 } from '../one/engine-api';
 
 const DEFINITION_LABELS = {
@@ -92,12 +94,20 @@ const PROCESS_STATUS_OPTIONS = [
   { value: 'SUSPENDED', label: getProcessStatusLabel('SUSPENDED') },
 ];
 
+/** all | locked | unlocked — بدون رشتهٔ خالی تا Select/ButtonGroup درست کار کند */
+const LOCKED_FILTER_ALL = 'all';
+
 const defaultFilters = {
   processId: '',
   definitionKey: '',
   processStatus: '',
   applicantName: '',
   currentElementId: '',
+  createdFrom: null,
+  createdTo: null,
+  createdByUserId: '',
+  assignedBranchId: '',
+  isLocked: LOCKED_FILTER_ALL,
 };
 
 const SearchSchema = zod.object({
@@ -106,6 +116,11 @@ const SearchSchema = zod.object({
   processStatus: zod.string().optional(),
   applicantName: zod.string().optional(),
   currentElementId: zod.string().optional(),
+  createdFrom: zod.any().optional(),
+  createdTo: zod.any().optional(),
+  createdByUserId: zod.string().optional(),
+  assignedBranchId: zod.string().optional(),
+  isLocked: zod.string().optional(),
 });
 
 /** پاسخ API / مدل DB ممکن است snake_case یا PascalCase باشد */
@@ -127,6 +142,56 @@ function pickProcessInstanceId(p) {
   return v != null ? v : null;
 }
 
+function pickProcessCreatedAt(p) {
+  if (!p || typeof p !== 'object') return null;
+  return p.CreatedAt ?? p.created_at ?? p.createdAt ?? null;
+}
+
+function pickStarterUserId(p) {
+  if (!p || typeof p !== 'object') return null;
+  const vars = p.variables ?? p.Variables ?? {};
+  const fromVar = vars.__starter_user_id;
+  const uid = p.user_id ?? p.UserID ?? fromVar;
+  if (uid == null || uid === '') return null;
+  return Number(uid) || String(uid);
+}
+
+function pickProcessBranchId(p) {
+  if (!p || typeof p !== 'object') return null;
+  const direct = Number(p.branch_id ?? p.BranchID ?? 0);
+  if (direct > 0) return direct;
+  const vars = p.variables ?? p.Variables ?? {};
+  const fromVar = Number(vars.__starter_branch_id ?? 0);
+  return fromVar > 0 ? fromVar : null;
+}
+
+function pickProcessIsLocked(p) {
+  if (!p || typeof p !== 'object') return false;
+  return p.is_locked === true || p.IsLocked === true;
+}
+
+function normalizeLockedFilter(value) {
+  if (value === true || value === 'true' || value === 'locked') return 'locked';
+  if (value === false || value === 'false' || value === 'unlocked') return 'unlocked';
+  return LOCKED_FILTER_ALL;
+}
+
+function parseFilterDay(value) {
+  if (!value) return null;
+  const d = dayjs(value);
+  return d.isValid() ? d : null;
+}
+
+function matchesCreatedDateRange(createdAt, from, to) {
+  if (!from && !to) return true;
+  if (!createdAt) return false;
+  const d = dayjs(createdAt);
+  if (!d.isValid()) return false;
+  if (from && d.isBefore(from.startOf('day'))) return false;
+  if (to && d.isAfter(to.endOf('day'))) return false;
+  return true;
+}
+
 function mapItemsToRows(items) {
   return (items || []).map((item) => {
     const p = item.process;
@@ -135,6 +200,7 @@ function mapItemsToRows(items) {
     const key = p?.definition_key ?? p?.DefinitionKey ?? '';
     const rejectState = p ? parseEngineProcessRejectState(p) : null;
     const processStatus = rejectState?.rejected ? 'REJECTED' : (p?.status ?? p?.Status ?? '—');
+    const assignedBranchId = latest ? taskReviewBranchId(latest) : pickProcessBranchId(p);
     return {
       id: pid,
       processInstanceId: pid,
@@ -142,6 +208,11 @@ function mapItemsToRows(items) {
       serviceLabel: DEFINITION_LABELS[key] || key || '—',
       processStatus,
       applicantName: p.variables?.applicant_name ?? '—',
+      createdAt: pickProcessCreatedAt(p),
+      starterUserId: pickStarterUserId(p),
+      processBranchId: pickProcessBranchId(p),
+      assignedBranchId: assignedBranchId || null,
+      isLocked: pickProcessIsLocked(p),
       startedAt: p.started_at ?? p.StartedAt ?? null,
       updatedAt: pickProcessUpdatedAt(p),
       currentTaskName: latest?.name ?? '—',
@@ -194,7 +265,8 @@ export default function ServicesListPage() {
     defaultValues: defaultFilters,
   });
 
-  const { handleSubmit, getValues, reset } = methods;
+  const { handleSubmit, getValues, reset, watch, setValue } = methods;
+  const isLockedFilter = normalizeLockedFilter(watch('isLocked'));
 
   const loadProcesses = useCallback(async () => {
     setLoading(true);
@@ -224,7 +296,11 @@ export default function ServicesListPage() {
     ];
   }, [isBranchEntitlementActive, processKeys]);
 
-  const filteredRows = useMemo(() => allRows.filter((row) => {
+  const filteredRows = useMemo(() => {
+    const createdFrom = parseFilterDay(submittedFilters.createdFrom);
+    const createdTo = parseFilterDay(submittedFilters.createdTo);
+
+    return allRows.filter((row) => {
       if (
         isBranchEntitlementActive &&
         processKeys.length > 0 &&
@@ -255,8 +331,23 @@ export default function ServicesListPage() {
         const q = submittedFilters.currentElementId.trim().toLowerCase();
         if (!String(row.currentElementId).toLowerCase().includes(q)) return false;
       }
+      if (!matchesCreatedDateRange(row.createdAt, createdFrom, createdTo)) {
+        return false;
+      }
+      if (submittedFilters.createdByUserId) {
+        const q = submittedFilters.createdByUserId.trim();
+        if (row.starterUserId == null || !String(row.starterUserId).includes(q)) return false;
+      }
+      if (submittedFilters.assignedBranchId) {
+        const q = submittedFilters.assignedBranchId.trim();
+        if (row.assignedBranchId == null || !String(row.assignedBranchId).includes(q)) return false;
+      }
+      const lockedFilter = normalizeLockedFilter(submittedFilters.isLocked);
+      if (lockedFilter === 'locked' && !row.isLocked) return false;
+      if (lockedFilter === 'unlocked' && row.isLocked) return false;
       return true;
-    }), [allRows, submittedFilters, isBranchEntitlementActive, processKeys]);
+    });
+  }, [allRows, submittedFilters, isBranchEntitlementActive, processKeys]);
 
   const handleSearch = handleSubmit(() => {
     setSubmittedFilters(getValues());
@@ -521,6 +612,91 @@ export default function ServicesListPage() {
                     label="شناسه مرحله (element)"
                     placeholder="مثلاً payment"
                   />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <NoSsr>
+                    <Field.DatePicker
+                      name="createdFrom"
+                      label="ایجاد از تاریخ"
+                      slotProps={{ textField: { fullWidth: true } }}
+                    />
+                  </NoSsr>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <NoSsr>
+                    <Field.DatePicker
+                      name="createdTo"
+                      label="ایجاد تا تاریخ"
+                      slotProps={{ textField: { fullWidth: true } }}
+                    />
+                  </NoSsr>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Field.Text
+                    name="createdByUserId"
+                    label="ایجاد شده توسط (شناسه کاربر شعبه)"
+                    placeholder="مثلاً 42"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Field.Text
+                    name="assignedBranchId"
+                    label="شناسه شعبهٔ تسک جاری"
+                    placeholder="مثلاً 14"
+                  />
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box
+                    sx={{
+                      height: '100%',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      justifyContent: 'flex-end',
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary" sx={{ mb: 0.75, display: 'block' }}>
+                      وضعیت قفل فرایند
+                    </Typography>
+                    <ButtonGroup
+                      fullWidth
+                      variant="outlined"
+                      aria-label="فیلتر قفل فرایند"
+                      sx={{
+                        '& .MuiButton-root': {
+                          py: 1.1,
+                          fontSize: '0.8125rem',
+                          whiteSpace: 'nowrap',
+                        },
+                      }}
+                    >
+                      <Button
+                        type="button"
+                        variant={isLockedFilter === LOCKED_FILTER_ALL ? 'contained' : 'outlined'}
+                        onClick={() => setValue('isLocked', LOCKED_FILTER_ALL, { shouldDirty: true })}
+                        startIcon={<Icon icon="solar:layers-minimalistic-bold" width={17} />}
+                      >
+                        همه
+                      </Button>
+                      <Button
+                        type="button"
+                        color="warning"
+                        variant={isLockedFilter === 'locked' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('isLocked', 'locked', { shouldDirty: true })}
+                        startIcon={<Icon icon="solar:lock-bold" width={17} />}
+                      >
+                        قفل شده
+                      </Button>
+                      <Button
+                        type="button"
+                        color="success"
+                        variant={isLockedFilter === 'unlocked' ? 'contained' : 'outlined'}
+                        onClick={() => setValue('isLocked', 'unlocked', { shouldDirty: true })}
+                        startIcon={<Icon icon="solar:lock-unlocked-bold" width={17} />}
+                      >
+                        قفل نشده
+                      </Button>
+                    </ButtonGroup>
+                  </Box>
                 </Grid>
               </Grid>
 

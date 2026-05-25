@@ -28,6 +28,7 @@ export function filterNavByEntitledServices(navData, { active, processKeys, user
   const allowedPaths = new Set(
     processKeys.map((k) => servicePathForProcessKey(k)).filter(Boolean)
   );
+  allowedPaths.add(paths.dashboard.services.inbox);
   allowedPaths.add(paths.dashboard.services.list);
 
   for (const [perm, path] of UI_SERVICE_PERM_TO_PATH) {

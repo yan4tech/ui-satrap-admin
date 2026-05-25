@@ -26,6 +26,7 @@ export const PERM = {
     branchCentralList: 'ui.branch.central.list',
     branchCentralCreate: 'ui.branch.central.create',
     branchCentral: 'ui.branch.central',
+    servicesInbox: 'ui.services.inbox',
     servicesList: 'ui.services.list',
     servicesOne: 'ui.services.one',
     servicesTwo: 'ui.services.two',

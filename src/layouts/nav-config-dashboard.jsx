@@ -139,16 +139,26 @@ export const navData = [
       },
       {
         title: 'خدمات',
-        path: paths.dashboard.services.list,
+        path: paths.dashboard.services.inbox,
         icon: ICONS.services,
         anyPermissions: [
+          PERM.ui.servicesInbox,
           PERM.ui.servicesList,
           PERM.ui.servicesOne,
           PERM.ui.servicesTwo,
           PERM.ui.servicesThree,
         ],
         children: [
-          { title: 'لیست', path: paths.dashboard.services.list, requiredPermissions: [PERM.ui.servicesList] },
+          {
+            title: 'صندوق کار',
+            path: paths.dashboard.services.inbox,
+            requiredPermissions: [PERM.ui.servicesInbox],
+          },
+          {
+            title: 'گزارش فرایندها',
+            path: paths.dashboard.services.list,
+            requiredPermissions: [PERM.ui.servicesList],
+          },
           {
             title: 'خدمت شماره یک',
             path: paths.dashboard.services.one,

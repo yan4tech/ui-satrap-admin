@@ -180,10 +180,10 @@ export default function BranchOverviewPage() {
             footerActions={[
               {
                 component: RouterLink,
-                href: paths.dashboard.services.list,
+                href: paths.dashboard.services.inbox,
                 variant: 'contained',
-                startIcon: <Iconify icon="solar:list-bold-duotone" />,
-                children: 'لیست درخواست‌ها',
+                startIcon: <Iconify icon="solar:inbox-in-bold-duotone" />,
+                children: 'صندوق کار',
               },
               {
                 component: RouterLink,

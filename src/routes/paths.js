@@ -45,6 +45,7 @@ export const paths = {
     root: ROOTS.DASHBOARD,
     two: `${ROOTS.DASHBOARD}/two`,
     services: {
+      inbox: `${ROOTS.DASHBOARD}/services/inbox`,
       list: `${ROOTS.DASHBOARD}/services/list`,
       one: `${ROOTS.DASHBOARD}/services/one`,
       two: `${ROOTS.DASHBOARD}/services/two`,

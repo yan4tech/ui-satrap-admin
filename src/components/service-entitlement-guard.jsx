@@ -19,7 +19,7 @@ export function ServiceEntitlementGuard({ processKey, children }) {
   useEffect(() => {
     if (loading || !isBranchEntitlementActive) return;
     if (!hasProcessKey(processKey)) {
-      router.replace(paths.dashboard.services.list);
+      router.replace(paths.dashboard.services.inbox);
     }
   }, [loading, isBranchEntitlementActive, hasProcessKey, processKey, router]);
 
@@ -53,8 +53,8 @@ export function ServiceEntitlementGuard({ processKey, children }) {
           خدمات مجاز:{' '}
           {services.length > 0 ? services.map((s) => s.title).join('، ') : 'هیچ خدمتی تخصیص داده نشده'}
         </Typography>
-        <Button variant="contained" onClick={() => router.push(paths.dashboard.services.list)}>
-          بازگشت به لیست
+        <Button variant="contained" onClick={() => router.push(paths.dashboard.services.inbox)}>
+          بازگشت به صندوق کار
         </Button>
       </Box>
     );

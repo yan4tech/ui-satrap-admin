@@ -215,6 +215,36 @@ export async function fetchBranchOpenTaskCounts(branchIds = []) {
   return data?.data ?? data;
 }
 
+function normalizeWorkInboxPage(data) {
+  const root = data && typeof data === 'object' ? data : {};
+  const inner = root.data !== undefined ? root.data : root;
+  const items = inner?.items ?? inner?.Items ?? [];
+  return {
+    items: Array.isArray(items) ? items : [],
+    total: inner?.total ?? inner?.Total ?? 0,
+    limit: inner?.limit ?? inner?.Limit ?? 20,
+    offset: inner?.offset ?? inner?.Offset ?? 0,
+    mode: inner?.mode ?? inner?.Mode ?? 'auto',
+    availableModes: inner?.available_modes ?? inner?.availableModes ?? inner?.AvailableModes ?? [],
+  };
+}
+
+/** صندوق کار — تسک‌های باز (CREATED) شعبه‌محور: continue | review */
+export async function fetchWorkInbox(params = {}) {
+  const q = new URLSearchParams();
+  if (params.mode) q.set('mode', String(params.mode));
+  if (params.limit != null) q.set('limit', String(params.limit));
+  if (params.offset != null) q.set('offset', String(params.offset));
+  const qs = q.toString();
+  const url = `${ENGINE_BASE_URL}/api/engine/service/work-inbox${qs ? `?${qs}` : ''}`;
+  const res = await fetch(url, {
+    headers: engineAuthHeaders(),
+  });
+  const data = await parseJson(res);
+  assertEngineSuccess(res, data, 'دریافت صندوق کار ناموفق بود.');
+  return normalizeWorkInboxPage(data);
+}
+
 export async function fetchProcesses(params = {}) {
   const q = new URLSearchParams();
   if (params.limit != null) q.set('limit', String(params.limit));

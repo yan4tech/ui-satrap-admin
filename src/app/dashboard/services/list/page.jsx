@@ -535,6 +535,19 @@ export default function ServicesListPage() {
 
   return (
     <Stack spacing={3}>
+      <Alert severity="info" icon={<Icon icon="solar:chart-2-bold-duotone" width={22} />}>
+        این صفحه برای <strong>گزارش‌گیری و نظارت</strong> است. کار روزمره را از{' '}
+        <Button
+          size="small"
+          variant="text"
+          sx={{ verticalAlign: 'baseline', px: 0.5, minWidth: 0 }}
+          onClick={() => router.push(paths.dashboard.services.inbox)}
+        >
+          صندوق کار
+        </Button>{' '}
+        انجام دهید.
+      </Alert>
+
       <Card
         sx={{
           borderRadius: 3,
@@ -726,7 +739,7 @@ export default function ServicesListPage() {
       <Card>
         <CardContent>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
-            <Typography variant="h6">نتیجه جستجو</Typography>
+            <Typography variant="h6">گزارش فرایندها</Typography>
             <Button
               variant="outlined"
               size="small"

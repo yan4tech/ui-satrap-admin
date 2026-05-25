@@ -41,10 +41,18 @@ const SECTIONS = {
     editLabel: 'ویرایش کاربر',
     detailsLabel: 'جزئیات کاربر',
   },
+  audit: {
+    listPath: () => paths.dashboard.audit.events,
+    sectionLabel: 'لاگ ممیزی',
+    listLabel: 'رویدادهای ممیزی',
+    createLabel: '',
+    editLabel: '',
+    detailsLabel: '',
+  },
 };
 
 /**
- * @param {{ section: 'role' | 'permission' | 'user' | 'delegation' }} props
+ * @param {{ section: 'role' | 'permission' | 'user' | 'delegation' | 'audit' }} props
  */
 export function ManagementBread({ section }) {
   const router = useRouter();
@@ -57,7 +65,9 @@ export function ManagementBread({ section }) {
     /** @type {{ key: string, label: string | null, onClick: (() => void) | null, isText?: boolean }[]} */
     const list = [{ key: 'home', label: null, onClick: () => router.push(paths.dashboard.root) }];
 
-    if (pathname.endsWith('/search')) {
+    if (section === 'audit' && pathname.includes('/audit/')) {
+      list.push({ key: 'cur', label: cfg.listLabel, onClick: null, isText: true });
+    } else if (pathname.endsWith('/search')) {
       list.push({ key: 'cur', label: cfg.listLabel, onClick: null, isText: true });
     } else if (pathname.endsWith('/create')) {
       list.push({
@@ -81,7 +91,7 @@ export function ManagementBread({ section }) {
     }
 
     return list;
-  }, [pathname, searchParams, router, cfg]);
+  }, [pathname, searchParams, router, cfg, section]);
 
   return (
     <Card sx={{ p: 2, mb: 2 }}>

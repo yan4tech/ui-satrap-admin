@@ -90,6 +90,9 @@ export const paths = {
     delegation: {
       search: `${ROOTS.DASHBOARD}/delegation/search`,
     },
+    audit: {
+      events: `${ROOTS.DASHBOARD}/audit/events`,
+    },
     user: {
       create: `${ROOTS.DASHBOARD}/user/create`,
       search: `${ROOTS.DASHBOARD}/user/search`,

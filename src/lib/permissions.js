@@ -14,6 +14,7 @@ export const PERM = {
     roleDelegationManage: 'ui.role.delegation.manage',
     permissionsList: 'ui.permissions.list',
     permissionsCreate: 'ui.permissions.create',
+    auditList: 'ui.audit.list',
     accessControlManage: 'ui.access-control.manage',
     companyTenantManage: 'ui.company.tenant.manage',
     companyCentralList: 'ui.company.central.list',

@@ -249,6 +249,9 @@ export async function fetchProcesses(params = {}) {
   const q = new URLSearchParams();
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
+  if (params.processInstanceId != null && String(params.processInstanceId).trim() !== '') {
+    q.set('processInstanceId', String(params.processInstanceId).trim());
+  }
   const qs = q.toString();
   const url = `${ENGINE_BASE_URL}/api/engine/service/processes${qs ? `?${qs}` : ''}`;
   const res = await fetch(url, {
@@ -416,6 +419,17 @@ export async function fetchProcessTasks(processInstanceId) {
   const data = await parseJson(res);
   assertEngineSuccess(res, data, 'دریافت وظایف فرایند ناموفق بود.');
   return data.tasks ?? {};
+}
+
+/** GET /history/:id — تایم‌لاین یکپارچهٔ سیر کار فرایند */
+export async function fetchProcessHistory(processInstanceId) {
+  const res = await fetch(`${ENGINE_BASE_URL}/api/engine/service/history/${processInstanceId}`, {
+    headers: engineAuthHeaders(),
+  });
+  const data = await parseJson(res);
+  assertEngineSuccess(res, data, 'دریافت سیر کار فرایند ناموفق بود.');
+  const list = data.history ?? data.History ?? [];
+  return Array.isArray(list) ? list : [];
 }
 
 /** آخرین نسخهٔ تسک برای یک element_id از نقشهٔ tasks پاسخ API */

@@ -31,6 +31,7 @@ export const PERM = {
     servicesOne: 'ui.services.one',
     servicesTwo: 'ui.services.two',
     servicesThree: 'ui.services.three',
+    servicesProcessTimeline: 'ui.services.process.timeline',
     servicesManage: 'ui.services.manage',
     usersManage: 'ui.users.manage',
   },

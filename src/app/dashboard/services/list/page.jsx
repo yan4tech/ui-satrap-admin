@@ -268,11 +268,16 @@ export default function ServicesListPage() {
   const { handleSubmit, getValues, reset, watch, setValue } = methods;
   const isLockedFilter = normalizeLockedFilter(watch('isLocked'));
 
-  const loadProcesses = useCallback(async () => {
+  const loadProcesses = useCallback(async (searchProcessId) => {
     setLoading(true);
     setError(null);
     try {
-      const data = await fetchProcesses();
+      const pid = searchProcessId != null ? String(searchProcessId).trim() : '';
+      const data = await fetchProcesses(
+        pid
+          ? { processInstanceId: pid, limit: 100, offset: 0 }
+          : { limit: 100, offset: 0 }
+      );
       setAllRows(mapItemsToRows(data.items));
     } catch (e) {
       setError(e instanceof Error ? e.message : 'خطا در دریافت لیست فرایندها.');
@@ -349,10 +354,10 @@ export default function ServicesListPage() {
     });
   }, [allRows, submittedFilters, isBranchEntitlementActive, processKeys]);
 
-  const handleSearch = handleSubmit(() => {
-    setSubmittedFilters(getValues());
+  const handleSearch = handleSubmit((values) => {
+    setSubmittedFilters(values);
     setPaginationModel((prev) => ({ ...prev, page: 0 }));
-    void loadProcesses();
+    void loadProcesses(values.processId);
   });
 
   const handleResetFilters = () => {

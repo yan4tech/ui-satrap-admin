@@ -9,6 +9,8 @@ import {
   Box,
   Card,
   Chip,
+  Tab,
+  Tabs,
   Step,
   StepButton,
   Alert,
@@ -26,7 +28,11 @@ import {
   DialogContentText,
 } from '@mui/material';
 
+import { usePermissions } from 'src/hooks/use-permissions';
+import { PERM } from 'src/lib/permissions';
 import { ServiceEntitlementGuard } from 'src/components/service-entitlement-guard';
+
+import { ProcessWorkTimeline } from '../_components/process-work-timeline';
 
 import StartServiceStep from './StartServiceStep';
 import { startService } from './start-service-api';
@@ -186,6 +192,8 @@ export function ServiceWorkflowPage({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { can: canPermission } = usePermissions();
+  const canViewProcessTimeline = canPermission(PERM.ui.servicesProcessTimeline);
   const processIdFromUrl = searchParams.get('processId');
   const definitionKeyFromUrl = searchParams.get('definitionKey');
 
@@ -238,6 +246,7 @@ export function ServiceWorkflowPage({
     error: null,
     taskVersionsForElement: null,
   });
+  const [processPageTab, setProcessPageTab] = useState('workflow');
 
   const currentTask = useMemo(() => {
     if (processRejected && rejectedViewTask) return rejectedViewTask;
@@ -266,7 +275,14 @@ export function ServiceWorkflowPage({
     setProcessRejectDialogComment('');
     setProcessRejectDialogError('');
     pendingRejectAnchorTaskRef.current = null;
+    setProcessPageTab('workflow');
   }, [processInstanceId]);
+
+  useEffect(() => {
+    if (processPageTab === 'timeline' && !canViewProcessTimeline) {
+      setProcessPageTab('workflow');
+    }
+  }, [processPageTab, canViewProcessTimeline]);
 
   useEffect(() => {
     if (currentTask) {
@@ -947,7 +963,7 @@ export function ServiceWorkflowPage({
           </Stack>
         </Typography>
 
-        {waitingOnOtherParty ? (
+        {waitingOnOtherParty && processPageTab === 'workflow' ? (
           <Alert severity="warning" sx={{ mb: 2 }} variant="outlined">
             <Typography variant="body2">
               این مرحله برای نقش فعلی شما در سامانه نیست (مثلاً بررسی خدمت برای شرکت، یا تکمیل فرم
@@ -957,6 +973,23 @@ export function ServiceWorkflowPage({
           </Alert>
         ) : null}
 
+        {processInstanceId != null && canViewProcessTimeline ? (
+          <Tabs
+            value={processPageTab}
+            onChange={(_, value) => setProcessPageTab(value)}
+            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab value="workflow" label="فرایند" />
+            <Tab value="timeline" label="سیر کار" />
+          </Tabs>
+        ) : null}
+
+        {processPageTab === 'timeline' && processInstanceId != null && canViewProcessTimeline ? (
+          <ProcessWorkTimeline processInstanceId={processInstanceId} />
+        ) : null}
+
+        {processPageTab === 'workflow' ? (
+        <>
         <Stepper
           nonLinear
           activeStep={
@@ -1134,6 +1167,8 @@ export function ServiceWorkflowPage({
             </Button>
           )}
         </Box>
+        </>
+        ) : null}
 
         <StepTaskDetailDialogComponent
           open={detailDialog.open}

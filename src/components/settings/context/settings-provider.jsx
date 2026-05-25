@@ -66,7 +66,8 @@ export function SettingsProvider({
   useEffect(() => {
     setField('direction', 'rtl');
     setField('fontFamily', themeConfig.fontFamily.primary);
-    // Intentionally once after hydration so browser cookie cannot restore `ltr`/old fonts.
+    setField('navLayout', defaultSettings.navLayout);
+    // Intentionally once after hydration so per-browser storage cannot restore stale layout/fonts/direction.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

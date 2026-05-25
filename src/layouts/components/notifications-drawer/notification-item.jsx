@@ -1,79 +1,87 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
+
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Avatar from '@mui/material/Avatar';
 import SvgIcon from '@mui/material/SvgIcon';
+import Typography from '@mui/material/Typography';
 import ListItemText from '@mui/material/ListItemText';
-import ListItemAvatar from '@mui/material/ListItemAvatar';
 import ListItemButton from '@mui/material/ListItemButton';
 
 import { fToNow } from 'src/utils/format-time';
+import { markNotificationRead } from 'src/lib/notifications-api';
+import { resolveNotificationHref } from 'src/lib/notification-navigation';
 
-import { Label } from 'src/components/label';
-import { FileThumbnail } from 'src/components/file-thumbnail';
-
-import { notificationIcons } from './icons';
+import { processNotificationIcons } from './icons-process';
 
 // ----------------------------------------------------------------------
 
-const readerContent = (data) => (
-  <Box
-    dangerouslySetInnerHTML={{ __html: data }}
-    sx={{
-      '& p': { m: 0, typography: 'body2' },
-      '& a': { color: 'inherit', textDecoration: 'none' },
-      '& strong': { typography: 'subtitle2' },
-    }}
-  />
-);
+const TYPE_COLOR = {
+  task: 'info.main',
+  correction: 'warning.main',
+  lock: 'error.main',
+  integration: 'success.main',
+};
 
-const renderIcon = (type) =>
-  ({
-    order: notificationIcons.order,
-    chat: notificationIcons.chat,
-    mail: notificationIcons.mail,
-    delivery: notificationIcons.delivery,
-  })[type];
+function renderIcon(type) {
+  return processNotificationIcons[type] ?? processNotificationIcons.task;
+}
 
-export function NotificationItem({ notification }) {
+export function NotificationItem({ notification, onRead, onCloseDrawer }) {
+  const router = useRouter();
+
+  const handleAction = async () => {
+    const wasUnread = notification?.isUnRead !== false;
+
+    if (wasUnread) {
+      onRead?.(notification);
+      if (notification?.id != null) {
+        void markNotificationRead(notification.id).catch(() => {});
+      }
+    }
+
+    onCloseDrawer?.();
+    router.push(resolveNotificationHref(notification));
+  };
+
   const renderAvatar = () => (
-    <ListItemAvatar>
-      {notification.avatarUrl ? (
-        <Avatar src={notification.avatarUrl} sx={{ bgcolor: 'background.neutral' }} />
-      ) : (
-        <Box
-          sx={{
-            width: 40,
-            height: 40,
-            display: 'flex',
-            borderRadius: '50%',
-            alignItems: 'center',
-            justifyContent: 'center',
-            bgcolor: 'background.neutral',
-          }}
-        >
-          <SvgIcon sx={{ width: 24, height: 24 }}>{renderIcon(notification.type)}</SvgIcon>
-        </Box>
-      )}
-    </ListItemAvatar>
+    <Box
+      sx={{
+        width: 40,
+        height: 40,
+        flexShrink: 0,
+        display: 'flex',
+        borderRadius: '50%',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.neutral',
+        color: TYPE_COLOR[notification.type] || 'text.secondary',
+      }}
+    >
+      <SvgIcon sx={{ width: 24, height: 24 }}>{renderIcon(notification.type)}</SvgIcon>
+    </Box>
   );
 
   const renderText = () => (
     <ListItemText
-      primary={readerContent(notification.title)}
+      primary={
+        <Typography variant="subtitle2" component="span">
+          {notification.title}
+        </Typography>
+      }
       secondary={
         <>
-          {fToNow(notification.createdAt)}
+          {notification.category}
           <Box
             component="span"
-            sx={{ width: 2, height: 2, borderRadius: '50%', bgcolor: 'currentColor' }}
+            sx={{ width: 2, height: 2, borderRadius: '50%', bgcolor: 'currentColor', mx: 0.5 }}
           />
-          {notification.category}
+          {fToNow(notification.createdAt)}
         </>
       }
       slotProps={{
-        primary: {
-          sx: { mb: 0.5 },
-        },
+        primary: { sx: { mb: 0.5 } },
         secondary: {
           sx: {
             gap: 0.5,
@@ -94,7 +102,7 @@ export function NotificationItem({ notification }) {
           top: 26,
           width: 8,
           height: 8,
-          right: 20,
+          left: 10,
           borderRadius: '50%',
           bgcolor: 'info.main',
           position: 'absolute',
@@ -102,116 +110,16 @@ export function NotificationItem({ notification }) {
       />
     );
 
-  const renderFriendAction = () => (
-    <Box sx={{ gap: 1, mt: 1.5, display: 'flex' }}>
-      <Button size="small" variant="contained">
-        Accept
-      </Button>
-      <Button size="small" variant="outlined">
-        Decline
-      </Button>
-    </Box>
-  );
-
-  const renderProjectAction = () => (
-    <>
-      <Box
-        sx={{
-          p: 1.5,
-          my: 1.5,
-          borderRadius: 1.5,
-          color: 'text.secondary',
-          bgcolor: 'background.neutral',
-        }}
-      >
-        {readerContent(
-          `<p><strong>@Jaydon Frankie</strong> feedback by asking questions or just leave a note of appreciation.</p>`
-        )}
-      </Box>
-
-      <Button size="small" variant="contained" sx={{ alignSelf: 'flex-start' }}>
-        Reply
-      </Button>
-    </>
-  );
-
-  const renderFileAction = () => (
-    <Box
-      sx={(theme) => ({
-        p: theme.spacing(1.5, 1.5, 1.5, 1),
-        gap: 1,
-        mt: 1.5,
-        display: 'flex',
-        borderRadius: 1.5,
-        bgcolor: 'background.neutral',
-      })}
-    >
-      <FileThumbnail file="http://localhost:8080/httpsdesign-suriname-2015.mp3" />
-
-      <ListItemText
-        primary="design-suriname-2015.mp3 design-suriname-2015.mp3"
-        secondary="2.3 Mb"
-        slotProps={{
-          primary: {
-            noWrap: true,
-            sx: (theme) => ({
-              color: 'text.secondary',
-              fontSize: theme.typography.pxToRem(13),
-            }),
-          },
-          secondary: {
-            sx: {
-              mt: 0.25,
-              typography: 'caption',
-              color: 'text.disabled',
-            },
-          },
-        }}
-      />
-
-      <Button size="small" variant="outlined" sx={{ flexShrink: 0 }}>
-        Download
-      </Button>
-    </Box>
-  );
-
-  const renderTagsAction = () => (
-    <Box
-      sx={{
-        mt: 1.5,
-        gap: 0.75,
-        display: 'flex',
-        flexWrap: 'wrap',
-      }}
-    >
-      <Label variant="outlined" color="info">
-        Design
-      </Label>
-      <Label variant="outlined" color="warning">
-        Dashboard
-      </Label>
-      <Label variant="outlined">Design system</Label>
-    </Box>
-  );
-
-  const renderPaymentAction = () => (
-    <Box sx={{ gap: 1, mt: 1.5, display: 'flex' }}>
-      <Button size="small" variant="contained">
-        Pay
-      </Button>
-      <Button size="small" variant="outlined">
-        Decline
-      </Button>
-    </Box>
-  );
-
   return (
     <ListItemButton
       disableRipple
+      onClick={handleAction}
       sx={[
         (theme) => ({
           p: 2.5,
           alignItems: 'flex-start',
+          gap: 1.5,
+          opacity: notification.isUnRead ? 1 : 0.72,
           borderBottom: `dashed 1px ${theme.vars.palette.divider}`,
         }),
       ]}
@@ -221,11 +129,29 @@ export function NotificationItem({ notification }) {
 
       <Box sx={{ minWidth: 0, flex: '1 1 auto' }}>
         {renderText()}
-        {notification.type === 'friend' && renderFriendAction()}
-        {notification.type === 'project' && renderProjectAction()}
-        {notification.type === 'file' && renderFileAction()}
-        {notification.type === 'tags' && renderTagsAction()}
-        {notification.type === 'payment' && renderPaymentAction()}
+        {notification.body ? (
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ mt: 0.75, whiteSpace: 'pre-line' }}
+          >
+            {notification.body}
+          </Typography>
+        ) : null}
+
+        {notification.actionLabel ? (
+          <Button
+            size="small"
+            variant="contained"
+            sx={{ mt: 1.5 }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAction();
+            }}
+          >
+            {notification.actionLabel}
+          </Button>
+        ) : null}
       </Box>
     </ListItemButton>
   );

@@ -114,7 +114,7 @@ function engineAuthHeaders() {
   return h;
 }
 
-function jsonHeaders() {
+export function jsonHeaders() {
   return {
     ...engineAuthHeaders(),
     'Content-Type': 'application/json',

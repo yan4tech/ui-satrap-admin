@@ -23,6 +23,8 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+import { useSearchParams } from 'next/navigation';
+import { resolveNotificationHref } from 'src/lib/notification-navigation';
 import { useAuthContext } from 'src/auth/hooks';
 import { useEntitledServices } from 'src/hooks/use-entitled-services';
 import {
@@ -123,6 +125,7 @@ function processStatusColor(status) {
 
 export default function ServicesInboxPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuthContext();
   const { isBranchEntitlementActive, processKeys } = useEntitledServices();
 
@@ -164,6 +167,21 @@ export default function ServicesInboxPage() {
   useEffect(() => {
     void loadInbox();
   }, [loadInbox]);
+
+  /** لینک قدیمی اعلان‌ها: inbox?processId=… → همان باز کردن صفحهٔ خدمت */
+  useEffect(() => {
+    const processId = searchParams.get('processId');
+    if (!processId || String(processId).trim() === '') return;
+    const href = resolveNotificationHref({
+      processInstanceId: processId,
+      taskId: searchParams.get('taskId') ?? undefined,
+      definitionKey: searchParams.get('definitionKey') ?? 'service1',
+      actionPath: typeof window !== 'undefined' ? window.location.pathname + window.location.search : '',
+    });
+    if (href && !href.includes('/inbox')) {
+      router.replace(href);
+    }
+  }, [searchParams, router]);
 
   const filteredRows = useMemo(() => {
     if (!isBranchEntitlementActive || !processKeys?.length) return rows;

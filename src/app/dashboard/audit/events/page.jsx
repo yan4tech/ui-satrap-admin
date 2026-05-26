@@ -35,6 +35,7 @@ import {
   AUDIT_ACTIONS,
   AUDIT_SERVICES,
   auditActionLabel,
+  auditActionChipColor,
   auditServiceLabel,
   auditFilterToISO,
   getDefaultAuditFilters,
@@ -203,19 +204,6 @@ export default function AuditEventsPage() {
   const columns = [
     { field: 'occurred_at', headerName: 'زمان', width: 170 },
     {
-      field: 'success',
-      headerName: 'نتیجه',
-      width: 90,
-      renderCell: (params) => (
-        <Chip
-          size="small"
-          label={params.value ? 'موفق' : 'ناموفق'}
-          color={params.value ? 'success' : 'error'}
-          variant="outlined"
-        />
-      ),
-    },
-    {
       field: 'service',
       headerName: 'سرویس',
       width: 110,
@@ -226,7 +214,18 @@ export default function AuditEventsPage() {
       headerName: 'عملیات',
       flex: 1,
       minWidth: 140,
-      valueFormatter: (value) => auditActionLabel(value),
+      renderCell: (params) => {
+        const label = auditActionLabel(params.value);
+        const chipColor = auditActionChipColor(params.value);
+        return (
+          <Chip
+            size="small"
+            label={label}
+            color={chipColor === 'default' ? undefined : chipColor}
+            variant="outlined"
+          />
+        );
+      },
     },
     { field: 'entity_type', headerName: 'موجودیت', width: 120 },
     { field: 'entity_id', headerName: 'شناسه', width: 100 },

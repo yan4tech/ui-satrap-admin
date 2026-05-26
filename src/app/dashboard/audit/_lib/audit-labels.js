@@ -93,6 +93,19 @@ export function auditActionLabel(action) {
   return ACTION_LABEL_MAP[key] || key || '—';
 }
 
+/** Chip color for action column: green = success wording, red = failure wording. */
+export function auditActionChipColor(action) {
+  const label = auditActionLabel(action);
+  if (label.includes('ناموفق')) return 'error';
+  if (label.includes('موفق')) return 'success';
+
+  const key = String(action ?? '').trim().toLowerCase();
+  if (key.endsWith('.failed') || key.includes('reject')) return 'error';
+  if (key.endsWith('.success') || key.endsWith('.complete')) return 'success';
+
+  return 'default';
+}
+
 export function auditServiceLabel(service) {
   const key = String(service ?? '').trim();
   return SERVICE_LABEL_MAP[key] || key || '—';

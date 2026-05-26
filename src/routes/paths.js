@@ -93,6 +93,9 @@ export const paths = {
     audit: {
       events: `${ROOTS.DASHBOARD}/audit/events`,
     },
+    finance: {
+      receipts: `${ROOTS.DASHBOARD}/finance/receipts`,
+    },
     user: {
       create: `${ROOTS.DASHBOARD}/user/create`,
       search: `${ROOTS.DASHBOARD}/user/search`,

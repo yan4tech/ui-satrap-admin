@@ -49,6 +49,11 @@ export function KpiGrid({ items }) {
                   >
                     {toFaDigits(item.value)}
                   </Typography>
+                  {item.subtitle ? (
+                    <Typography variant="caption" sx={{ color: 'text.secondary', mt: 0.5, display: 'block' }}>
+                      {toFaDigits(item.subtitle)}
+                    </Typography>
+                  ) : null}
                   {item.change ? (
                     <Stack direction="row" spacing={0.5} alignItems="center" sx={{ mt: 0.5 }}>
                       {item.trend ? (

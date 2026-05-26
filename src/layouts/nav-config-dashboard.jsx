@@ -65,6 +65,17 @@ export const navData = [
     ],
   },
   {
+    subheader: 'مالی',
+    items: [
+      {
+        title: 'گزارش دریافتی‌ها',
+        path: paths.dashboard.finance.receipts,
+        icon: ICONS.banking,
+        requiredPermissions: [PERM.ui.financeList],
+      },
+    ],
+  },
+  {
     subheader: 'مدیریت',
     items: [
       {

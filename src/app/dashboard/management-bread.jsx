@@ -49,10 +49,18 @@ const SECTIONS = {
     editLabel: '',
     detailsLabel: '',
   },
+  finance: {
+    listPath: () => paths.dashboard.finance.receipts,
+    sectionLabel: 'مالی',
+    listLabel: 'گزارش دریافتی‌ها',
+    createLabel: '',
+    editLabel: '',
+    detailsLabel: '',
+  },
 };
 
 /**
- * @param {{ section: 'role' | 'permission' | 'user' | 'delegation' | 'audit' }} props
+ * @param {{ section: 'role' | 'permission' | 'user' | 'delegation' | 'audit' | 'finance' }} props
  */
 export function ManagementBread({ section }) {
   const router = useRouter();
@@ -65,7 +73,7 @@ export function ManagementBread({ section }) {
     /** @type {{ key: string, label: string | null, onClick: (() => void) | null, isText?: boolean }[]} */
     const list = [{ key: 'home', label: null, onClick: () => router.push(paths.dashboard.root) }];
 
-    if (section === 'audit' && pathname.includes('/audit/')) {
+    if ((section === 'audit' && pathname.includes('/audit/')) || (section === 'finance' && pathname.includes('/finance/'))) {
       list.push({ key: 'cur', label: cfg.listLabel, onClick: null, isText: true });
     } else if (pathname.endsWith('/search')) {
       list.push({ key: 'cur', label: cfg.listLabel, onClick: null, isText: true });

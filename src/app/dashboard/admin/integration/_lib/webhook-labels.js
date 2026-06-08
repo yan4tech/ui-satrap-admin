@@ -1,4 +1,4 @@
-import { GATEWAY_BASE_URL } from 'src/lib/integration-api';
+import { integrationApiBase } from 'src/lib/integration-api';
 
 export const WEBHOOK_AUTH_TYPES = [
   { value: 'api_key', label: 'API Key' },
@@ -10,11 +10,11 @@ export function webhookAuthTypeLabel(authType) {
   return WEBHOOK_AUTH_TYPES.find((t) => t.value === authType)?.label ?? authType ?? '—';
 }
 
-/** مسیر عمومی از طریق Traefik */
+/** مسیر عمومی (Traefik یا gateway مستقیم بسته به NEXT_PUBLIC_GATEWAY_URL) */
 export function buildInboundWebhookUrl(token) {
   const t = String(token ?? '').trim();
   if (!t) return '';
-  return `${GATEWAY_BASE_URL}/api/gateway/api/integration/inbound/${encodeURIComponent(t)}`;
+  return `${integrationApiBase()}/inbound/${encodeURIComponent(t)}`;
 }
 
 /** مسیر مستقیم سرویس gateway (مطابق پرامپت) */

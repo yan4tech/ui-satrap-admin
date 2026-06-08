@@ -6,8 +6,25 @@ const GATEWAY_BASE_RAW =
 /** پایهٔ Traefik یا gateway مستقیم؛ با `NEXT_PUBLIC_GATEWAY_URL` قابل تنظیم است */
 export const GATEWAY_BASE_URL = GATEWAY_BASE_RAW.replace(/\/+$/, '');
 
-/** مسیر عمومی integration از طریق Traefik (`/api/gateway` → gateway) */
-const INTEGRATION_API = `${GATEWAY_BASE_URL}/api/gateway/api/integration`;
+/**
+ * Traefik (http://localhost): /api/gateway/api/integration — stripPrefix → /api/integration
+ * Gateway مستقیم (http://localhost:3500): /api/integration
+ */
+export function integrationApiBase() {
+  try {
+    const { port, hostname } = new URL(GATEWAY_BASE_URL);
+    const viaTraefik =
+      (port === '' || port === '80' || port === '443') &&
+      (hostname === 'localhost' || hostname === '127.0.0.1');
+    return viaTraefik
+      ? `${GATEWAY_BASE_URL}/api/gateway/api/integration`
+      : `${GATEWAY_BASE_URL}/api/integration`;
+  } catch {
+    return `${GATEWAY_BASE_URL}/api/gateway/api/integration`;
+  }
+}
+
+const INTEGRATION_API = integrationApiBase();
 
 function unwrapData(envelope) {
   const root = envelope && typeof envelope === 'object' ? envelope : {};

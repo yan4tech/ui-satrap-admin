@@ -107,7 +107,7 @@ export default function PosPaymentStep({
       const enginePayload = buildEnginePayloadFromPos(posData, elKey);
       const ok = await onEngineSubmit(enginePayload);
       if (ok === false) {
-        throw new Error('ثبت پرداخت در موتور فرایند ناموفق بود.');
+        return;
       }
       setLastSuccess({
         trace: enginePayload.pos_trace_number,

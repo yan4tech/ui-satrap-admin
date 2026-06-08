@@ -847,6 +847,7 @@ export function ServiceWorkflowPage({
         key={`${renderedTask?.ID ?? 'no-task'}-${previewStep ?? 'live'}`}
         task={renderedTask}
         tasksIdMap={allTasksById}
+        processInstanceId={processInstanceId}
         reviewHydrationKey={processInstanceId}
         onSubmitStepForm={handleSubmitStepForm}
         submitting={stepSubmitting}

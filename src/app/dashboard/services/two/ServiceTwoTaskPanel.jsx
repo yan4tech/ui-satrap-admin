@@ -127,6 +127,7 @@ export default function ServiceTwoTaskPanel(props) {
   const {
     task,
     tasksIdMap,
+    processInstanceId = null,
     reviewHydrationKey,
     onSubmitStepForm,
     submitting,
@@ -202,7 +203,8 @@ export default function ServiceTwoTaskPanel(props) {
 
   const isReview = isReviewElementId(elKey);
   const showOuterReviewFooter = isReview && elKey !== 'review1' && elKey !== 'centralreviewform2' && elKey !== 'review2';
-  const hideOuterUserFooter = elKey === 'entercode';
+  const hideOuterUserFooter =
+    elKey === 'entercode' || elKey === 'payment' || elKey === 'payment1' || elKey === 'paymentsurvey';
   const submitLockedForComplete = finalSubmitDisabled || isTaskAlreadyComplete(task);
   const engineReviewProps = {
     onEngineStepSubmit: onSubmitStepForm,
@@ -216,7 +218,18 @@ export default function ServiceTwoTaskPanel(props) {
     case 'payment':
     case 'payment1':
     case 'paymentsurvey':
-      inner = <StaticPayment />;
+      inner = (
+        <StaticPayment
+          processInstanceId={processInstanceId}
+          task={task}
+          stepId={elKey === 'paymentsurvey' ? 'payment1' : elKey}
+          serviceLabel="خدمت شماره دو"
+          onEngineSubmit={onSubmitStepForm}
+          engineSubmitting={submitting}
+          engineSubmitError={submitError}
+          finalSubmitDisabled={submitLockedForComplete}
+        />
+      );
       break;
     case 'form1':
       inner = <Page1Wizard taskKind="form1" review={form1Review} setReview={setForm1Review} formMethods={formMethods} />;

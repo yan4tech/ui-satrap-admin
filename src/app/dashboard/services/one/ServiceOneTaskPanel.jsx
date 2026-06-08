@@ -154,6 +154,7 @@ const initialFormReview = () => ({ status: 'pending', comment: '' });
 export default function ServiceOneTaskPanel({
   task,
   tasksIdMap,
+  processInstanceId = null,
   reviewHydrationKey,
   onSubmitStepForm,
   submitting,
@@ -255,8 +256,9 @@ export default function ServiceOneTaskPanel({
   /** فوتر دکمه‌های «تایید بررسی / رد» فقط برای مراحلی غیر از تایید اطلاعات اولیه و تایید نقشه برداری */
   const showOuterReviewFooter =
     isReview && elKey !== 'review1' && elKey !== 'centralreviewform2' && elKey !== 'review2';
-  /** ورود کد پیامک فوتر اختصاصی داخل همان کامپوننت دارد */
-  const hideOuterUserFooter = elKey === 'entercode';
+  /** ورود کد پیامک و پرداخت POS فوتر اختصاصی داخل همان کامپوننت دارند */
+  const hideOuterUserFooter =
+    elKey === 'entercode' || elKey === 'payment' || elKey === 'payment1' || elKey === 'paymentsurvey';
   const submitLockedForComplete = finalSubmitDisabled || isTaskAlreadyComplete(task);
 
   const engineReviewProps = {
@@ -271,7 +273,18 @@ export default function ServiceOneTaskPanel({
     case 'payment':
     case 'payment1':
     case 'paymentsurvey':
-      inner = <StaticPayment />;
+      inner = (
+        <StaticPayment
+          processInstanceId={processInstanceId}
+          task={task}
+          stepId={elKey === 'paymentsurvey' ? 'payment1' : elKey}
+          serviceLabel="خدمت شماره یک"
+          onEngineSubmit={onSubmitStepForm}
+          engineSubmitting={submitting}
+          engineSubmitError={submitError}
+          finalSubmitDisabled={submitLockedForComplete}
+        />
+      );
       break;
     case 'form1':
       inner = (

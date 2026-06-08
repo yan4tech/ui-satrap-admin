@@ -156,6 +156,39 @@ export const navData = [
         ],
       },
       {
+        title: 'یکپارچه‌سازی',
+        path: paths.dashboard.admin.integration.connectors,
+        icon: ICONS.list,
+        centralAdminOnly: true,
+        children: [
+          {
+            title: 'کانکتورها',
+            path: paths.dashboard.admin.integration.connectors,
+            centralAdminOnly: true,
+          },
+          {
+            title: 'مانیتور اجرا',
+            path: paths.dashboard.admin.integration.executions,
+            centralAdminOnly: true,
+          },
+          {
+            title: 'مدیریت DLQ',
+            path: paths.dashboard.admin.integration.dlq,
+            centralAdminOnly: true,
+          },
+          {
+            title: 'Webhooks',
+            path: paths.dashboard.admin.integration.webhooks,
+            centralAdminOnly: true,
+          },
+          {
+            title: 'Credential Refs',
+            path: paths.dashboard.admin.integration.credentialRefs,
+            centralAdminOnly: true,
+          },
+        ],
+      },
+      {
         title: 'خدمات',
         path: paths.dashboard.services.inbox,
         icon: ICONS.services,

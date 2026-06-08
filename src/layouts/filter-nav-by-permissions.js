@@ -1,5 +1,6 @@
 import { paths } from 'src/routes/paths';
 
+import { isCentralAdmin } from 'src/lib/admin-access';
 import { canViewBranchDashboard, canViewBranchUserDashboard } from 'src/lib/dashboard-nav-permissions';
 import { userHasAllPermissions, userHasAnyPermission } from 'src/lib/permissions';
 
@@ -20,6 +21,9 @@ export function filterNavByPermissions(navData, user) {
           return null;
         }
         if (item.path === paths.dashboard.branch.userOverview && !canViewBranchUserDashboard(user)) {
+          return null;
+        }
+        if (item.centralAdminOnly && !isCentralAdmin(user)) {
           return null;
         }
         if (item.requiredPermissions?.length && !userHasAllPermissions(user, item.requiredPermissions)) {

@@ -31,7 +31,9 @@ import { WorkspacesPopover } from '../components/workspaces-popover';
 import { navData as dashboardNavData } from '../nav-config-dashboard';
 import { filterNavByEntitledServices } from '../filter-nav-by-entitled-services';
 import { filterNavByPermissions } from '../filter-nav-by-permissions';
+import { injectIntegrationProcessNav } from '../inject-integration-process-nav';
 import { useEntitledServices } from 'src/hooks/use-entitled-services';
+import { useProcessDefinitions } from 'src/hooks/use-process-definitions';
 import { dashboardLayoutVars, dashboardNavColorVars } from './css-vars';
 import { NotificationsDrawer } from '../components/notifications-drawer';
 import { MainSection, layoutClasses, HeaderSection, LayoutSection } from '../core';
@@ -44,6 +46,7 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
   const { user } = useAuthContext();
   const { isBranchEntitlementActive, processKeys, loading: servicesLoading } =
     useEntitledServices();
+  const { definitions: processDefinitions } = useProcessDefinitions();
 
   const settings = useSettingsContext();
 
@@ -52,7 +55,8 @@ export function DashboardLayout({ sx, cssVars, children, slotProps, layoutQuery 
   const { value: open, onFalse: onClose, onTrue: onOpen } = useBoolean();
 
   const baseNavData = slotProps?.nav?.data ?? dashboardNavData;
-  const navAfterPermissions = filterNavByPermissions(baseNavData, user);
+  const navWithIntegrationProcesses = injectIntegrationProcessNav(baseNavData, processDefinitions);
+  const navAfterPermissions = filterNavByPermissions(navWithIntegrationProcesses, user);
   const navData =
     !servicesLoading && isBranchEntitlementActive
       ? filterNavByEntitledServices(navAfterPermissions, {

@@ -107,5 +107,17 @@ export const paths = {
       edit: (id) => `${ROOTS.DASHBOARD}/process-definition/edit/${id}`,
       details: (id) => `${ROOTS.DASHBOARD}/process-definition/edit/${id}?view=1`,
     },
+    admin: {
+      integration: {
+        connectors: `${ROOTS.DASHBOARD}/admin/integration/connectors`,
+        connectorActions: (id) => `${ROOTS.DASHBOARD}/admin/integration/connectors/${id}/actions`,
+        executions: `${ROOTS.DASHBOARD}/admin/integration/executions`,
+        dlq: `${ROOTS.DASHBOARD}/admin/integration/dlq`,
+        webhooks: `${ROOTS.DASHBOARD}/admin/integration/webhooks`,
+        credentialRefs: `${ROOTS.DASHBOARD}/admin/integration/credential-refs`,
+        processIntegrations: (processKey) =>
+          `${ROOTS.DASHBOARD}/admin/integration/processes/${processKey}/integrations`,
+      },
+    },
   },
 };

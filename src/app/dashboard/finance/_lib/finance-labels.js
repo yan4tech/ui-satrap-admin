@@ -1,16 +1,29 @@
 import dayjs from 'dayjs';
+import jalaliday from 'jalaliday';
+
+dayjs.extend(jalaliday);
+dayjs.calendar('jalali');
+dayjs.locale('fa');
+
+/** هفت روز اخیر شامل امروز (۷ روز تقویمی) */
+const DEFAULT_RANGE_DAYS_INCLUSIVE = 7;
 
 /** @returns {import('dayjs').Dayjs | null} */
-function parseFilterDay(value) {
+function jalaliDay(value) {
   if (!value) return null;
-  const d = dayjs.isDayjs(value) ? value : dayjs(value);
+  if (dayjs.isDayjs(value)) return value.calendar('jalali');
+  const d = dayjs(value).calendar('jalali');
   return d.isValid() ? d : null;
 }
 
-/** پیش‌فرض: امروز (شمسی — همان تقویم سراسری تم). */
+/** پیش‌فرض: از یک هفته قبل تا امروز (شمسی). */
 export function defaultFinanceDateRange() {
-  const today = dayjs().startOf('day');
-  return { from: today, to: today };
+  const to = dayjs().calendar('jalali').endOf('day');
+  const from = dayjs()
+    .calendar('jalali')
+    .subtract(DEFAULT_RANGE_DAYS_INCLUSIVE - 1, 'day')
+    .startOf('day');
+  return { from, to };
 }
 
 export function getDefaultFinanceFilters() {
@@ -30,7 +43,7 @@ export function getDefaultFinanceFilters() {
 
 /** @param {unknown} value */
 export function financeFilterToISO(value, boundary = 'start') {
-  const d = parseFilterDay(value);
+  const d = jalaliDay(value);
   if (!d) return null;
   if (boundary === 'end') return d.endOf('day').toDate().toISOString();
   return d.startOf('day').toDate().toISOString();

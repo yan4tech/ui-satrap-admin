@@ -37,6 +37,7 @@ import { Scrollbar } from 'src/components/scrollbar';
 import { usePermissions } from 'src/hooks/use-permissions';
 import { PERM } from 'src/lib/permissions';
 import axios from 'src/lib/axios';
+import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
 
 import {
   PAYMENT_STATUS_OPTIONS,
@@ -314,9 +315,7 @@ export default function FinanceReceiptsPage() {
       setSummary(payload?.summary ?? null);
     } catch (error) {
       console.error('Failed to fetch financial receipts:', error);
-      setErrorMessage(
-        error?.response?.data?.error || error?.response?.data?.message || 'خطا در دریافت گزارش مالی'
-      );
+      setErrorMessage(extractMembershipErrorMessage(error, 'خطا در دریافت گزارش مالی'));
       setRows([]);
       setRowCount(0);
       setSummary(null);
@@ -332,9 +331,7 @@ export default function FinanceReceiptsPage() {
       const mapped = mapReceiptRow(res?.data?.data ?? {});
       setDetail(mapped);
     } catch (error) {
-      setErrorMessage(
-        error?.response?.data?.error || error?.response?.data?.message || 'خطا در دریافت جزئیات پرداخت'
-      );
+      setErrorMessage(extractMembershipErrorMessage(error, 'خطا در دریافت جزئیات پرداخت'));
     } finally {
       setDetailLoading(false);
     }
@@ -361,9 +358,7 @@ export default function FinanceReceiptsPage() {
       setDetail(null);
       await fetchData();
     } catch (error) {
-      setErrorMessage(
-        error?.response?.data?.error || error?.response?.data?.message || 'خطا در استرداد وجه'
-      );
+      setErrorMessage(extractMembershipErrorMessage(error, 'خطا در استرداد وجه'));
     } finally {
       setRefundLoading(false);
     }
@@ -484,7 +479,7 @@ export default function FinanceReceiptsPage() {
             />
             <Icon icon="solar:filter-linear" width={20} />
             <Typography variant="h6">فیلتر دریافتی‌ها</Typography>
-            <Chip size="small" label="پیش‌فرض: امروز" variant="outlined" sx={{ mr: 'auto' }} />
+            <Chip size="small" label="پیش‌فرض: هفت روز اخیر" variant="outlined" sx={{ mr: 'auto' }} />
           </Box>
 
           <Collapse in={isSearchOpen}>

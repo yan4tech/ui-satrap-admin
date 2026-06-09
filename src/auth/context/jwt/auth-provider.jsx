@@ -7,7 +7,7 @@ import axios, { endpoints } from 'src/lib/axios';
 import { clearMembershipUserHeader, setMembershipUserJsonFromObject } from 'src/lib/api-user-header';
 import { normalizeMembershipUser } from 'src/auth/utils';
 import { setApiMode } from 'src/lib/api-mode';
-import { getBranchIdStored, setBranchIdForApi } from 'src/lib/api-branch-header';
+import { setBranchIdForApi } from 'src/lib/api-branch-header';
 import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
 
 import { JWT_STORAGE_KEY } from './constant';
@@ -60,7 +60,7 @@ export function AuthProvider({ children }) {
           ]) || (bid != null && Number(bid) > 0);
         if (isDashboardUser) {
           setApiMode('branch');
-          if (!getBranchIdStored() && bid != null && Number(bid) > 0) {
+          if (bid != null && Number(bid) > 0) {
             setBranchIdForApi(String(bid));
           }
         }

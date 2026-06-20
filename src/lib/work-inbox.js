@@ -13,6 +13,12 @@ export const INBOX_MODE_LABELS = {
   [INBOX_MODE.review]: 'صف بررسی',
 };
 
+/** نقش عملیاتی در صف — کارشناس (USER_TASK) و بازبین (SERVICE_REVIEW) */
+export const INBOX_ROLE_LABELS = {
+  [INBOX_MODE.continue]: 'کارشناس',
+  [INBOX_MODE.review]: 'بازبین',
+};
+
 /** @param {object|null|undefined} user */
 export function resolveBranchIdFromUser(user) {
   const bid = user?.branch_id ?? user?.branchId ?? user?.BranchID;

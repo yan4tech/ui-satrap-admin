@@ -6,12 +6,14 @@ const SERVICE_NAV_PATHS = new Set([
   paths.dashboard.services.one,
   paths.dashboard.services.two,
   paths.dashboard.services.three,
+  paths.dashboard.services.four,
 ]);
 
 const UI_SERVICE_PERM_TO_PATH = [
   [PERM.ui.servicesOne, paths.dashboard.services.one],
   [PERM.ui.servicesTwo, paths.dashboard.services.two],
   [PERM.ui.servicesThree, paths.dashboard.services.three],
+  [PERM.ui.servicesFour, paths.dashboard.services.four],
 ];
 
 /**

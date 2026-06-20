@@ -165,6 +165,7 @@ export function buildEngineProcessHref(processInstanceId, processKey) {
   let base = paths.dashboard.services.one;
   if (def === 'service2') base = paths.dashboard.services.two;
   else if (def === 'service3') base = paths.dashboard.services.three;
+  else if (def === 'service4') base = paths.dashboard.services.four;
 
   return `${base}?${q.toString()}`;
 }

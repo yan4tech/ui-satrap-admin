@@ -19,7 +19,9 @@
     "re:build": "yarn clean && yarn install && yarn build",
     "re:build-npm": "npm run clean && npm install && npm run build",
     "test:e2e": "playwright test",
-    "test:e2e:integration": "playwright test e2e/integration-admin-flow.spec.js"
+    "test:e2e:integration": "playwright test e2e/integration-admin-flow.spec.js",
+    "test:e2e:service2-stage1": "playwright test e2e/service2-page1-stage1.spec.js",
+    "test:e2e:service4-stage1": "playwright test e2e/service4-page1-stage1.spec.js"
   },
   "engines": {
     "node": ">=20"

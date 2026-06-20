@@ -153,6 +153,7 @@ export default function BranchUserDashboardPage() {
         { perm: PERM.ui.servicesOne, path: paths.dashboard.services.one, label: 'خدمت یک' },
         { perm: PERM.ui.servicesTwo, path: paths.dashboard.services.two, label: 'خدمت دو' },
         { perm: PERM.ui.servicesThree, path: paths.dashboard.services.three, label: 'خدمت سه' },
+        { perm: PERM.ui.servicesFour, path: paths.dashboard.services.four, label: 'خدمت چهار' },
         { perm: PERM.ui.servicesInbox, path: paths.dashboard.services.inbox, label: 'صندوق کار' },
         { perm: PERM.ui.servicesList, path: paths.dashboard.services.list, label: 'گزارش فرایندها' },
       ].filter((item) => userHasPermission(user, item.perm)),

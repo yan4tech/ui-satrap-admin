@@ -32,6 +32,64 @@ const PARTY_LABELS = {
   CENTRAL: 'شعبه مرکزی',
 };
 
+const BPMN_ELEMENT_LABELS = {
+  start: 'شروع فرایند',
+  generate: 'تولید شناسه و محاسبه هزینه',
+  stage1_initial: 'ارسال داده‌های اولیه متقاضی و ادعا',
+  stage1_send_registry: 'ارسال یکجای داده‌های مرحله ۱ به سازمان',
+  stage4_send_registry: 'ارسال یکجای داده استعلام ثبتی به سازمان',
+  stage5_send_registry: 'ارسال یکجای داده بازدید به سازمان',
+  form1: 'ارسال داده‌های اولیه متقاضی و ادعا',
+  review1: 'تایید اطلاعات اولیه',
+  review5: 'تایید بازدید کارشناس',
+  payment: 'پرداخت',
+  paymentsurvey: 'پرداخت (نظرسنجی)',
+  payment1: 'پرداخت',
+  sendagency: 'ارسال رضایت متقاضی (OTP/SMS)',
+  tracking: 'نمایش پاسخ ثبت',
+  registrationtracking: 'پیگیری ثبت',
+  form2: 'آگهی نوبتی تحدید حدود',
+  centralreviewform2: 'تایید آگهی تحدید حدود',
+  review2: 'تایید آگهی تحدید حدود',
+  entercode: 'اخذ رضایت متقاضی (OTP/SMS)',
+  stage3_claim_confirm: 'تأیید اطلاعات ادعا توسط متقاضی',
+  claimconfirm: 'تأیید اطلاعات ادعا توسط متقاضی',
+  stage4_registry_inquiry: 'استعلام ثبتی سازمان',
+  stage5_expert_visit: 'بازدید کارشناس امور ثبتی و حقوقی',
+  expertvisit: 'بازدید کارشناس امور ثبتی و حقوقی',
+  stage6_committee: 'ارسال به هیئت تعیین تکلیف',
+  stage7_announcement: 'انتشار آگهی رأی هیئت',
+  announcement: 'انتشار آگهی رأی هیئت',
+  stage8_objection: 'اعلام وجود/فقدان اعتراض',
+  objection: 'اعلام وجود/فقدان اعتراض',
+  stage9_court_decision: 'ارسال رأی دادگاه',
+  courtdecision: 'ارسال رأی دادگاه',
+  stage10_committee_review: 'بررسی رأی دادگاه توسط دبیرخانه',
+  stage11_document_fee: 'پرداخت هزینه صدور سند',
+  documentfee: 'پرداخت هزینه صدور سند',
+  generate_document_fee: 'آماده‌سازی هزینه صدور سند',
+  stage11_announcement_fee: 'پرداخت هزینه آگهی تحدید حدود',
+  announcementfee: 'پرداخت هزینه آگهی تحدید حدود',
+  generate_announcement_fee: 'آماده‌سازی هزینه آگهی تحدید حدود',
+  stage11_land_owner_fee: 'پرداخت اجرت/بهای عرصه (ماده ۱۲)',
+  landownerfee: 'پرداخت اجرت/بهای عرصه (ماده ۱۲)',
+  generate_land_owner_fee: 'آماده‌سازی اجرت/بهای عرصه',
+  generate_issued_document: 'آماده‌سازی اطلاعات سند صادرشده',
+  stage12_issued: 'صدور سند',
+  stage12_notify: 'اطلاع‌رسانی صدور سند به متقاضی',
+  issued: 'صدور سند',
+  end: 'پایان موفق فرایند',
+  end_stage1_rejected: 'توقف — رد در مرحله ۱',
+  end_stage4_rejected: 'توقف — رد استعلام ثبتی (مرحله ۴)',
+  end_stage5_cannot_issue: 'توقف — عدم امکان صدور از استعلام ثبت (مرحله ۵)',
+  end_stage5_rejected: 'توقف — رد بازدید کارشناس (مرحله ۵)',
+};
+
+export function getBpmnElementLabel(elementId) {
+  const key = String(elementId ?? '').trim().toLowerCase();
+  return BPMN_ELEMENT_LABELS[key] ?? (elementId || '—');
+}
+
 export function getProcessStatusLabel(status) {
   const key = String(status ?? '').trim().toUpperCase();
   return PROCESS_STATUS_LABELS[key] ?? (status || '—');

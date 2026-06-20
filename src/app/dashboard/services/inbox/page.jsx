@@ -16,6 +16,8 @@ import {
   Tooltip,
   Tab,
   Tabs,
+  MenuItem,
+  TextField,
   Typography,
   CardContent,
   CircularProgress,
@@ -30,12 +32,15 @@ import { useEntitledServices } from 'src/hooks/use-entitled-services';
 import {
   INBOX_MODE,
   INBOX_MODE_LABELS,
+  INBOX_ROLE_LABELS,
   mergeInboxModes,
   resolveInboxModesForUser,
 } from 'src/lib/work-inbox';
 
+import { getBpmnElementLabel } from '../_lib/process-history-labels';
 import {
   fetchWorkInbox,
+  fetchWorkInboxCounts,
   writeService1TasksSnapshot,
   parseEngineProcessRejectState,
   taskReviewBranchId,
@@ -45,7 +50,16 @@ const DEFINITION_LABELS = {
   service1: 'خدمت شماره یک',
   service2: 'خدمت شماره دو',
   service3: 'خدمت شماره سه',
+  service4: 'خدمت شماره چهار',
 };
+
+const DEFINITION_OPTIONS = [
+  { value: '', label: 'همه خدمات' },
+  { value: 'service1', label: DEFINITION_LABELS.service1 },
+  { value: 'service2', label: DEFINITION_LABELS.service2 },
+  { value: 'service3', label: DEFINITION_LABELS.service3 },
+  { value: 'service4', label: DEFINITION_LABELS.service4 },
+];
 
 const PROCESS_STATUS_LABELS = {
   RUNNING: 'در حال اجرا',
@@ -82,6 +96,15 @@ function pickProcessUpdatedAt(p) {
   return p.UpdatedAt ?? p.updated_at ?? p.updatedAt ?? null;
 }
 
+function resolveCurrentTaskLabel(task) {
+  if (!task || typeof task !== 'object') return '—';
+  const elementId = String(task.element_id ?? task.ElementID ?? '').trim();
+  const label = getBpmnElementLabel(elementId);
+  if (label && label !== '—' && label !== elementId) return label;
+  const name = String(task.name ?? '').trim();
+  return name || elementId || '—';
+}
+
 function mapInboxItemsToRows(items) {
   return (items || [])
     .map((item) => {
@@ -101,7 +124,7 @@ function mapInboxItemsToRows(items) {
         applicantName: p?.variables?.applicant_name ?? '—',
         createdAt: pickProcessCreatedAt(p),
         updatedAt: pickProcessUpdatedAt(p),
-        currentTaskName: t?.name ?? '—',
+        currentTaskName: resolveCurrentTaskLabel(t),
         currentElementId: t?.element_id ?? t?.ElementID ?? '—',
         currentTaskStatus: t?.status ?? '—',
         currentTaskType: t?.type ?? '—',
@@ -132,11 +155,59 @@ export default function ServicesInboxPage() {
   const defaultModes = useMemo(() => resolveInboxModesForUser(user), [user]);
   const [activeMode, setActiveMode] = useState(defaultModes[0] ?? INBOX_MODE.continue);
   const [availableModes, setAvailableModes] = useState(defaultModes);
+  const [definitionKeyFilter, setDefinitionKeyFilter] = useState('');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [total, setTotal] = useState(0);
+  const [modeCounts, setModeCounts] = useState({ [INBOX_MODE.continue]: 0, [INBOX_MODE.review]: 0 });
+  const [service4Counts, setService4Counts] = useState({ continueTasks: 0, reviewTasks: 0 });
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 10 });
+
+  const hasService4Entitlement = useMemo(() => {
+    if (!isBranchEntitlementActive) return true;
+    return !processKeys?.length || processKeys.includes('service4');
+  }, [isBranchEntitlementActive, processKeys]);
+
+  const definitionOptions = useMemo(() => {
+    if (!isBranchEntitlementActive || !processKeys?.length) {
+      return DEFINITION_OPTIONS;
+    }
+    return [
+      { value: '', label: 'همه خدمات' },
+      ...DEFINITION_OPTIONS.filter((o) => o.value && processKeys.includes(o.value)),
+    ];
+  }, [isBranchEntitlementActive, processKeys]);
+
+  const loadInboxCounts = useCallback(async () => {
+    try {
+      const filterKey = definitionKeyFilter || undefined;
+      const counts = await fetchWorkInboxCounts(
+        filterKey ? { definitionKey: filterKey } : undefined,
+      );
+      setModeCounts({
+        [INBOX_MODE.continue]: counts.continueTasks,
+        [INBOX_MODE.review]: counts.reviewTasks,
+      });
+      if (hasService4Entitlement && filterKey !== 'service4') {
+        const s4 = await fetchWorkInboxCounts({ definitionKey: 'service4' });
+        setService4Counts({
+          continueTasks: s4.continueTasks,
+          reviewTasks: s4.reviewTasks,
+        });
+      } else if (filterKey === 'service4') {
+        setService4Counts({
+          continueTasks: counts.continueTasks,
+          reviewTasks: counts.reviewTasks,
+        });
+      } else {
+        setService4Counts({ continueTasks: 0, reviewTasks: 0 });
+      }
+    } catch {
+      setModeCounts({ [INBOX_MODE.continue]: 0, [INBOX_MODE.review]: 0 });
+      setService4Counts({ continueTasks: 0, reviewTasks: 0 });
+    }
+  }, [definitionKeyFilter, hasService4Entitlement]);
 
   const loadInbox = useCallback(async () => {
     setLoading(true);
@@ -145,6 +216,7 @@ export default function ServicesInboxPage() {
       const offset = paginationModel.page * paginationModel.pageSize;
       const data = await fetchWorkInbox({
         mode: activeMode,
+        definitionKey: definitionKeyFilter || undefined,
         limit: paginationModel.pageSize,
         offset,
       });
@@ -162,11 +234,15 @@ export default function ServicesInboxPage() {
     } finally {
       setLoading(false);
     }
-  }, [activeMode, paginationModel.page, paginationModel.pageSize, user]);
+  }, [activeMode, definitionKeyFilter, paginationModel.page, paginationModel.pageSize, user]);
 
   useEffect(() => {
     void loadInbox();
   }, [loadInbox]);
+
+  useEffect(() => {
+    void loadInboxCounts();
+  }, [loadInboxCounts]);
 
   /** لینک قدیمی اعلان‌ها: inbox?processId=… → همان باز کردن صفحهٔ خدمت */
   useEffect(() => {
@@ -199,6 +275,10 @@ export default function ServicesInboxPage() {
 
       if (key === 'service3') {
         router.push(`${paths.dashboard.services.three}${qs}`);
+        return;
+      }
+      if (key === 'service4') {
+        router.push(`${paths.dashboard.services.four}${qs}`);
         return;
       }
       if (key === 'service2') {
@@ -304,12 +384,33 @@ export default function ServicesInboxPage() {
               variant="outlined"
               size="small"
               startIcon={<Icon icon="solar:refresh-linear" width={18} />}
-              onClick={() => void loadInbox()}
+              onClick={() => {
+                void loadInbox();
+                void loadInboxCounts();
+              }}
               disabled={loading}
             >
               بروزرسانی
             </Button>
           </Stack>
+
+          {hasService4Entitlement &&
+          (service4Counts.continueTasks > 0 || service4Counts.reviewTasks > 0) ? (
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 2 }}>
+              <Chip
+                size="small"
+                color="info"
+                variant="soft"
+                label={`${DEFINITION_LABELS.service4} — ${INBOX_ROLE_LABELS[INBOX_MODE.continue]}: ${service4Counts.continueTasks}`}
+              />
+              <Chip
+                size="small"
+                color="warning"
+                variant="soft"
+                label={`${DEFINITION_LABELS.service4} — ${INBOX_ROLE_LABELS[INBOX_MODE.review]}: ${service4Counts.reviewTasks}`}
+              />
+            </Stack>
+          ) : null}
 
           {showTabs ? (
             <Tabs
@@ -320,17 +421,53 @@ export default function ServicesInboxPage() {
               }}
               sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
             >
-              {availableModes.map((mode) => (
-                <Tab
-                  key={mode}
-                  value={mode}
-                  label={INBOX_MODE_LABELS[mode] ?? mode}
-                  icon={<Icon icon="solar:inbox-in-bold-duotone" width={20} />}
-                  iconPosition="start"
-                />
-              ))}
+              {availableModes.map((mode) => {
+                const count = modeCounts[mode] ?? 0;
+                const tabLabel = INBOX_MODE_LABELS[mode] ?? mode;
+                return (
+                  <Tab
+                    key={mode}
+                    value={mode}
+                    label={
+                      <Stack direction="row" spacing={0.75} alignItems="center">
+                        <span>{tabLabel}</span>
+                        {count > 0 ? (
+                          <Chip size="small" label={count} color="primary" variant="soft" />
+                        ) : null}
+                      </Stack>
+                    }
+                    icon={<Icon icon="solar:inbox-in-bold-duotone" width={20} />}
+                    iconPosition="start"
+                  />
+                );
+              })}
             </Tabs>
           ) : null}
+
+          <Stack
+            direction={{ xs: 'column', sm: 'row' }}
+            spacing={2}
+            alignItems={{ sm: 'center' }}
+            sx={{ mb: 2 }}
+          >
+            <TextField
+              select
+              size="small"
+              label="نوع خدمت"
+              value={definitionKeyFilter}
+              onChange={(e) => {
+                setDefinitionKeyFilter(e.target.value);
+                setPaginationModel((prev) => ({ ...prev, page: 0 }));
+              }}
+              sx={{ minWidth: { xs: '100%', sm: 220 } }}
+            >
+              {definitionOptions.map((option) => (
+                <MenuItem key={option.value || 'all'} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          </Stack>
 
           {error ? (
             <Alert severity="error" sx={{ mb: 2 }}>

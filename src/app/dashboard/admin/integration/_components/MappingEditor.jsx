@@ -33,6 +33,7 @@ import {
   parseSampleVariables,
   previewInputMapping,
 } from '../_lib/mapping-preview';
+import { getProcessStepSampleVariables } from '../_lib/process-bpmn-steps';
 
 const DEFAULT_SAMPLE_VARIABLES = {
   user_id: 'U-12345',
@@ -189,6 +190,15 @@ export function MappingEditor({
       setSampleText(formatMappingJson(sampleVariablesProp));
     }
   }, [sampleVariablesProp]);
+
+  useEffect(() => {
+    if (sampleVariablesProp) return;
+    const stepSample = getProcessStepSampleVariables(processKey, stepId);
+    if (stepSample) {
+      setInternalSample(stepSample);
+      setSampleText(formatMappingJson(stepSample));
+    }
+  }, [processKey, stepId, sampleVariablesProp]);
 
   const commitMapping = useCallback(
     (next) => {

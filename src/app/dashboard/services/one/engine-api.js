@@ -233,6 +233,10 @@ function normalizeWorkInboxPage(data) {
 export async function fetchWorkInbox(params = {}) {
   const q = new URLSearchParams();
   if (params.mode) q.set('mode', String(params.mode));
+  const definitionKey = params.definitionKey ?? params.definition_key;
+  if (definitionKey != null && String(definitionKey).trim() !== '') {
+    q.set('definition_key', String(definitionKey).trim());
+  }
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
   const qs = q.toString();
@@ -243,6 +247,35 @@ export async function fetchWorkInbox(params = {}) {
   const data = await parseJson(res);
   assertEngineSuccess(res, data, 'دریافت صندوق کار ناموفق بود.');
   return normalizeWorkInboxPage(data);
+}
+
+function normalizeWorkInboxCounts(data) {
+  const root = data && typeof data === 'object' ? data : {};
+  const inner = root.data !== undefined ? root.data : root;
+  const modes = inner?.available_modes ?? inner?.availableModes ?? inner?.AvailableModes ?? [];
+  return {
+    definitionKey: inner?.definition_key ?? inner?.definitionKey ?? '',
+    continueTasks: Number(inner?.continue_tasks ?? inner?.continueTasks ?? inner?.ContinueTasks ?? 0) || 0,
+    reviewTasks: Number(inner?.review_tasks ?? inner?.reviewTasks ?? inner?.ReviewTasks ?? 0) || 0,
+    availableModes: Array.isArray(modes) ? modes : [],
+  };
+}
+
+/** شمارش تسک‌های باز صندوق کار — continue (کارشناس) و review (بازبین) */
+export async function fetchWorkInboxCounts(params = {}) {
+  const q = new URLSearchParams();
+  const definitionKey = params.definitionKey ?? params.definition_key;
+  if (definitionKey != null && String(definitionKey).trim() !== '') {
+    q.set('definition_key', String(definitionKey).trim());
+  }
+  const qs = q.toString();
+  const url = `${ENGINE_BASE_URL}/api/engine/service/work-inbox-counts${qs ? `?${qs}` : ''}`;
+  const res = await fetch(url, {
+    headers: engineAuthHeaders(),
+  });
+  const data = await parseJson(res);
+  assertEngineSuccess(res, data, 'دریافت شمارش صندوق کار ناموفق بود.');
+  return normalizeWorkInboxCounts(data);
 }
 
 export async function fetchProcesses(params = {}) {
@@ -575,7 +608,13 @@ export function buildForm1ReviewStateFromTasksMap(tasksMap, options = {}) {
     if (r.comment || r.status !== 'pending') return r;
   }
 
-  const form1 = pickLatestTaskForElement(tasksMap, 'form1');
+  const formElementIds = Array.isArray(options.formElementIds) && options.formElementIds.length
+    ? options.formElementIds
+    : ['form1'];
+
+  const form1 = formElementIds
+    .map((elementId) => pickLatestTaskForElement(tasksMap, elementId))
+    .find(Boolean);
   if (form1) {
     const ad = form1.attached_data && typeof form1.attached_data === 'object' ? form1.attached_data : {};
     const review1Node = ad.review1 && typeof ad.review1 === 'object' ? ad.review1 : null;
@@ -638,6 +677,52 @@ export function buildForm2ReviewStateFromTasksMap(tasksMap, options = {}) {
       }
     }
     const r = parseAttachedDataForReviewFeedback(form2.attached_data);
+    if (r.comment && r.status === 'pending') {
+      return { ...r, status: 'needs_correction' };
+    }
+    return r;
+  }
+
+  return { status: 'pending', comment: '' };
+}
+
+/** برای نمایش بلوک «نتیجه بررسی» در بازدید کارشناس بعد از اصلاح */
+export function buildExpertVisitReviewStateFromTasksMap(tasksMap, options = {}) {
+  const { activeTask = null } = options;
+  const openReview =
+    activeTask && normEl(activeTask.element_id) === 'review5'
+      ? activeTask
+      : pickOpenTaskForElement(tasksMap, 'review5');
+  if (openReview) {
+    return { status: 'pending', comment: '' };
+  }
+
+  const doneReview = pickLatestDoneTaskForElement(tasksMap, 'review5');
+  if (doneReview) {
+    const r = parseAttachedDataForReviewFeedback(doneReview.attached_data);
+    if (r.comment || r.status !== 'pending') return r;
+  }
+
+  const formElementIds = Array.isArray(options.formElementIds) && options.formElementIds.length
+    ? options.formElementIds
+    : ['stage5_expert_visit', 'expertvisit'];
+
+  const expertVisitTask = formElementIds
+    .map((elementId) => pickLatestTaskForElement(tasksMap, elementId))
+    .find(Boolean);
+  if (expertVisitTask) {
+    const ad =
+      expertVisitTask.attached_data && typeof expertVisitTask.attached_data === 'object'
+        ? expertVisitTask.attached_data
+        : {};
+    const review5Node = ad.review5 && typeof ad.review5 === 'object' ? ad.review5 : null;
+    if (review5Node) {
+      const fromReviewNode = parseReviewNodeFeedback(review5Node);
+      if (fromReviewNode.comment || fromReviewNode.status !== 'pending') {
+        return fromReviewNode;
+      }
+    }
+    const r = parseAttachedDataForReviewFeedback(expertVisitTask.attached_data);
     if (r.comment && r.status === 'pending') {
       return { ...r, status: 'needs_correction' };
     }

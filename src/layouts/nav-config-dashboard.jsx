@@ -23,6 +23,7 @@ const ICONS = {
   serviceOne: icon('ic-tour'),
   serviceTwo: icon('ic-kanban'),
   serviceThree: icon('ic-course'),
+  serviceFour: icon('ic-invoice'),
   list: icon('ic-file'),
   create: icon('ic-order'),
   banking: icon('ic-banking'),
@@ -198,6 +199,7 @@ export const navData = [
           PERM.ui.servicesOne,
           PERM.ui.servicesTwo,
           PERM.ui.servicesThree,
+          PERM.ui.servicesFour,
         ],
         children: [
           {
@@ -230,6 +232,13 @@ export const navData = [
             icon: ICONS.serviceThree,
             requiredPermissions: [PERM.ui.servicesThree],
             children: [{ title: 'جدید', path: paths.dashboard.services.three, requiredPermissions: [PERM.ui.servicesThree] }],
+          },
+          {
+            title: 'خدمت شماره چهار',
+            path: paths.dashboard.services.four,
+            icon: ICONS.serviceFour,
+            requiredPermissions: [PERM.ui.servicesFour],
+            children: [{ title: 'جدید', path: paths.dashboard.services.four, requiredPermissions: [PERM.ui.servicesFour] }],
           },
         ],
       },

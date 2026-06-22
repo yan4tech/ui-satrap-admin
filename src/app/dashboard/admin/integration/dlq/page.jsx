@@ -60,6 +60,11 @@ const RESOLVED_OPTIONS = [
   { value: '', label: 'همه' },
 ];
 
+function selectedRowIds(selectionModel) {
+  if (!selectionModel || selectionModel.type !== 'include') return [];
+  return Array.from(selectionModel.ids ?? []).map((id) => Number(id));
+}
+
 function mapDlqRow(item) {
   const fields = extractDlqRequestFields(item.payload_json);
   return {
@@ -92,7 +97,10 @@ export default function IntegrationDlqPage() {
   const [successMessage, setSuccessMessage] = useState(null);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 25 });
   const [isSearchOpen, setIsSearchOpen] = useState(true);
-  const [rowSelectionModel, setRowSelectionModel] = useState([]);
+  const [rowSelectionModel, setRowSelectionModel] = useState(() => ({
+    type: 'include',
+    ids: new Set(),
+  }));
   const [bulkRetryLoading, setBulkRetryLoading] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState(null);
   const [errorDetail, setErrorDetail] = useState(null);
@@ -124,7 +132,7 @@ export default function IntegrationDlqPage() {
       const { items, total } = await listIntegrationDlq(params);
       setRows(items.map(mapDlqRow));
       setRowCount(total > 0 ? total : items.length);
-      setRowSelectionModel([]);
+      setRowSelectionModel({ type: 'include', ids: new Set() });
     } catch (error) {
       console.error('Failed to fetch DLQ entries:', error);
       setErrorMessage(error?.message || 'خطا در دریافت صف DLQ');
@@ -184,7 +192,7 @@ export default function IntegrationDlqPage() {
   );
 
   const handleBulkRetry = useCallback(async () => {
-    const selectedIds = rowSelectionModel.map((id) => Number(id));
+    const selectedIds = selectedRowIds(rowSelectionModel);
     const selectedRows = rows.filter((r) => selectedIds.includes(r.id) && r.is_open && r.retryable);
     if (!selectedRows.length) {
       setErrorMessage('حداقل یک ردیف باز و قابل تلاش مجدد انتخاب کنید.');
@@ -210,7 +218,7 @@ export default function IntegrationDlqPage() {
   }, [rowSelectionModel, rows, fetchData]);
 
   const selectedRetryableCount = useMemo(() => {
-    const selectedIds = new Set(rowSelectionModel.map((id) => Number(id)));
+    const selectedIds = new Set(selectedRowIds(rowSelectionModel));
     return rows.filter((r) => selectedIds.has(r.id) && r.is_open && r.retryable).length;
   }, [rowSelectionModel, rows]);
 

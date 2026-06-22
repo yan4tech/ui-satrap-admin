@@ -23,6 +23,7 @@ import { HorizontalBarsCard } from '../../_components/horizontal-bars-card';
 import { ServiceBreakdownCards } from '../../_components/service-breakdown-cards';
 import { BranchKpiTabs } from '../../_components/branch-kpi-tabs';
 import { toFaDigits } from '../../_components/to-fa-digits';
+import { dashboardServiceRow, SERVICE_LABELS } from 'src/lib/service-labels';
 
 const COMPANY_NAME = 'شرکت نمونه پارس';
 
@@ -67,9 +68,9 @@ const branchStatus = [
 ];
 
 const serviceBreakdown = [
-  { name: 'خدمت شماره یک', waitingReview: 28, waitingRegistryReply: 11, completed: 412, rejected: 6 },
-  { name: 'خدمت شماره دو', waitingReview: 19, waitingRegistryReply: 8, completed: 287, rejected: 9 },
-  { name: 'خدمت شماره سه', waitingReview: 24, waitingRegistryReply: 14, completed: 356, rejected: 5 },
+  dashboardServiceRow('service1', { waitingReview: 28, waitingRegistryReply: 11, completed: 412, rejected: 6 }),
+  dashboardServiceRow('service2', { waitingReview: 19, waitingRegistryReply: 8, completed: 287, rejected: 9 }),
+  dashboardServiceRow('service3', { waitingReview: 24, waitingRegistryReply: 14, completed: 356, rejected: 5 }),
 ];
 
 const monthlyRequests = [420, 480, 510, 560, 530, 610];
@@ -93,39 +94,39 @@ const branchKpiByBranch = [
   {
     branch: 'شعبه مرکزی تهران',
     services: [
-      { name: 'خدمت شماره یک', success: 88, failed: 7, inReview: 12 },
-      { name: 'خدمت شماره دو', success: 62, failed: 5, inReview: 8 },
-      { name: 'خدمت شماره سه', success: 74, failed: 4, inReview: 9 },
+      dashboardServiceRow('service1', { success: 88, failed: 7, inReview: 12 }),
+      dashboardServiceRow('service2', { success: 62, failed: 5, inReview: 8 }),
+      dashboardServiceRow('service3', { success: 74, failed: 4, inReview: 9 }),
     ],
   },
   {
     branch: 'شعبه اصفهان',
     services: [
-      { name: 'خدمت شماره یک', success: 61, failed: 6, inReview: 7 },
-      { name: 'خدمت شماره دو', success: 44, failed: 8, inReview: 6 },
-      { name: 'خدمت شماره سه', success: 52, failed: 3, inReview: 5 },
+      dashboardServiceRow('service1', { success: 61, failed: 6, inReview: 7 }),
+      dashboardServiceRow('service2', { success: 44, failed: 8, inReview: 6 }),
+      dashboardServiceRow('service3', { success: 52, failed: 3, inReview: 5 }),
     ],
   },
   {
     branch: 'شعبه شیراز',
     services: [
-      { name: 'خدمت شماره یک', success: 48, failed: 11, inReview: 14 },
-      { name: 'خدمت شماره دو', success: 39, failed: 9, inReview: 11 },
-      { name: 'خدمت شماره سه', success: 41, failed: 7, inReview: 10 },
+      dashboardServiceRow('service1', { success: 48, failed: 11, inReview: 14 }),
+      dashboardServiceRow('service2', { success: 39, failed: 9, inReview: 11 }),
+      dashboardServiceRow('service3', { success: 41, failed: 7, inReview: 10 }),
     ],
   },
 ];
 
 const pendingTasks = [
   { label: 'تایید ۸ کاربر جدید در شعبه شیراز', progress: 65 },
-  { label: 'بازبینی تنظیمات خدمت شماره دو برای ۳ شعبه', progress: 40 },
+  { label: `بازبینی تنظیمات ${SERVICE_LABELS.service2} برای ۳ شعبه`, progress: 40 },
   { label: 'پیگیری درخواست‌های معوق بیش از ۷ روز', progress: 55 },
 ];
 
 const latestActivities = [
   { title: 'شعبه کرج به سامانه متصل شد', subtitle: '۵ دقیقه پیش' },
   { title: 'مدیر شعبه اصفهان به‌روزرسانی شد', subtitle: '۲۳ دقیقه پیش' },
-  { title: '۱۴ درخواست خدمت یک تایید شد', subtitle: '۴۷ دقیقه پیش' },
+  { title: `۱۴ درخواست ${SERVICE_LABELS.service1} تایید شد`, subtitle: '۴۷ دقیقه پیش' },
   { title: 'گزارش هفتگی شرکت تولید شد', subtitle: '۱ ساعت پیش' },
 ];
 

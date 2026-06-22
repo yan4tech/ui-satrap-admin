@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+
 import {
   Box,
   Card,
@@ -12,6 +13,9 @@ import {
   Typography,
   CardHeader,
 } from '@mui/material';
+
+import { ServiceLabel } from 'src/components/service-label';
+
 import { toFaDigits } from './to-fa-digits';
 
 export function BranchKpiTabs({ data, title = 'عملکرد شعب به تفکیک خدمت' }) {
@@ -39,9 +43,7 @@ export function BranchKpiTabs({ data, title = 'عملکرد شعب به تفکی
           {current.services.map((service) => (
             <Grid key={`${current.branch}-${service.name}`} size={{ xs: 12, md: 4 }}>
               <Box sx={{ p: 2, borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
-                <Typography variant="subtitle2" sx={{ mb: 1.5 }}>
-                  {service.name}
-                </Typography>
+                <ServiceLabel label={service.name} variant="card" sx={{ mb: 1.5 }} />
                 <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1 }}>
                   <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                     موفق

@@ -5,6 +5,8 @@ import React, { useMemo, useState, useCallback } from 'react';
 
 import { Box, Chip, Alert, Stack, Button, TextField, Typography } from '@mui/material';
 
+import { RHFUploadBox } from 'src/components/hook-form/rhf-upload-box';
+
 import { sanitizeValuesForEngineJson } from '../engine-api';
 
 const REVIEW_STATUS = {
@@ -20,94 +22,6 @@ const REVIEW_STATUS_META = {
   [REVIEW_STATUS.REJECTED]: { label: 'رد شد', color: 'error', severity: 'error' },
   [REVIEW_STATUS.NEEDS_CORRECTION]: { label: 'نیاز به اصلاح', color: 'info', severity: 'info' },
 };
-
-function UploadBox({ name, label, helperText, accept }) {
-  const { control } = useFormContext();
-
-  return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState: { error } }) => (
-        <Box>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            {label}
-          </Typography>
-
-          <Box
-            component="label"
-            sx={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              minHeight: 72,
-              px: 2,
-              border: '1px solid',
-              borderColor: error ? 'error.main' : 'text.primary',
-              cursor: 'pointer',
-              backgroundColor: 'background.paper',
-              overflow: 'hidden',
-            }}
-          >
-            <input
-              type="file"
-              accept={accept}
-              hidden
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                field.onChange(file);
-              }}
-            />
-
-            <Box
-              sx={{
-                position: 'absolute',
-                width: '70%',
-                borderTop: '1px solid',
-                borderColor: 'text.secondary',
-                transform: 'rotate(14deg)',
-                pointerEvents: 'none',
-              }}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                width: '70%',
-                borderTop: '1px solid',
-                borderColor: 'text.secondary',
-                transform: 'rotate(-14deg)',
-                pointerEvents: 'none',
-              }}
-            />
-
-            <Typography
-              variant="body2"
-              sx={{
-                zIndex: 1,
-                backgroundColor: 'background.paper',
-                px: 1,
-                maxWidth: '100%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {field.value?.name || helperText}
-            </Typography>
-          </Box>
-
-          {error?.message ? (
-            <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-              {error.message}
-            </Typography>
-          ) : null}
-        </Box>
-      )}
-    />
-  );
-}
 
 const defaultReview = () => ({ status: REVIEW_STATUS.PENDING, comment: '' });
 
@@ -213,35 +127,39 @@ export default function WorkflowWizardPage2({
           }}
         >
           <Box>
-            <UploadBox
+            <RHFUploadBox
               name="survey.image_1"
               label="عکس 1 :"
               helperText="انتخاب فایل تصویر"
               accept="image/*"
+              minHeight={120}
             />
           </Box>
           <Box>
-            <UploadBox
+            <RHFUploadBox
               name="survey.image_2"
               label="عکس 2 :"
               helperText="انتخاب فایل تصویر"
               accept="image/*"
+              minHeight={120}
             />
           </Box>
           <Box>
-            <UploadBox
+            <RHFUploadBox
               name="survey.image_3"
               label="عکس 3 :"
               helperText="انتخاب فایل تصویر"
               accept="image/*"
+              minHeight={120}
             />
           </Box>
           <Box>
-            <UploadBox
+            <RHFUploadBox
               name="survey.image_4"
               label="عکس 4 :"
               helperText="انتخاب فایل تصویر"
               accept="image/*"
+              minHeight={120}
             />
           </Box>
         </Box>
@@ -259,11 +177,12 @@ export default function WorkflowWizardPage2({
         </Alert>
 
         <Box sx={{ maxWidth: 520, mt: 2 }}>
-          <UploadBox
+          <RHFUploadBox
             name="survey.map_file"
             label="نقشه :"
             helperText="انتخاب فایل نقشه"
             accept=".pdf,.jpg,.jpeg,.png"
+            minHeight={120}
           />
         </Box>
 

@@ -1,5 +1,7 @@
 /** الگوهای آماده برای ساخت سریع کانکتور/اکشن بدون نوشتن JSON دستی */
 
+import { SERVICE_LABELS } from 'src/lib/service-labels';
+
 const SHAHKAR_CONFIG = {
   timeout_ms: 15000,
   retry_count: 1,
@@ -43,7 +45,7 @@ export const CONNECTOR_PRESETS = [
     bindHint: {
       processKey: 'service1',
       stepId: 'sendAgency1',
-      label: 'اتصال به sendAgency1 (خدمت ۱)',
+      label: `اتصال به sendAgency1 (${SERVICE_LABELS.service1})`,
     },
   },
 ];

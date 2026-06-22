@@ -31,6 +31,8 @@ import {
 import { usePermissions } from 'src/hooks/use-permissions';
 import { PERM } from 'src/lib/permissions';
 import { ServiceEntitlementGuard } from 'src/components/service-entitlement-guard';
+import { ServiceLabel } from 'src/components/service-label';
+import { SERVICE_LABELS } from 'src/lib/service-labels';
 
 import { ProcessWorkTimeline } from '../_components/process-work-timeline';
 
@@ -62,6 +64,7 @@ import {
   canCurrentClientCompleteTask,
   parseEngineProcessRejectState,
   pickPipelineEarliestTaskFromIdMap,
+  tryDemoMockSendAgency,
 } from './engine-api';
 
 const SERVICE1_DEFINITION_KEY = 'service1';
@@ -180,7 +183,7 @@ function pickLatestUserFacingTask(taskMap, getWorkflowRank, { actionableOnly = f
 
 export function ServiceWorkflowPage({
   serviceDefinitionKey = SERVICE1_DEFINITION_KEY,
-  serviceTitle = 'خدمت شماره یک',
+  serviceTitle = SERVICE_LABELS.service1,
   startServiceFn = startService,
   TaskPanelComponent = ServiceOneTaskPanel,
   StepTaskDetailDialogComponent = ServiceOneStepTaskDetailDialog,
@@ -358,14 +361,19 @@ export function ServiceWorkflowPage({
       }
       let mergedOut;
       try {
-        const t = await fetchProcessTasks(pid);
+        let t = await fetchProcessTasks(pid);
         setLoadError(null);
-        const merged = mergeApiTasksWithSnapshot(
+        let merged = mergeApiTasksWithSnapshot(
           pid,
           silent ? allTasksByIdRef.current : {},
           t
         );
-        const inst = await fetchProcessInstance(pid);
+        let inst = await fetchProcessInstance(pid);
+        if (await tryDemoMockSendAgency(pid, inst)) {
+          t = await fetchProcessTasks(pid);
+          merged = mergeApiTasksWithSnapshot(pid, silent ? allTasksByIdRef.current : {}, t);
+          inst = await fetchProcessInstance(pid);
+        }
         const rejectFromApi = inst ? parseEngineProcessRejectState(inst) : null;
         const storedMeta = readService1ProcessMeta(pid);
         const rejectFromMeta =
@@ -586,6 +594,7 @@ export function ServiceWorkflowPage({
           ...formPayload,
         });
         setFormPhaseComplete(true);
+        await loadTasks(processInstanceId);
         return true;
       }
       if (body && body.rejectToEngine) {
@@ -952,7 +961,7 @@ export function ServiceWorkflowPage({
         ) : null}
         <Typography variant="h5" sx={{ mb: 3 }} component="div">
           <Stack direction="row" alignItems="center" gap={1} flexWrap="wrap" useFlexGap>
-            <span>{serviceTitle}</span>
+            <ServiceLabel label={serviceTitle} variant="title" component="span" />
             {processInstanceId != null ? (
               <Chip
                 label={`شماره خدمت: ${processInstanceId}`}
@@ -1255,7 +1264,7 @@ export default function WorkflowWizard() {
     <ServiceEntitlementGuard processKey={SERVICE1_DEFINITION_KEY}>
       <ServiceWorkflowPage
         serviceDefinitionKey={SERVICE1_DEFINITION_KEY}
-        serviceTitle="خدمت شماره یک"
+        serviceTitle={SERVICE_LABELS.service1}
         startServiceFn={startService}
         TaskPanelComponent={ServiceOneTaskPanel}
         StepTaskDetailDialogComponent={ServiceOneStepTaskDetailDialog}

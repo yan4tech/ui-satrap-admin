@@ -3,7 +3,9 @@
 import React from 'react';
 import { Alert, Stack } from '@mui/material';
 
-export default function StartServiceStep({ error, serviceTitle = 'خدمت 1' }) {
+import { SERVICE_LABELS } from 'src/lib/service-labels';
+
+export default function StartServiceStep({ error, serviceTitle = SERVICE_LABELS.service1 }) {
   return (
     <Stack spacing={2} alignItems="center" sx={{ width: '100%', maxWidth: 520, mx: 'auto' }}>
       <Alert

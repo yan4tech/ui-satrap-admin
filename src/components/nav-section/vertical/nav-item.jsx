@@ -69,9 +69,11 @@ export function NavItem({
 
       {title && (
         <ItemTexts {...ownerState} className={navSectionClasses.item.texts} sx={slotProps?.texts}>
-          <ItemTitle {...ownerState} className={navSectionClasses.item.title} sx={slotProps?.title}>
-            {title}
-          </ItemTitle>
+          <Tooltip title={title} placement="right" enterDelay={500} disableInteractive>
+            <ItemTitle {...ownerState} className={navSectionClasses.item.title} sx={slotProps?.title}>
+              {title}
+            </ItemTitle>
+          </Tooltip>
 
           {caption && (
             <Tooltip title={caption} placement="top-start">

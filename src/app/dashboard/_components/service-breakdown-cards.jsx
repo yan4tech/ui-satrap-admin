@@ -3,10 +3,11 @@ import { varAlpha } from 'minimal-shared/utils';
 import { Box, Chip, Grid, Stack, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
+import { ServiceLabel } from 'src/components/service-label';
 
+import { toFaDigits } from './to-fa-digits';
 import { DashboardCard } from './dashboard-card';
 import { dashboardSectionTitleSx } from './dashboard-styles';
-import { toFaDigits } from './to-fa-digits';
 
 const ROWS = [
   { key: 'waitingReview', label: 'در انتظار بررسی', color: 'warning', icon: 'solar:hourglass-line-bold-duotone' },
@@ -65,9 +66,7 @@ export function ServiceBreakdownCards({ services, sectionTitle = 'وضعیت خ�
                         />
                       </Box>
                       <Box>
-                        <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                          {service.name}
-                        </Typography>
+                        <ServiceLabel label={service.name} variant="card" />
                         <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                           مجموع: {toFaDigits(total)} درخواست
                         </Typography>

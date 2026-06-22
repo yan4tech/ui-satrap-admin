@@ -1,6 +1,7 @@
 import { Box, Button, Chip, Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
+import { ServiceLabel } from 'src/components/service-label';
 
 import { DashboardCard } from './dashboard-card';
 import { dashboardSectionTitleSx } from './dashboard-styles';
@@ -38,8 +39,7 @@ export function StatusListCard({ title, items, footerActions }) {
               }
             >
               <ListItemText
-                primary={service.name}
-                primaryTypographyProps={{ variant: 'body2', fontWeight: 600 }}
+                primary={<ServiceLabel label={service.name} variant="default" sx={{ fontWeight: 600 }} />}
               />
             </ListItem>
             {index < items.length - 1 ? <Divider component="li" sx={{ mx: 2.5 }} /> : null}

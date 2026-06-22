@@ -1,11 +1,12 @@
 import { getProcessDefinition } from 'src/lib/integration-api';
+import { getServiceBpmnName, SERVICE_LABEL_OPTIONS } from 'src/lib/service-labels';
 
 /** @typedef {{ id: string, name: string, type: string }} BpmnStep */
 
 /** @type {Record<string, { name: string, startId: string, elements: Record<string, { id: string, name: string, type: string }>, flows: { from: string, to: string }[] }>} */
 export const PROCESS_BPMN_MODELS = {
   service1: {
-    name: 'خدمت شماره یک (khedmat1)',
+    name: getServiceBpmnName('service1'),
     startId: 'start',
     elements: {
       start: { id: 'start', name: 'Start', type: 'USER_TASK' },
@@ -36,7 +37,7 @@ export const PROCESS_BPMN_MODELS = {
     ],
   },
   service2: {
-    name: 'خدمت شماره دو (khedmat2)',
+    name: getServiceBpmnName('service2'),
     startId: 'start',
     elements: {
       start: { id: 'start', name: 'Start', type: 'USER_TASK' },
@@ -63,7 +64,7 @@ export const PROCESS_BPMN_MODELS = {
     ],
   },
   service3: {
-    name: 'خدمت شماره سه (khedmat3)',
+    name: getServiceBpmnName('service3'),
     startId: 'start',
     elements: {
       start: { id: 'start', name: 'Start', type: 'USER_TASK' },
@@ -227,11 +228,7 @@ export function suggestHookType(step) {
 }
 
 /** @deprecated از listProcessDefinitions() استفاده کنید */
-export const PROCESS_KEY_OPTIONS = [
-  { value: 'service1', label: 'خدمت شماره یک' },
-  { value: 'service2', label: 'خدمت شماره دو' },
-  { value: 'service3', label: 'خدمت شماره سه' },
-];
+export const PROCESS_KEY_OPTIONS = SERVICE_LABEL_OPTIONS;
 
 /** تبدیل تعاریف API به گزینه‌های selector */
 export function processDefinitionsToOptions(definitions) {

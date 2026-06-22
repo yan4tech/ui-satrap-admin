@@ -1,6 +1,8 @@
 import dayjs from 'dayjs';
 import jalaliday from 'jalaliday';
 
+import { SERVICE_LABEL_OPTIONS } from 'src/lib/service-labels';
+
 dayjs.extend(jalaliday);
 dayjs.calendar('jalali');
 dayjs.locale('fa');
@@ -58,9 +60,7 @@ export const PAYMENT_STATUS_OPTIONS = [
 
 export const PROCESS_DEFINITION_OPTIONS = [
   { value: '', label: 'همه فرایندها' },
-  { value: 'service1', label: 'خدمت شماره یک' },
-  { value: 'service2', label: 'خدمت شماره دو' },
-  { value: 'service3', label: 'خدمت شماره سه' },
+  ...SERVICE_LABEL_OPTIONS,
 ];
 
 const STATUS_LABEL_MAP = Object.fromEntries(

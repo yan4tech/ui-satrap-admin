@@ -41,11 +41,8 @@ import {
   taskReviewBranchId,
 } from '../one/engine-api';
 
-const DEFINITION_LABELS = {
-  service1: 'خدمت شماره یک',
-  service2: 'خدمت شماره دو',
-  service3: 'خدمت شماره سه',
-};
+import { DEFINITION_LABELS } from 'src/lib/service-labels';
+import { ServiceLabel } from 'src/components/service-label';
 
 const PROCESS_STATUS_LABELS = {
   RUNNING: 'در حال اجرا',
@@ -224,8 +221,11 @@ export default function ServicesInboxPage() {
       {
         field: 'serviceLabel',
         headerName: 'خدمت',
-        flex: 1,
-        minWidth: 120,
+        flex: 1.2,
+        minWidth: 160,
+        renderCell: (params) => (
+          <ServiceLabel label={params.value} variant="table" sx={{ py: 0.5 }} />
+        ),
       },
       {
         field: 'applicantName',

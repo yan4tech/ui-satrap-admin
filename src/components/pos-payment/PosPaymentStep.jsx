@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { Alert, Box, Button, CircularProgress, Stack, Typography } from '@mui/material';
 
+import { ServiceLabel } from 'src/components/service-label';
+
 import { fetchProcessInstance } from 'src/app/dashboard/services/one/engine-api';
 import {
   buildEnginePayloadFromPos,
@@ -138,9 +140,7 @@ export default function PosPaymentStep({
       </Typography>
 
       <Stack spacing={1.5} sx={{ mb: 2 }}>
-        <Typography variant="body2" color="text.secondary">
-          {serviceLabel}
-        </Typography>
+        <ServiceLabel label={serviceLabel} variant="default" sx={{ color: 'text.secondary' }} />
         <Typography variant="h6" fontWeight={700}>
           مبلغ قابل پرداخت:{' '}
           {amountLoading ? <CircularProgress size={18} sx={{ ml: 1, verticalAlign: 'middle' }} /> : `${formatPrice(amount)} ریال`}

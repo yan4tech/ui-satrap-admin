@@ -1,16 +1,16 @@
 'use client';
 
 import { useState } from 'react';
-
 import { varAlpha } from 'minimal-shared/utils';
 
 import { Box, Chip, Grid, Stack, Tab, Tabs, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
+import { ServiceLabel } from 'src/components/service-label';
 
+import { toFaDigits } from './to-fa-digits';
 import { DashboardCard } from './dashboard-card';
 import { dashboardSectionTitleSx } from './dashboard-styles';
-import { toFaDigits } from './to-fa-digits';
 
 export function ProcessKpiTabs({ data }) {
   const [activeProvince, setActiveProvince] = useState(data?.[0]?.province ?? '');
@@ -62,9 +62,7 @@ export function ProcessKpiTabs({ data }) {
                   height: '100%',
                 }}
               >
-                <Typography variant="subtitle2" sx={{ mb: 1.5, fontWeight: 700 }}>
-                  {service.name}
-                </Typography>
+                <ServiceLabel label={service.name} variant="card" sx={{ mb: 1.5 }} />
 
                 {[
                   { key: 'success', label: 'موفق', color: 'success' },

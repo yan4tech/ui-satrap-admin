@@ -159,6 +159,18 @@ function mapReceiptRow(item) {
     user_id: item?.user_id ?? item?.UserID,
     amount: item?.amount ?? item?.Amount ?? 0,
     refunded_amount: item?.refunded_amount ?? item?.RefundedAmount ?? 0,
+    refunded_at: item?.refunded_at ?? item?.RefundedAt,
+    refunded_at_label: formatDateTime(item?.refunded_at ?? item?.RefundedAt),
+    refunded_by: item?.refunded_by ?? item?.RefundedBy,
+    refund_tracking_code: item?.refund_tracking_code ?? item?.RefundTrackingCode ?? '',
+    refund_tracking_number: item?.refund_tracking_number ?? item?.RefundTrackingNumber ?? '',
+    refund_response_code: item?.refund_response_code ?? item?.RefundResponseCode ?? '',
+    refund_response_message: item?.refund_response_message ?? item?.RefundResponseMessage ?? '',
+    refund_inquiry_status: item?.refund_inquiry_status ?? item?.RefundInquiryStatus,
+    refund_inquiry_status_label:
+      item?.refund_inquiry_status_label ?? item?.RefundInquiryStatusLabel ?? '',
+    refund_inquiry_d_iban: item?.refund_inquiry_d_iban ?? item?.RefundInquiryDIban ?? '',
+    refund_inquiry_date: item?.refund_inquiry_date ?? item?.RefundInquiryDate ?? '',
     status: item?.status ?? item?.Status ?? '',
     payment_gateway: item?.payment_gateway ?? item?.PaymentGateway ?? '',
     transaction_id: item?.transaction_id ?? item?.TransactionID ?? '',
@@ -172,6 +184,23 @@ function mapReceiptRow(item) {
     invoice_status: item?.invoice_status ?? item?.InvoiceStatus,
     card_number: item?.card_number ?? item?.CardNumber ?? '',
   };
+}
+
+function refundBlockedReason(row) {
+  const status = String(row?.status ?? '').toUpperCase();
+  if (status === 'REFUNDED' || Number(row?.refunded_amount) > 0) {
+    return 'این پرداخت قبلاً استرداد شده است';
+  }
+  if (status !== 'PAID') {
+    return 'فقط پرداخت‌های موفق قابل استرداد هستند';
+  }
+  if (!String(row?.process_status ?? '').toUpperCase().includes('REJECT')) {
+    return 'فرایند باید با وضعیت «رد شده» خاتمه یافته باشد';
+  }
+  if (!row?.refund_eligible) {
+    return 'فرایند هنوز به‌طور کامل بسته نشده است';
+  }
+  return null;
 }
 
 function DetailField({ label, children }) {
@@ -273,6 +302,7 @@ export default function FinanceReceiptsPage() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [refundTarget, setRefundTarget] = useState(null);
   const [refundLoading, setRefundLoading] = useState(false);
+  const [inquiryLoading, setInquiryLoading] = useState(false);
 
   const methods = useForm({
     resolver: zodResolver(SearchSchema),
@@ -346,16 +376,34 @@ export default function FinanceReceiptsPage() {
     fetchData();
   });
 
+  const handleInquiryRefund = async (paymentId) => {
+    if (!paymentId) return;
+    setInquiryLoading(true);
+    setErrorMessage(null);
+    try {
+      const res = await axios.post(`/api/payment/financial/receipts/${paymentId}/refund/inquiry`);
+      const mapped = mapReceiptRow(res?.data?.data ?? {});
+      setDetail(mapped);
+      await fetchData();
+    } catch (error) {
+      setErrorMessage(extractMembershipErrorMessage(error, 'خطا در استعلام ریفاند'));
+    } finally {
+      setInquiryLoading(false);
+    }
+  };
+
   const handleRefund = async () => {
     if (!refundTarget?.payment_id) return;
     setRefundLoading(true);
     setErrorMessage(null);
     try {
-      await axios.post(`/api/payment/financial/receipts/${refundTarget.payment_id}/refund`, {
-        amount: refundTarget.amount,
-      });
+      const res = await axios.post(
+        `/api/payment/financial/receipts/${refundTarget.payment_id}/refund`,
+        { amount: refundTarget.amount }
+      );
+      const refunded = mapReceiptRow(res?.data?.data ?? {});
       setRefundTarget(null);
-      setDetail(null);
+      setDetail(refunded);
       await fetchData();
     } catch (error) {
       setErrorMessage(extractMembershipErrorMessage(error, 'خطا در استرداد وجه'));
@@ -394,6 +442,12 @@ export default function FinanceReceiptsPage() {
       valueFormatter: (value) => formatRial(value),
     },
     {
+      field: 'refunded_amount',
+      headerName: 'مبلغ استرداد',
+      width: 130,
+      valueFormatter: (value) => (Number(value) > 0 ? formatRial(value) : '—'),
+    },
+    {
       field: 'process_definition_key',
       headerName: 'فرایند',
       width: 130,
@@ -407,37 +461,57 @@ export default function FinanceReceiptsPage() {
     {
       field: 'actions',
       headerName: 'عملیات',
-      width: 110,
+      width: 130,
       sortable: false,
       filterable: false,
-      renderCell: (params) => (
-        <Stack direction="row" spacing={0.5}>
-          <Tooltip title="جزئیات">
-            <IconButton
-              size="small"
-              onClick={() => {
-                setDetail(params.row);
-                loadDetail(params.row.payment_id);
-              }}
-              aria-label="جزئیات"
-            >
-              <Icon icon="solar:eye-linear" width={20} />
-            </IconButton>
-          </Tooltip>
-          {params.row.refund_eligible ? (
-            <Tooltip title="برگرداندن هزینه">
+      renderCell: (params) => {
+        const blocked = refundBlockedReason(params.row);
+        const canRefund = params.row.refund_eligible;
+        return (
+          <Stack direction="row" spacing={0.5}>
+            <Tooltip title="جزئیات">
               <IconButton
                 size="small"
-                color="warning"
-                onClick={() => setRefundTarget(params.row)}
-                aria-label="استرداد"
+                onClick={() => {
+                  setDetail(params.row);
+                  loadDetail(params.row.payment_id);
+                }}
+                aria-label="جزئیات"
               >
-                <Icon icon="solar:undo-left-round-linear" width={20} />
+                <Icon icon="solar:eye-linear" width={20} />
               </IconButton>
             </Tooltip>
-          ) : null}
-        </Stack>
-      ),
+            {canRefund ? (
+              <Tooltip title="استرداد وجه">
+                <IconButton
+                  size="small"
+                  color="warning"
+                  onClick={() => setRefundTarget(params.row)}
+                  aria-label="استرداد"
+                >
+                  <Icon icon="solar:undo-left-round-linear" width={20} />
+                </IconButton>
+              </Tooltip>
+            ) : String(params.row.status).toUpperCase() === 'REFUNDED' ? (
+              <Tooltip title="استرداد انجام شده">
+                <span>
+                  <IconButton size="small" disabled aria-label="استرداد شده">
+                    <Icon icon="solar:check-circle-linear" width={20} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : blocked ? (
+              <Tooltip title={blocked}>
+                <span>
+                  <IconButton size="small" disabled aria-label="غیرقابل استرداد">
+                    <Icon icon="solar:undo-left-round-linear" width={20} />
+                  </IconButton>
+                </span>
+              </Tooltip>
+            ) : null}
+          </Stack>
+        );
+      },
     },
   ];
 
@@ -494,7 +568,11 @@ export default function FinanceReceiptsPage() {
                 >
                   <Field.Select name="process_definition_key" label="فرایند / خدمت">
                     {PROCESS_DEFINITION_OPTIONS.map((p) => (
-                      <MenuItem key={p.value || 'all'} value={p.value}>
+                      <MenuItem
+                        key={p.value || 'all'}
+                        value={p.value}
+                        sx={{ whiteSpace: 'normal', lineHeight: 1.5, py: 1 }}
+                      >
                         {p.label}
                       </MenuItem>
                     ))}
@@ -643,10 +721,83 @@ export default function FinanceReceiptsPage() {
                     {detail.description ? (
                       <DetailField label="توضیحات">{detail.description}</DetailField>
                     ) : null}
-                    {detail.refunded_amount > 0 ? (
-                      <Alert severity="info">
-                        مبلغ استرداد شده: {formatRial(detail.refunded_amount)}
+                    {Number(detail.refunded_amount) > 0 ||
+                    String(detail.status).toUpperCase() === 'REFUNDED' ? (
+                      <Alert severity="warning" icon={<Icon icon="solar:undo-left-round-linear" width={22} />}>
+                        <Typography variant="subtitle2" sx={{ mb: 0.5 }}>
+                          اطلاعات ریفاند (به‌پرداخت ملت)
+                        </Typography>
+                        <Box
+                          sx={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+                            gap: 1,
+                          }}
+                        >
+                          <DetailField label="مبلغ استرداد">
+                            {formatRial(detail.refunded_amount)}
+                          </DetailField>
+                          <DetailField label="تاریخ استرداد">
+                            {detail.refunded_at_label || '—'}
+                          </DetailField>
+                          <DetailField label="کد پاسخ درگاه">
+                            {detail.refund_response_code || '—'}
+                          </DetailField>
+                          <DetailField label="پیام درگاه">
+                            {detail.refund_response_message || '—'}
+                          </DetailField>
+                          <DetailField label="کد رهگیری درخواست">
+                            <Box component="span" dir="ltr" sx={{ unicodeBidi: 'plaintext' }}>
+                              {detail.refund_tracking_code || '—'}
+                            </Box>
+                          </DetailField>
+                          <DetailField label="شماره پیگیری">
+                            <Box component="span" dir="ltr" sx={{ unicodeBidi: 'plaintext' }}>
+                              {detail.refund_tracking_number || '—'}
+                            </Box>
+                          </DetailField>
+                          <DetailField label="وضعیت پایا">
+                            {detail.refund_inquiry_status_label ||
+                              (detail.refund_inquiry_status != null
+                                ? String(detail.refund_inquiry_status)
+                                : '—')}
+                          </DetailField>
+                          <DetailField label="تاریخ استعلام پایا">
+                            {detail.refund_inquiry_date || '—'}
+                          </DetailField>
+                          <DetailField label="شبای مقصد">
+                            <Box component="span" dir="ltr" sx={{ unicodeBidi: 'plaintext' }}>
+                              {detail.refund_inquiry_d_iban || '—'}
+                            </Box>
+                          </DetailField>
+                          <DetailField label="انجام‌دهنده">
+                            {detail.refunded_by || '—'}
+                          </DetailField>
+                        </Box>
+                        {detail.refund_tracking_code || detail.refund_tracking_number ? (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            sx={{ mt: 1.5 }}
+                            disabled={inquiryLoading}
+                            onClick={() => handleInquiryRefund(detail.payment_id)}
+                            startIcon={
+                              inquiryLoading ? (
+                                <Icon icon="svg-spinners:180-ring" width={18} />
+                              ) : (
+                                <Icon icon="solar:refresh-linear" width={18} />
+                              )
+                            }
+                          >
+                            استعلام وضعیت ریفاند
+                          </Button>
+                        ) : null}
                       </Alert>
+                    ) : null}
+                    {!detail.refund_eligible &&
+                    String(detail.status).toUpperCase() === 'PAID' &&
+                    refundBlockedReason(detail) ? (
+                      <Alert severity="info">{refundBlockedReason(detail)}</Alert>
                     ) : null}
                   </>
                 )}
@@ -664,7 +815,7 @@ export default function FinanceReceiptsPage() {
                     startIcon={<Icon icon="solar:undo-left-round-linear" width={20} />}
                     onClick={() => setRefundTarget(detail)}
                   >
-                    برگرداندن هزینه
+                    استرداد وجه
                   </Button>
                 </Box>
               </>
@@ -680,6 +831,9 @@ export default function FinanceReceiptsPage() {
             آیا از برگرداندن مبلغ{' '}
             <strong>{formatRial(refundTarget?.amount)}</strong> برای پرداخت شماره{' '}
             <strong>{refundTarget?.payment_id}</strong> اطمینان دارید؟
+            <br />
+            ابتدا درخواست به سرویس ریفاند به‌پرداخت ملت ارسال می‌شود و پس از تأیید (کد ۰۰۰)،
+            وضعیت مالی به‌روزرسانی می‌گردد.
             <br />
             این عمل فقط برای فرایندهایی که با رد خاتمه یافته‌اند مجاز است.
           </DialogContentText>

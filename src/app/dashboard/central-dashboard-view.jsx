@@ -12,6 +12,7 @@ import { ProgressAlertsCard } from './_components/progress-alerts-card';
 import { ServiceBreakdownCards } from './_components/service-breakdown-cards';
 import { StatusListCard } from './_components/status-list-card';
 import { toFaDigits } from './_components/to-fa-digits';
+import { dashboardServiceRow, SERVICE_LABELS } from 'src/lib/service-labels';
 
 const kpis = [
   {
@@ -49,14 +50,14 @@ const kpis = [
 const serviceStatus = [
   { name: 'مدیریت کاربران', state: 'فعال', color: 'success' },
   { name: 'مدیریت شعبات', state: 'نیازمند بررسی', color: 'warning' },
-  { name: 'خدمات شماره یک', state: 'فعال', color: 'success' },
-  { name: 'خدمات شماره دو', state: 'اختلال جزئی', color: 'error' },
-  { name: 'خدمات شماره سه', state: 'فعال', color: 'success' },
+  { name: SERVICE_LABELS.service1, state: 'فعال', color: 'success' },
+  { name: SERVICE_LABELS.service2, state: 'اختلال جزئی', color: 'error' },
+  { name: SERVICE_LABELS.service3, state: 'فعال', color: 'success' },
 ];
 
 const latestActivities = [
   { title: 'کاربر جدید ثبت شد', subtitle: '۲ دقیقه پیش', icon: 'solar:user-plus-bold-duotone' },
-  { title: 'خدمت شماره دو بروزرسانی شد', subtitle: '۱۱ دقیقه پیش', icon: 'solar:refresh-circle-bold-duotone' },
+  { title: `${SERVICE_LABELS.service2} بروزرسانی شد`, subtitle: '۱۱ دقیقه پیش', icon: 'solar:refresh-circle-bold-duotone' },
   { title: 'نقش جدید برای اپراتور تعریف شد', subtitle: '۳۵ دقیقه پیش', icon: 'solar:shield-keyhole-bold-duotone' },
   { title: 'گزارش روزانه تولید گردید', subtitle: '۵۹ دقیقه پیش', icon: 'solar:document-text-bold-duotone' },
 ];
@@ -64,31 +65,13 @@ const latestActivities = [
 const pendingTasks = [
   { label: 'بررسی ۱۴ درخواست تایید نشده', progress: 70 },
   { label: 'تکمیل تنظیمات دسترسی مدیر شعبه', progress: 45 },
-  { label: 'بازبینی خطاهای ثبت‌شده سرویس دو', progress: 30 },
+  { label: `بازبینی خطاهای ثبت‌شده ${SERVICE_LABELS.service2}`, progress: 30 },
 ];
 
 const serviceBreakdown = [
-  {
-    name: 'خدمت شماره یک',
-    waitingReview: 42,
-    waitingRegistryReply: 18,
-    completed: 133,
-    rejected: 9,
-  },
-  {
-    name: 'خدمت شماره دو',
-    waitingReview: 27,
-    waitingRegistryReply: 12,
-    completed: 98,
-    rejected: 14,
-  },
-  {
-    name: 'خدمت شماره سه',
-    waitingReview: 31,
-    waitingRegistryReply: 16,
-    completed: 121,
-    rejected: 7,
-  },
+  dashboardServiceRow('service1', { waitingReview: 42, waitingRegistryReply: 18, completed: 133, rejected: 9 }),
+  dashboardServiceRow('service2', { waitingReview: 27, waitingRegistryReply: 12, completed: 98, rejected: 14 }),
+  dashboardServiceRow('service3', { waitingReview: 31, waitingRegistryReply: 16, completed: 121, rejected: 7 }),
 ];
 
 const monthlyRequests = [180, 220, 210, 260, 240, 290];
@@ -104,25 +87,25 @@ const processKpiByProvince = [
   {
     province: 'تهران',
     services: [
-      { name: 'خدمت شماره یک', success: 54, failed: 9, inReview: 12 },
-      { name: 'خدمت شماره دو', success: 47, failed: 11, inReview: 14 },
-      { name: 'خدمت شماره سه', success: 39, failed: 8, inReview: 10 },
+      dashboardServiceRow('service1', { success: 54, failed: 9, inReview: 12 }),
+      dashboardServiceRow('service2', { success: 47, failed: 11, inReview: 14 }),
+      dashboardServiceRow('service3', { success: 39, failed: 8, inReview: 10 }),
     ],
   },
   {
     province: 'اصفهان',
     services: [
-      { name: 'خدمت شماره یک', success: 41, failed: 7, inReview: 9 },
-      { name: 'خدمت شماره دو', success: 36, failed: 10, inReview: 11 },
-      { name: 'خدمت شماره سه', success: 31, failed: 6, inReview: 8 },
+      dashboardServiceRow('service1', { success: 41, failed: 7, inReview: 9 }),
+      dashboardServiceRow('service2', { success: 36, failed: 10, inReview: 11 }),
+      dashboardServiceRow('service3', { success: 31, failed: 6, inReview: 8 }),
     ],
   },
   {
     province: 'فارس',
     services: [
-      { name: 'خدمت شماره یک', success: 33, failed: 6, inReview: 7 },
-      { name: 'خدمت شماره دو', success: 29, failed: 8, inReview: 9 },
-      { name: 'خدمت شماره سه', success: 24, failed: 5, inReview: 6 },
+      dashboardServiceRow('service1', { success: 33, failed: 6, inReview: 7 }),
+      dashboardServiceRow('service2', { success: 29, failed: 8, inReview: 9 }),
+      dashboardServiceRow('service3', { success: 24, failed: 5, inReview: 6 }),
     ],
   },
 ];

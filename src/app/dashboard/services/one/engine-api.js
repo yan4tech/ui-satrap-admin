@@ -1,3 +1,4 @@
+import { isDemoAutoApproveReviews, isDemoMockSendAgency, isSendAgencyElementId } from 'src/lib/demo-workflow';
 import { getApiMode, getApiRequestMode } from 'src/lib/api-mode';
 import { getBranchIdStored, getBranchRequestHeaderValue } from 'src/lib/api-branch-header';
 import { getMembershipUserHeaderString } from 'src/lib/api-user-header';
@@ -874,4 +875,74 @@ export async function advanceTaskNext(processInstanceId, taskId, body = { approv
   const data = await parseJson(res);
   assertEngineSuccess(res, data, 'رفتن به مرحله بعد ناموفق بود.');
   return data;
+}
+
+/** دمو: تایید خودکار مرحلهٔ بازبینی (review1 / review2) وقتی کاربر جاری مجاز به تکمیل نیست */
+export async function demoSkipReviewStep(processInstanceId, taskId) {
+  const res = await fetch(
+    `${ENGINE_BASE_URL}/api/engine/service/demo/skip-review/${processInstanceId}/${taskId}`,
+    {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({}),
+    },
+  );
+  const data = await parseJson(res);
+  assertEngineSuccess(res, data, 'رد خودکار مرحلهٔ بازبینی ناموفق بود.');
+  return data;
+}
+
+const DEMO_REVIEW_ELEMENT_IDS = ['review1', 'review2', 'centralreviewform2'];
+
+/** اگر فرایند روی sendAgency در WAITING_EXTERNAL مانده، در حالت دمو آن را تکمیل می‌کند. */
+export async function demoMockSendAgency(processInstanceId) {
+  const res = await fetch(
+    `${ENGINE_BASE_URL}/api/engine/service/demo/mock-send-agency/${processInstanceId}`,
+    {
+      method: 'POST',
+      headers: jsonHeaders(),
+      body: JSON.stringify({}),
+    },
+  );
+  const data = await parseJson(res);
+  assertEngineSuccess(res, data, 'ماک sendAgency ناموفق بود.');
+  return data;
+}
+
+/** فرایندهای گیرکرده روی sendAgency یا integration بیرونی را در دمو جلو می‌برد. */
+export async function tryDemoMockSendAgency(processInstanceId, instance) {
+  if (!isDemoMockSendAgency() || !processInstanceId) return false;
+  const status = String(instance?.status ?? instance?.Status ?? '')
+    .trim()
+    .toUpperCase();
+  if (status !== 'WAITING_EXTERNAL') return false;
+
+  const stepId =
+    instance?.variables?.__integration_step_id ??
+    instance?.Variables?.__integration_step_id ??
+    '';
+  if (stepId && !isSendAgencyElementId(stepId)) return false;
+
+  try {
+    await demoMockSendAgency(processInstanceId);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** اگر مرحلهٔ بازبینی برای نقش فعلی قفل است، در حالت دمو آن را رد می‌کند. */
+export async function tryDemoSkipBlockingReview(processInstanceId, tasksMap) {
+  if (!isDemoAutoApproveReviews() || !processInstanceId || !tasksMap) return false;
+  for (const elementId of DEMO_REVIEW_ELEMENT_IDS) {
+    const open = pickOpenTaskForElement(tasksMap, elementId);
+    if (!open || canCurrentClientCompleteTask(open)) continue;
+    try {
+      await demoSkipReviewStep(processInstanceId, open.ID);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+  return false;
 }

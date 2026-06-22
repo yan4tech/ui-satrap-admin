@@ -20,6 +20,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Field } from 'src/components/hook-form';
+import { RHFUploadBox } from 'src/components/hook-form/rhf-upload-box';
 
 const REVIEW_STATUS = {
   PENDING: 'pending',
@@ -51,94 +52,6 @@ const DOCUMENT_TYPE_OPTIONS = [
   'گواهی حصر وراثت',
   'سایر',
 ];
-
-function UploadBox({ name, label, helperText, accept }) {
-  const { control } = useFormContext();
-
-  return (
-    <Controller
-      name={name}
-      control={control}
-      render={({ field, fieldState: { error } }) => (
-        <Box>
-          <Typography variant="body2" sx={{ mb: 1 }}>
-            {label}
-          </Typography>
-
-          <Box
-            component="label"
-            sx={{
-              position: 'relative',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: '100%',
-              minHeight: 72,
-              px: 2,
-              border: '1px solid',
-              borderColor: error ? 'error.main' : 'text.primary',
-              cursor: 'pointer',
-              backgroundColor: 'background.paper',
-              overflow: 'hidden',
-            }}
-          >
-            <input
-              type="file"
-              accept={accept}
-              hidden
-              onChange={(event) => {
-                const file = event.target.files?.[0] ?? null;
-                field.onChange(file);
-              }}
-            />
-
-            <Box
-              sx={{
-                position: 'absolute',
-                width: '70%',
-                borderTop: '1px solid',
-                borderColor: 'text.secondary',
-                transform: 'rotate(14deg)',
-                pointerEvents: 'none',
-              }}
-            />
-            <Box
-              sx={{
-                position: 'absolute',
-                width: '70%',
-                borderTop: '1px solid',
-                borderColor: 'text.secondary',
-                transform: 'rotate(-14deg)',
-                pointerEvents: 'none',
-              }}
-            />
-
-            <Typography
-              variant="body2"
-              sx={{
-                zIndex: 1,
-                backgroundColor: 'background.paper',
-                px: 1,
-                maxWidth: '100%',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {field.value?.name || helperText}
-            </Typography>
-          </Box>
-
-          {error?.message ? (
-            <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-              {error.message}
-            </Typography>
-          ) : null}
-        </Box>
-      )}
-    />
-  );
-}
 
 function InfoHint({ text }) {
   const [anchorEl, setAnchorEl] = useState(null);
@@ -502,7 +415,7 @@ export default function WorkflowWizardPage2({
 
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
             <Box sx={{ width: '100%' }}>
-              <UploadBox
+              <RHFUploadBox
                 name="action.document_image"
                 label="تصویر سند"
                 helperText="تصویر یا فایل مستند ادعا را بارگذاری کنید"
@@ -538,10 +451,9 @@ export default function WorkflowWizardPage2({
           <Stack spacing={2} sx={{ pt: 0.5 }}>
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
               <Box sx={{ width: '100%' }}>
-                <UploadBox
+                <RHFUploadBox
                   name="action.document_image"
                   label="تصویر سند"
-                  // helperText="تصویر یا فایل مستند ادعا را بارگذاری کنید"
                   accept="image/*,.pdf"
                 />
               </Box>

@@ -15,6 +15,7 @@ import { ProgressAlertsCard } from '../../_components/progress-alerts-card';
 import { StatusListCard } from '../../_components/status-list-card';
 import { ActivityFeedCard } from '../../_components/activity-feed-card';
 import { toFaDigits } from '../../_components/to-fa-digits';
+import { dashboardServiceRow, SERVICE_LABELS } from 'src/lib/service-labels';
 
 const BRANCH_NAME = 'شعبه مرکزی ولیعصر';
 const BRANCH_CODE = 'TH-001';
@@ -56,9 +57,9 @@ const kpis = [
 ];
 
 const serviceBreakdown = [
-  { name: 'خدمت شماره یک', waitingReview: 6, waitingRegistryReply: 3, completed: 98, rejected: 2 },
-  { name: 'خدمت شماره دو', waitingReview: 4, waitingRegistryReply: 2, completed: 54, rejected: 3 },
-  { name: 'خدمت شماره سه', waitingReview: 4, waitingRegistryReply: 5, completed: 35, rejected: 1 },
+  dashboardServiceRow('service1', { waitingReview: 6, waitingRegistryReply: 3, completed: 98, rejected: 2 }),
+  dashboardServiceRow('service2', { waitingReview: 4, waitingRegistryReply: 2, completed: 54, rejected: 3 }),
+  dashboardServiceRow('service3', { waitingReview: 4, waitingRegistryReply: 5, completed: 35, rejected: 1 }),
 ];
 
 const weeklyActivity = [12, 18, 15, 22, 19, 23, 14];
@@ -86,27 +87,27 @@ const teamMembers = [
 ];
 
 const pendingReviews = [
-  { id: 'REQ-4821', service: 'خدمت شماره یک', applicant: 'محمد رضایی', wait: '۲ ساعت', priority: 'high' },
-  { id: 'REQ-4819', service: 'خدمت شماره دو', applicant: 'زهرا موسوی', wait: '۵ ساعت', priority: 'medium' },
-  { id: 'REQ-4815', service: 'خدمت شماره سه', applicant: 'امیر حسینی', wait: '۱ روز', priority: 'high' },
-  { id: 'REQ-4808', service: 'خدمت شماره یک', applicant: 'فاطمه جعفری', wait: '۱ روز', priority: 'low' },
+  { id: 'REQ-4821', service: SERVICE_LABELS.service1, applicant: 'محمد رضایی', wait: '۲ ساعت', priority: 'high' },
+  { id: 'REQ-4819', service: SERVICE_LABELS.service2, applicant: 'زهرا موسوی', wait: '۵ ساعت', priority: 'medium' },
+  { id: 'REQ-4815', service: SERVICE_LABELS.service3, applicant: 'امیر حسینی', wait: '۱ روز', priority: 'high' },
+  { id: 'REQ-4808', service: SERVICE_LABELS.service1, applicant: 'فاطمه جعفری', wait: '۱ روز', priority: 'low' },
 ];
 
 const serviceStatus = [
-  { name: 'خدمت شماره یک', state: 'فعال', color: 'success' },
-  { name: 'خدمت شماره دو', state: 'فعال', color: 'success' },
-  { name: 'خدمت شماره سه', state: 'نیازمند بررسی', color: 'warning' },
+  { name: SERVICE_LABELS.service1, state: 'فعال', color: 'success' },
+  { name: SERVICE_LABELS.service2, state: 'فعال', color: 'success' },
+  { name: SERVICE_LABELS.service3, state: 'نیازمند بررسی', color: 'warning' },
 ];
 
 const branchAlerts = [
   { label: '۳ درخواست بیش از ۴۸ ساعت در صف مانده', progress: 80 },
   { label: 'تکمیل پروفایل ۲ اپراتور جدید', progress: 35 },
-  { label: 'بازبینی تنظیمات خدمت شماره سه', progress: 50 },
+  { label: `بازبینی تنظیمات ${SERVICE_LABELS.service3}`, progress: 50 },
 ];
 
 const latestActivities = [
   { title: 'درخواست REQ-4821 ثبت شد', subtitle: '۸ دقیقه پیش', icon: 'solar:document-add-bold-duotone' },
-  { title: 'خدمت شماره یک توسط رضا کریمی تایید شد', subtitle: '۲۱ دقیقه پیش', icon: 'solar:check-read-bold-duotone' },
+  { title: `${SERVICE_LABELS.service1} توسط رضا کریمی تایید شد`, subtitle: '۲۱ دقیقه پیش', icon: 'solar:check-read-bold-duotone' },
   { title: 'کاربر جدید به شعبه اضافه شد', subtitle: '۴۵ دقیقه پیش', icon: 'solar:user-plus-bold-duotone' },
   { title: 'گزارش روزانه شعبه صادر شد', subtitle: '۱ ساعت پیش', icon: 'solar:chart-2-bold-duotone' },
 ];

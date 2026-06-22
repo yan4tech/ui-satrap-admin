@@ -1,5 +1,6 @@
 import axios from 'src/lib/axios';
 import { getApiRequestMode } from 'src/lib/api-mode';
+import { getServiceLabelById } from 'src/lib/service-labels';
 
 const MODE_HEADER = () => ({ mode: getApiRequestMode() });
 
@@ -9,7 +10,7 @@ export function normalizeService(raw) {
   if (!Number.isFinite(id) || id < 1) return null;
   return {
     id,
-    title: String(raw.title ?? raw.Title ?? '').trim() || `خدمت ${id}`,
+    title: String(raw.title ?? raw.Title ?? '').trim() || getServiceLabelById(id),
     slug: String(raw.slug ?? raw.Slug ?? '').trim(),
     process_key: String(raw.process_key ?? raw.ProcessKey ?? raw.slug ?? '').trim(),
     description: String(raw.description ?? raw.Description ?? '').trim(),

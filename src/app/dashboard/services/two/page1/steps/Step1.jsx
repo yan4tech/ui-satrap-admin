@@ -1,5 +1,5 @@
 import React from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { Box, Grid, MenuItem, Typography, IconButton, Popover, NoSsr } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
@@ -62,7 +62,7 @@ function InfoHint({ text }) {
 }
 
 export default function Page1() {
-  const { control, watch } = useFormContext();
+  const { watch } = useFormContext();
   const isDeceased = watch('is_claimant_deceased') === 'yes';
   const applicantRole = watch('applicant_role');
   const representationMethod = watch('representation_method');
@@ -203,79 +203,13 @@ export default function Page1() {
       {(isLegalRepresentativeCompany || isLegalRepresentativeIndividual) && isUploadDocument ? (
         <Box sx={{ gridColumn: { xs: 'span 1', md: 'span 2' } }}>
           <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1.5, p: 2 }}>
-            <Controller
+            <Field.Upload
               name="representation_doc_image"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Box>
-                  <Typography variant="body2">تصویر سند نمایندگی:</Typography>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-                    <Box
-                      component="label"
-                      sx={{
-                        position: 'relative',
-                        width: 320,
-                        height: 90,
-                        border: '1px solid',
-                        borderColor: error ? 'error.main' : 'text.primary',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        hidden
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] ?? null;
-                          field.onChange(file);
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          width: '90%',
-                          borderTop: '1px solid',
-                          borderColor: 'text.secondary',
-                          transform: 'translate(-50%, -50%) rotate(18deg)',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          width: '90%',
-                          borderTop: '1px solid',
-                          borderColor: 'text.secondary',
-                          transform: 'translate(-50%, -50%) rotate(-18deg)',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </Box>
-                  </Box>
-
-                  {field.value?.name ? (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mt: 1, display: 'block' }}
-                    >
-                      فایل انتخاب‌شده: {field.value.name}
-                    </Typography>
-                  ) : null}
-
-                  {error?.message ? (
-                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                      {error.message}
-                    </Typography>
-                  ) : null}
-                </Box>
-              )}
+              label="تصویر سند نمایندگی:"
+              accept="image/*"
+              helperText="انتخاب فایل تصویر"
+              width={320}
+              height={90}
             />
           </Box>
         </Box>

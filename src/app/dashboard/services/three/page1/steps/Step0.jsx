@@ -1,5 +1,5 @@
 import React from 'react';
-import { Controller, useFormContext } from 'react-hook-form';
+import { useFormContext } from 'react-hook-form';
 import { MenuItem, Box, IconButton, Popover, Typography, NoSsr } from '@mui/material';
 import { Field } from 'src/components/hook-form';
 
@@ -101,7 +101,7 @@ function ConditionalSection({ title, children }) {
 }
 
 export default function Page0() {
-  const { watch, control } = useFormContext();
+  const { watch } = useFormContext();
   const applicantRole = watch('applicant_role');
   const representationVerificationMethod = watch('representation_verification_method');
   const shouldShowArticle11Fields =
@@ -181,7 +181,16 @@ export default function Page0() {
             <>
               {/* تصویر سند نمایندگی */}
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-                <Field.Text name="representation_document_image" label="تصویر سند نمایندگی" />
+                <Box sx={{ width: '100%' }}>
+                  <Field.Upload
+                    name="representation_document_image"
+                    label="تصویر سند نمایندگی:"
+                    accept="image/*"
+                    helperText="انتخاب فایل تصویر"
+                    width={320}
+                    height={90}
+                  />
+                </Box>
                 <InfoHint text="ارسال تصویر سند نمایندگی الزامی است." />
               </Box>
 
@@ -226,79 +235,13 @@ export default function Page0() {
 
           {/* تصویر سند رسمی نمایندگی */}
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
-            <Controller
+            <Field.Upload
               name="official_representation_document_image"
-              control={control}
-              render={({ field, fieldState: { error } }) => (
-                <Box sx={{ width: '100%' }}>
-                  <Typography variant="body2">تصویر سند رسمی نمایندگی:</Typography>
-
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap' }}>
-                    <Box
-                      component="label"
-                      sx={{
-                        position: 'relative',
-                        width: 320,
-                        height: 90,
-                        border: '1px solid',
-                        borderColor: error ? 'error.main' : 'text.primary',
-                        cursor: 'pointer',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <input
-                        type="file"
-                        accept="image/*"
-                        hidden
-                        onChange={(event) => {
-                          const file = event.target.files?.[0] ?? null;
-                          field.onChange(file);
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          width: '90%',
-                          borderTop: '1px solid',
-                          borderColor: 'text.secondary',
-                          transform: 'translate(-50%, -50%) rotate(18deg)',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                      <Box
-                        sx={{
-                          position: 'absolute',
-                          top: '50%',
-                          left: '50%',
-                          width: '90%',
-                          borderTop: '1px solid',
-                          borderColor: 'text.secondary',
-                          transform: 'translate(-50%, -50%) rotate(-18deg)',
-                          pointerEvents: 'none',
-                        }}
-                      />
-                    </Box>
-                  </Box>
-
-                  {field.value?.name ? (
-                    <Typography
-                      variant="caption"
-                      color="text.secondary"
-                      sx={{ mt: 1, display: 'block' }}
-                    >
-                      فایل انتخاب‌شده: {field.value.name}
-                    </Typography>
-                  ) : null}
-
-                  {error?.message ? (
-                    <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                      {error.message}
-                    </Typography>
-                  ) : null}
-                </Box>
-              )}
+              label="تصویر سند رسمی نمایندگی:"
+              accept="image/*"
+              helperText="انتخاب فایل تصویر"
+              width={320}
+              height={90}
             />
             <InfoHint text="ارسال تصویر سند رسمی نمایندگی الزامی است." />
           </Box>

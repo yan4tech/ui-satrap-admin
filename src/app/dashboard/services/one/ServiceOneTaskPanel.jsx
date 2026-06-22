@@ -12,6 +12,7 @@ import {
   sanitizeValuesForEngineJson,
 } from './engine-api';
 import { isReviewElementId } from './service1-step-config';
+import { SERVICE_LABELS } from 'src/lib/service-labels';
 
 import StaticPayment from './payment/WorkflowWizard';
 import Page1Wizard from './page1/WorkflowWizard';
@@ -278,7 +279,7 @@ export default function ServiceOneTaskPanel({
           processInstanceId={processInstanceId}
           task={task}
           stepId={elKey === 'paymentsurvey' ? 'payment1' : elKey}
-          serviceLabel="خدمت شماره یک"
+          serviceLabel={SERVICE_LABELS.service1}
           onEngineSubmit={onSubmitStepForm}
           engineSubmitting={submitting}
           engineSubmitError={submitError}

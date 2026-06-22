@@ -2,12 +2,24 @@ import { paths } from 'src/routes/paths';
 
 import { CONFIG } from 'src/global-config';
 import { PERM } from 'src/lib/permissions';
+import { SERVICE_LABELS } from 'src/lib/service-labels';
 import {
   BRANCH_DASHBOARD_NAV_PERMISSIONS,
   BRANCH_USER_DASHBOARD_NAV_PERMISSIONS,
 } from 'src/lib/dashboard-nav-permissions';
 
 import { SvgColor } from 'src/components/svg-color';
+
+const SERVICE_NAV_TITLE_SX = {
+  whiteSpace: 'normal',
+  lineHeight: 1.45,
+  fontSize: '0.75rem',
+  display: '-webkit-box',
+  WebkitLineClamp: 3,
+  WebkitBoxOrient: 'vertical',
+  overflow: 'hidden',
+  wordBreak: 'break-word',
+};
 
 // ----------------------------------------------------------------------
 
@@ -211,24 +223,27 @@ export const navData = [
             requiredPermissions: [PERM.ui.servicesList],
           },
           {
-            title: 'خدمت شماره یک',
+            title: SERVICE_LABELS.service1,
             path: paths.dashboard.services.one,
             icon: ICONS.serviceOne,
             requiredPermissions: [PERM.ui.servicesOne],
+            slotProps: { title: { sx: SERVICE_NAV_TITLE_SX } },
             children: [{ title: 'جدید', path: paths.dashboard.services.one, requiredPermissions: [PERM.ui.servicesOne] }],
           },
           {
-            title: 'خدمت شماره دو',
+            title: SERVICE_LABELS.service2,
             path: paths.dashboard.services.two,
             icon: ICONS.serviceTwo,
             requiredPermissions: [PERM.ui.servicesTwo],
+            slotProps: { title: { sx: SERVICE_NAV_TITLE_SX } },
             children: [{ title: 'جدید', path: paths.dashboard.services.two, requiredPermissions: [PERM.ui.servicesTwo] }],
           },
           {
-            title: 'خدمت شماره سه',
+            title: SERVICE_LABELS.service3,
             path: paths.dashboard.services.three,
             icon: ICONS.serviceThree,
             requiredPermissions: [PERM.ui.servicesThree],
+            slotProps: { title: { sx: SERVICE_NAV_TITLE_SX } },
             children: [{ title: 'جدید', path: paths.dashboard.services.three, requiredPermissions: [PERM.ui.servicesThree] }],
           },
         ],

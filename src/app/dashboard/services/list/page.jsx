@@ -34,9 +34,13 @@ import {
 
 import { paths } from 'src/routes/paths';
 import { useRouter } from 'src/routes/hooks';
+
 import { useEntitledServices } from 'src/hooks/use-entitled-services';
 
+import { DEFINITION_LABELS, SERVICE_LABEL_OPTIONS } from 'src/lib/service-labels';
+
 import { Form, Field } from 'src/components/hook-form';
+import { ServiceLabel } from 'src/components/service-label';
 
 import {
   fetchProcesses,
@@ -47,18 +51,7 @@ import {
   taskReviewBranchId,
 } from '../one/engine-api';
 
-const DEFINITION_LABELS = {
-  service1: 'خدمت شماره یک',
-  service2: 'خدمت شماره دو',
-  service3: 'خدمت شماره سه',
-};
-
-const DEFINITION_OPTIONS = [
-  { value: '', label: 'همه' },
-  { value: 'service1', label: DEFINITION_LABELS.service1 },
-  { value: 'service2', label: DEFINITION_LABELS.service2 },
-  { value: 'service3', label: DEFINITION_LABELS.service3 },
-];
+const DEFINITION_OPTIONS = [{ value: '', label: 'همه' }, ...SERVICE_LABEL_OPTIONS];
 
 const PROCESS_STATUS_LABELS = {
   RUNNING: 'در حال اجرا',
@@ -417,8 +410,11 @@ export default function ServicesListPage() {
     {
       field: 'serviceLabel',
       headerName: 'نوع خدمت',
-      flex: 1,
-      minWidth: 130,
+      flex: 1.2,
+      minWidth: 180,
+      renderCell: (params) => (
+        <ServiceLabel label={params.value} variant="table" sx={{ py: 0.5 }} />
+      ),
     },
     {
       field: 'applicantName',
@@ -606,7 +602,11 @@ export default function ServicesListPage() {
                 <Grid size={{ xs: 12, md: 4 }}>
                   <Field.Select name="definitionKey" label="نوع خدمت">
                     {definitionOptions.map((item) => (
-                      <MenuItem key={item.value || 'all'} value={item.value}>
+                      <MenuItem
+                        key={item.value || 'all'}
+                        value={item.value}
+                        sx={{ whiteSpace: 'normal', lineHeight: 1.5, py: 1 }}
+                      >
                         {item.label}
                       </MenuItem>
                     ))}

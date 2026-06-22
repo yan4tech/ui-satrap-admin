@@ -17,6 +17,7 @@ import { InboxQueueCard } from '../../_components/inbox-queue-card';
 import { TimelineCard } from '../../_components/timeline-card';
 import { WeeklyGoalCard } from '../../_components/weekly-goal-card';
 import { toFaDigits } from '../../_components/to-fa-digits';
+import { dashboardServiceRow, SERVICE_LABELS } from 'src/lib/service-labels';
 
 const BRANCH_CONTEXT = {
   name: 'شعبه مرکزی ولیعصر',
@@ -63,9 +64,9 @@ const myKpis = [
 ];
 
 const myServiceBreakdown = [
-  { name: 'خدمت شماره یک', waitingReview: 3, waitingRegistryReply: 1, completed: 42, rejected: 1 },
-  { name: 'خدمت شماره دو', waitingReview: 2, waitingRegistryReply: 0, completed: 28, rejected: 2 },
-  { name: 'خدمت شماره سه', waitingReview: 2, waitingRegistryReply: 2, completed: 15, rejected: 0 },
+  dashboardServiceRow('service1', { waitingReview: 3, waitingRegistryReply: 1, completed: 42, rejected: 1 }),
+  dashboardServiceRow('service2', { waitingReview: 2, waitingRegistryReply: 0, completed: 28, rejected: 2 }),
+  dashboardServiceRow('service3', { waitingReview: 2, waitingRegistryReply: 2, completed: 15, rejected: 0 }),
 ];
 
 const weeklyMine = [3, 5, 4, 6, 5, 7, 4];
@@ -80,7 +81,7 @@ const myStatusMix = [
 const myInbox = [
   {
     id: 'REQ-4821',
-    service: 'خدمت شماره یک',
+    service: SERVICE_LABELS.service1,
     applicant: 'محمد رضایی',
     wait: '۲ ساعت',
     step: 'بررسی اولیه',
@@ -88,7 +89,7 @@ const myInbox = [
   },
   {
     id: 'REQ-4819',
-    service: 'خدمت شماره دو',
+    service: SERVICE_LABELS.service2,
     applicant: 'زهرا موسوی',
     wait: '۵ ساعت',
     step: 'تکمیل مدارک',
@@ -96,7 +97,7 @@ const myInbox = [
   },
   {
     id: 'REQ-4815',
-    service: 'خدمت شماره سه',
+    service: SERVICE_LABELS.service3,
     applicant: 'امیر حسینی',
     wait: '۱ روز',
     step: 'ارسال به ثبت',
@@ -150,9 +151,9 @@ export default function BranchUserDashboardPage() {
   const serviceLinks = useMemo(
     () =>
       [
-        { perm: PERM.ui.servicesOne, path: paths.dashboard.services.one, label: 'خدمت یک' },
-        { perm: PERM.ui.servicesTwo, path: paths.dashboard.services.two, label: 'خدمت دو' },
-        { perm: PERM.ui.servicesThree, path: paths.dashboard.services.three, label: 'خدمت سه' },
+        { perm: PERM.ui.servicesOne, path: paths.dashboard.services.one, label: SERVICE_LABELS.service1 },
+        { perm: PERM.ui.servicesTwo, path: paths.dashboard.services.two, label: SERVICE_LABELS.service2 },
+        { perm: PERM.ui.servicesThree, path: paths.dashboard.services.three, label: SERVICE_LABELS.service3 },
         { perm: PERM.ui.servicesInbox, path: paths.dashboard.services.inbox, label: 'صندوق کار' },
         { perm: PERM.ui.servicesList, path: paths.dashboard.services.list, label: 'گزارش فرایندها' },
       ].filter((item) => userHasPermission(user, item.perm)),

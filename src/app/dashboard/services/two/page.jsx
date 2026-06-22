@@ -2,6 +2,8 @@
 
 import { ServiceEntitlementGuard } from 'src/components/service-entitlement-guard';
 
+import { SERVICE_LABELS } from 'src/lib/service-labels';
+
 import { ServiceWorkflowPage } from '../one/page';
 
 import { startService } from './start-service-api';
@@ -20,7 +22,7 @@ export default function WorkflowWizard() {
     <ServiceEntitlementGuard processKey={SERVICE2_DEFINITION_KEY}>
     <ServiceWorkflowPage
       serviceDefinitionKey={SERVICE2_DEFINITION_KEY}
-      serviceTitle="خدمت شماره دو"
+      serviceTitle={SERVICE_LABELS.service2}
       startServiceFn={startService}
       TaskPanelComponent={ServiceTwoTaskPanel}
       stepperLabels={SERVICE2_STEPPER_LABELS}

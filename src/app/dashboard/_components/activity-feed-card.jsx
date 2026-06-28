@@ -1,12 +1,12 @@
 import {
-  Avatar,
   Box,
-  Divider,
   List,
+  Avatar,
+  Divider,
   ListItem,
-  ListItemAvatar,
-  ListItemText,
   Typography,
+  ListItemText,
+  ListItemAvatar,
 } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
@@ -21,12 +21,22 @@ const DEFAULT_ICONS = [
   'solar:document-text-bold-duotone',
 ];
 
-export function ActivityFeedCard({ title, activities, iconKeys }) {
+export function ActivityFeedCard({
+  title,
+  activities = [],
+  iconKeys,
+  emptyMessage = 'فعالیتی برای نمایش وجود ندارد',
+}) {
   return (
     <DashboardCard>
       <Typography variant="h6" sx={{ ...dashboardSectionTitleSx, px: 2.5, pt: 2.5, pb: 1 }}>
         {title}
       </Typography>
+      {!activities.length ? (
+        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2.5, pb: 2.5 }}>
+          {emptyMessage}
+        </Typography>
+      ) : null}
       <List sx={{ py: 0 }}>
         {activities.map((activity, index) => {
           const icon = activity.icon ?? iconKeys?.[index] ?? DEFAULT_ICONS[index % DEFAULT_ICONS.length];

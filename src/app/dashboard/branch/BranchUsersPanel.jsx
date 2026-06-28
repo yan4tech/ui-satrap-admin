@@ -24,9 +24,9 @@ import {
   TableContainer,
 } from '@mui/material';
 
-import { fetchAssignableRolesOptions } from 'src/app/dashboard/user/user-api';
-import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
 import { userHasAnyPermission } from 'src/lib/permissions';
+import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
+import { fetchAssignableRolesOptions } from 'src/app/dashboard/user/user-api';
 
 import { useAuthContext } from 'src/auth/hooks';
 

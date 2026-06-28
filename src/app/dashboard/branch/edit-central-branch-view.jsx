@@ -17,8 +17,9 @@ import {
 } from '@mui/material';
 
 import { updateCentralBranch } from 'src/lib/central-branch-api';
-import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
 import { branchAssignmentsFromSelection } from 'src/lib/branch-workflow';
+import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
+
 import { Form, Field } from 'src/components/hook-form';
 
 import CompanyFormSections from '../company/company-form-sections';

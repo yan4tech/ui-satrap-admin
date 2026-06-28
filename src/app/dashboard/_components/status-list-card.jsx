@@ -1,4 +1,4 @@
-import { Box, Button, Chip, Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
+import { Box, Chip, List, Stack, Button, Divider, ListItem, Typography, ListItemText } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -12,12 +12,22 @@ const STATE_ICONS = {
   default: 'solar:minus-circle-bold-duotone',
 };
 
-export function StatusListCard({ title, items, footerActions }) {
+export function StatusListCard({
+  title,
+  items = [],
+  footerActions,
+  emptyMessage = 'وضعیت خدماتی برای نمایش وجود ندارد',
+}) {
   return (
     <DashboardCard sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
       <Typography variant="h6" sx={{ ...dashboardSectionTitleSx, px: 2.5, pt: 2.5, pb: 1 }}>
         {title}
       </Typography>
+      {!items.length ? (
+        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2.5, pb: 1.5, flex: 1 }}>
+          {emptyMessage}
+        </Typography>
+      ) : null}
       <List sx={{ py: 0, flex: 1 }}>
         {items.map((service, index) => (
           <Box key={service.name}>

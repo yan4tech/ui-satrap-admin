@@ -4,7 +4,6 @@ import { z as zod } from 'zod';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
-import { ActiveStatusField } from 'src/components/status/active-status-field';
 import { zodResolver } from '@hookform/resolvers/zod';
 
 import Autocomplete from '@mui/material/Autocomplete';
@@ -29,44 +28,41 @@ import {
   TableContainer,
 } from '@mui/material';
 
-import { paths } from 'src/routes/paths';
-
 import axios from 'src/lib/axios';
 import { CONFIG } from 'src/global-config';
+import { getApiRequestMode } from 'src/lib/api-mode';
+import { fetchCentralBranchOptions } from 'src/lib/branch-api';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
+import { PERM, userHasPermission, userHasAnyPermission } from 'src/lib/permissions';
+import { branchWorkflowZodFields, branchWorkflowSuperRefine } from 'src/lib/branch-workflow-schema';
 import {
   normalizeService,
   assignBranchServices,
-  fetchBranchServiceOptionCatalog,
   fetchBranchServicesForCompany,
+  fetchBranchServiceOptionCatalog,
 } from 'src/lib/service-entitlement-api';
-
-import { fetchCentralBranchOptions } from 'src/lib/branch-api';
 import {
-  affiliationReviewToPayload,
-  branchAssignmentsFromSelection,
-  branchFormValuesFromBranch,
-  centralBranchFieldsFromAffiliation,
-  isCentralBranchAffiliation,
-  resolveServiceConstraintParentBranchId,
-  BRANCH_AFFILIATION,
   REVIEW_POLICY,
+  BRANCH_AFFILIATION,
+  affiliationReviewToPayload,
+  branchFormValuesFromBranch,
+  isCentralBranchAffiliation,
+  branchAssignmentsFromSelection,
+  centralBranchFieldsFromAffiliation,
+  resolveServiceConstraintParentBranchId,
 } from 'src/lib/branch-workflow';
-import { getApiRequestMode } from 'src/lib/api-mode';
-import CompanyFormSections from '../company/company-form-sections';
-import { branchesFromCompany, idsFromSelection } from '../company/company-form-utils';
-import { branchWorkflowZodFields, branchWorkflowSuperRefine } from 'src/lib/branch-workflow-schema';
 
 import { Form, Field } from 'src/components/hook-form';
+import { ActiveStatusField } from 'src/components/status/active-status-field';
 import BranchWorkflowSection from 'src/components/branch/BranchWorkflowSection';
 import ProvinceRegistrationUnitFields from 'src/components/location/ProvinceRegistrationUnitFields';
-
-import { PERM, userHasPermission, userHasAnyPermission } from 'src/lib/permissions';
 
 import { useAuthContext } from 'src/auth/hooks';
 
 import BranchUsersPanel from './BranchUsersPanel';
 import { countActiveBranchUsers } from './branch-users-api';
+import CompanyFormSections from '../company/company-form-sections';
+import { branchesFromCompany } from '../company/company-form-utils';
 
 // --------------------------------------
 // ZOD SCHEMA

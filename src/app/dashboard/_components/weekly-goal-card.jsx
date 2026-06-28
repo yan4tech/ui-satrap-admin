@@ -1,8 +1,8 @@
-import { Box, Button, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Stack, Button, Typography, LinearProgress } from '@mui/material';
 
+import { toFaDigits } from './to-fa-digits';
 import { DashboardCard } from './dashboard-card';
 import { dashboardSectionTitleSx } from './dashboard-styles';
-import { toFaDigits } from './to-fa-digits';
 
 export function WeeklyGoalCard({ title, subheader, progress, description, actions }) {
   return (

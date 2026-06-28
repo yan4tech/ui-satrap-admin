@@ -1,6 +1,6 @@
 import { varAlpha } from 'minimal-shared/utils';
 
-import { Avatar, Box, Card, Chip, Stack, Typography } from '@mui/material';
+import { Box, Card, Chip, Stack, Avatar, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 

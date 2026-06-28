@@ -2,9 +2,9 @@ import { varAlpha } from 'minimal-shared/utils';
 
 import { Box, Stack, Typography } from '@mui/material';
 
+import { toFaDigits } from './to-fa-digits';
 import { DashboardCard } from './dashboard-card';
 import { dashboardSectionTitleSx } from './dashboard-styles';
-import { toFaDigits } from './to-fa-digits';
 
 export function HorizontalBarsCard({
   title,

@@ -1,17 +1,19 @@
 'use client';
 
 import { useState } from 'react';
+
 import {
   Box,
+  Tab,
   Card,
   Chip,
-  Tab,
   Tabs,
   Grid,
   Stack,
   Typography,
   CardHeader,
 } from '@mui/material';
+
 import { toFaDigits } from './to-fa-digits';
 
 export function BranchKpiTabs({ data, title = 'عملکرد شعب به تفکیک خدمت' }) {

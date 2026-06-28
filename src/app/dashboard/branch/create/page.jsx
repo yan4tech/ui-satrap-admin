@@ -25,25 +25,25 @@ import {
 import { paths } from 'src/routes/paths';
 
 import axios from 'src/lib/axios';
-import { fetchCentralBranchOptions, fetchMyCentralBranch } from 'src/lib/branch-api';
 import { extractMembershipErrorMessage } from 'src/lib/membership-errors';
-
-import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
-
-import { useAuthContext } from 'src/auth/hooks';
+import { PERM, userHasPermission, userHasAnyPermission } from 'src/lib/permissions';
+import { fetchMyCentralBranch, fetchCentralBranchOptions } from 'src/lib/branch-api';
+import { branchWorkflowZodFields, branchWorkflowSuperRefine } from 'src/lib/branch-workflow-schema';
+import {
+  REVIEW_POLICY,
+  BRANCH_AFFILIATION,
+  affiliationReviewToPayload,
+  isCentralBranchAffiliation,
+  branchAssignmentsFromSelection,
+  centralBranchFieldsFromAffiliation,
+} from 'src/lib/branch-workflow';
 
 import { Form, Field } from 'src/components/hook-form';
 import BranchWorkflowSection from 'src/components/branch/BranchWorkflowSection';
 import ProvinceRegistrationUnitFields from 'src/components/location/ProvinceRegistrationUnitFields';
-import {
-  affiliationReviewToPayload,
-  branchAssignmentsFromSelection,
-  centralBranchFieldsFromAffiliation,
-  isCentralBranchAffiliation,
-  BRANCH_AFFILIATION,
-  REVIEW_POLICY,
-} from 'src/lib/branch-workflow';
-import { branchWorkflowZodFields, branchWorkflowSuperRefine } from 'src/lib/branch-workflow-schema';
+
+import { useAuthContext } from 'src/auth/hooks';
+
 import CompanyFormSections from '../../company/company-form-sections';
 
 // --------------------------------------

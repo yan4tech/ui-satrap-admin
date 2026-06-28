@@ -1,4 +1,4 @@
-import { PERM, userHasAnyPermission, userHasPermission } from 'src/lib/permissions';
+import { PERM, userHasPermission, userHasAnyPermission } from 'src/lib/permissions';
 
 /** دسترسی‌هایی که آیتم «داشبورد شرکت» را در منو فعال می‌کنند */
 export const COMPANY_DASHBOARD_NAV_PERMISSIONS = [

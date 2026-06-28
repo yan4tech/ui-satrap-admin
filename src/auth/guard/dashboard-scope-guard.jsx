@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 
 import { useRouter, usePathname } from 'src/routes/hooks';
 
-import { SplashScreen } from 'src/components/loading-screen';
-
 import { getDashboardAccessRedirect } from 'src/lib/dashboard-access';
+
+import { SplashScreen } from 'src/components/loading-screen';
 
 import { useAuthContext } from '../hooks';
 

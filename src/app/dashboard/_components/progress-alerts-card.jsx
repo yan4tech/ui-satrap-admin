@@ -1,12 +1,17 @@
-import { Box, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Stack, Typography, LinearProgress } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
+import { toFaDigits } from './to-fa-digits';
 import { DashboardCard } from './dashboard-card';
 import { dashboardSectionTitleSx } from './dashboard-styles';
-import { toFaDigits } from './to-fa-digits';
 
-export function ProgressAlertsCard({ title, subheader, tasks }) {
+export function ProgressAlertsCard({
+  title,
+  subheader,
+  tasks = [],
+  emptyMessage = 'هشداری برای نمایش وجود ندارد',
+}) {
   return (
     <DashboardCard sx={{ height: '100%' }}>
       <Box sx={{ px: 2.5, pt: 2.5, pb: 1 }}>
@@ -19,6 +24,11 @@ export function ProgressAlertsCard({ title, subheader, tasks }) {
           </Typography>
         ) : null}
       </Box>
+      {!tasks.length ? (
+        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2.5, pb: 2.5 }}>
+          {emptyMessage}
+        </Typography>
+      ) : null}
       <Stack spacing={2.25} sx={{ px: 2.5, pb: 2.5 }}>
         {tasks.map((task) => (
           <Box key={task.label}>

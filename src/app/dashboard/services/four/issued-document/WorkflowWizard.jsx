@@ -2,8 +2,10 @@
 
 import React from 'react';
 import { useFormContext } from 'react-hook-form';
-import { Alert, Box, Button, Stack, Typography } from '@mui/material';
-import DownloadIcon from '@mui/icons-material/Download';
+
+import { Box, Alert, Stack, Button, Typography } from '@mui/material';
+
+import { Iconify } from 'src/components/iconify';
 
 function ReadOnlyRow({ label, value }) {
   return (
@@ -89,7 +91,7 @@ export default function IssuedDocumentStep() {
                   rel="noopener noreferrer"
                   variant="outlined"
                   size="small"
-                  startIcon={<DownloadIcon />}
+                  startIcon={<Iconify icon="solar:download-bold-duotone" width={18} />}
                 >
                   دریافت فایل سند (نمایشی)
                 </Button>

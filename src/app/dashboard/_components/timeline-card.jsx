@@ -1,16 +1,21 @@
-import { Avatar, Box, Divider, List, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
+import { Box, List, Avatar, Divider, ListItem, Typography, ListItemText, ListItemAvatar } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
 import { DashboardCard } from './dashboard-card';
 import { dashboardSectionTitleSx } from './dashboard-styles';
 
-export function TimelineCard({ title, entries }) {
+export function TimelineCard({ title, entries = [], emptyMessage = 'فعالیتی برای نمایش وجود ندارد' }) {
   return (
     <DashboardCard sx={{ height: '100%' }}>
       <Typography variant="h6" sx={{ ...dashboardSectionTitleSx, px: 2.5, pt: 2.5, pb: 1 }}>
         {title}
       </Typography>
+      {!entries.length ? (
+        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2.5, pb: 2.5 }}>
+          {emptyMessage}
+        </Typography>
+      ) : null}
       <List sx={{ py: 0 }}>
         {entries.map((entry, index) => (
           <Box key={entry.title}>

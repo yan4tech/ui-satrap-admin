@@ -1,7 +1,7 @@
-import { ENGINE_BASE_URL, jsonHeaders } from 'src/app/dashboard/services/one/engine-api';
+import { ENGINE_BASE_URL, engineApiUrl, jsonHeaders } from 'src/app/dashboard/services/one/engine-api';
 
 /** هم‌مسیر با سایر APIهای موتور (work-inbox، processes، …) */
-const NOTIFICATIONS_API = `${ENGINE_BASE_URL}/api/engine/service/notifications`;
+const NOTIFICATIONS_API = engineApiUrl('/service/notifications');
 
 const NOTIF_READ_STORAGE_KEY = 'in_app_notifications_read_v1';
 
@@ -97,10 +97,9 @@ export async function fetchNotifications(tab = 'all') {
       headers: jsonHeaders(),
     });
   } catch (e) {
-    const hint =
-      ENGINE_BASE_URL.includes('localhost:3503')
-        ? ' آیا سرویس engine روی پورت 3503 یا Traefik (http://localhost) در حال اجراست؟'
-        : '';
+    const hint = !ENGINE_BASE_URL
+      ? ' آیا سرویس engine (پورت 3503) یا nginx در حال اجراست؟'
+      : '';
     throw new Error(
       `اتصال به API اعلان‌ها برقرار نشد (${ENGINE_BASE_URL}).${hint} ${e?.message || ''}`.trim()
     );

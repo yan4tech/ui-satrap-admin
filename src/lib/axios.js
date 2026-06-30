@@ -7,6 +7,7 @@ import { CONFIG } from 'src/global-config';
 import { JWT_STORAGE_KEY } from 'src/auth/context/jwt/constant';
 
 import { getApiMode, getApiRequestMode } from './api-mode';
+import { normalizeApiPath } from './api-url';
 import { clearMembershipUserHeader } from './api-user-header';
 import { clearBranchIdForApi, getBranchRequestHeaderValue } from './api-branch-header';
 import { isSessionExpiredResponse, extractMembershipErrorMessage } from './membership-errors';
@@ -34,6 +35,25 @@ function applyHeader(config, key, value) {
 }
 
 axiosInstance.interceptors.request.use((config) => {
+  // Normalize full path+query (params are merged here) so slash before `?` never reaches Next.
+  try {
+    const uri = axios.getUri({
+      url: config.url,
+      baseURL: config.baseURL,
+      params: config.params,
+      paramsSerializer: config.paramsSerializer,
+    });
+    const pathAndQuery = uri.startsWith('http')
+      ? `${new URL(uri).pathname}${new URL(uri).search}`
+      : uri;
+    const normalized = normalizeApiPath(pathAndQuery);
+    config.baseURL = '';
+    config.params = undefined;
+    config.url = normalized;
+  } catch {
+    config.url = normalizeApiPath(String(config.url ?? ''));
+  }
+
   const url = String(config.url ?? '');
   // Auth and post-login APIs use the same dashboard mode (branch / mobile).
   const isAuthLogin =

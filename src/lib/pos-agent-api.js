@@ -1,9 +1,6 @@
-const DEFAULT_POS_AGENT_URL = 'http://127.0.0.1:18800';
-
 export function getPosAgentBaseUrl() {
   const fromEnv = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_POS_AGENT_URL : '';
-  const base = (fromEnv || DEFAULT_POS_AGENT_URL).trim().replace(/\/$/, '');
-  return base || DEFAULT_POS_AGENT_URL;
+  return (fromEnv || '').trim().replace(/\/$/, '');
 }
 
 async function parsePosResponse(res) {

@@ -3,9 +3,9 @@ import { getBranchIdStored, getBranchRequestHeaderValue } from 'src/lib/api-bran
 import { getMembershipUserHeaderString } from 'src/lib/api-user-header';
 import { getSessionBearerAuthorization } from 'src/lib/session-bearer-header';
 
-import { ENGINE_BASE_URL } from '../one/engine-api';
+import { engineApiUrl } from '../one/engine-api';
 
-export const SERVICE_START_URL = `${ENGINE_BASE_URL}/api/engine/service/start/service3`;
+export const SERVICE_START_URL = engineApiUrl('/service/start/service3');
 
 export async function startService() {
   const userHeader = getMembershipUserHeaderString();

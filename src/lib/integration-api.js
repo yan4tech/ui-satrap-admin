@@ -1,16 +1,21 @@
-import { ENGINE_BASE_URL, jsonHeaders } from 'src/app/dashboard/services/one/engine-api';
+import { ENGINE_BASE_URL, engineApiUrl, jsonHeaders } from 'src/app/dashboard/services/one/engine-api';
+import { buildApiUrl, normalizeApiPath } from 'src/lib/api-url';
 
 const GATEWAY_BASE_RAW =
-  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_GATEWAY_URL?.trim()) || 'http://localhost';
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_GATEWAY_URL?.trim()) || '';
 
-/** پایهٔ Traefik یا gateway مستقیم؛ با `NEXT_PUBLIC_GATEWAY_URL` قابل تنظیم است */
+/** پایهٔ Traefik یا gateway مستقیم؛ خالی = same-origin (/api/integration via Next/nginx) */
 export const GATEWAY_BASE_URL = GATEWAY_BASE_RAW.replace(/\/+$/, '');
 
 /**
- * Traefik (http://localhost): /api/gateway/api/integration — stripPrefix → /api/integration
- * Gateway مستقیم (http://localhost:3500): /api/integration
+ * Traefik (http://127.0.0.1): /api/gateway/api/integration — stripPrefix → /api/integration
+ * Dev (empty base): /api/integration
+ * Gateway مستقیم (http://127.0.0.1:3505): /api/integration
  */
 export function integrationApiBase() {
+  if (!GATEWAY_BASE_URL) {
+    return '/api/integration';
+  }
   try {
     const { port, hostname } = new URL(GATEWAY_BASE_URL);
     const viaTraefik =
@@ -46,7 +51,9 @@ async function parseJson(res) {
 }
 
 async function integrationRequest(path, { method = 'GET', body, params } = {}) {
-  const url = new URL(`${INTEGRATION_API}${path}`);
+  const origin =
+    typeof window !== 'undefined' ? window.location.origin : 'http://127.0.0.1:3033';
+  const url = new URL(buildApiUrl('', `${INTEGRATION_API}${path}`), origin);
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
@@ -737,10 +744,9 @@ export async function updateInboundWebhook(id, payload) {
  * @param {object} [payload]
  */
 export async function testInboundWebhook(id, payload = {}) {
-  const url = `${INTEGRATION_API}/webhooks/${id}/test`;
   let res;
   try {
-    res = await fetch(url, {
+    res = await fetch(normalizeApiPath(`${INTEGRATION_API}/webhooks/${id}/test`), {
       method: 'POST',
       headers: jsonHeaders(),
       body: JSON.stringify({ payload }),
@@ -799,7 +805,7 @@ export function normalizeProcessDefinitionDetail(item) {
 async function engineRequest(path, { method = 'GET', body } = {}) {
   let res;
   try {
-    res = await fetch(`${ENGINE_BASE_URL}/api/engine${path}`, {
+    res = await fetch(engineApiUrl(path), {
       method,
       headers: jsonHeaders(),
       body: body != null ? JSON.stringify(body) : undefined,

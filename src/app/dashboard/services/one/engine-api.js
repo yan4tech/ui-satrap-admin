@@ -1,5 +1,6 @@
 import { isDemoAutoApproveReviews, isDemoMockSendAgency, isSendAgencyElementId } from 'src/lib/demo-workflow';
 import { getApiMode, getApiRequestMode } from 'src/lib/api-mode';
+import { buildApiUrl } from 'src/lib/api-url';
 import { getBranchIdStored, getBranchRequestHeaderValue } from 'src/lib/api-branch-header';
 import { getMembershipUserHeaderString } from 'src/lib/api-user-header';
 import { getSessionBearerAuthorization } from 'src/lib/session-bearer-header';
@@ -7,10 +8,14 @@ import { getSessionBearerAuthorization } from 'src/lib/session-bearer-header';
 import { isReviewElementId, getService1WorkflowRank } from './service1-step-config';
 
 const ENGINE_BASE_RAW =
-  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ENGINE_URL?.trim()) || 'http://localhost:3503';
+  (typeof process !== 'undefined' && process.env.NEXT_PUBLIC_ENGINE_URL?.trim()) || '';
 
-/** پایهٔ URL موتور؛ پیش‌فرض localhost — با `NEXT_PUBLIC_ENGINE_URL` در env ست شود */
+/** پایهٔ URL موتور؛ خالی = same-origin (/api/engine via Next/nginx) */
 export const ENGINE_BASE_URL = ENGINE_BASE_RAW.replace(/\/+$/, '');
+
+export function engineApiUrl(path = '') {
+  return buildApiUrl(ENGINE_BASE_URL, `/api/engine${path}`);
+}
 
 /**
  * استخراج آرایهٔ آیتم‌ها از پاسخ‌های مختلف لیست فرایندها (snake_case / PascalCase / آرایهٔ مستقیم).
@@ -207,7 +212,7 @@ export async function fetchBranchOpenTaskCounts(branchIds = []) {
     q.set('branch_ids', ids.join(','));
   }
   const qs = q.toString();
-  const url = `${ENGINE_BASE_URL}/api/engine/service/branch-open-task-counts${qs ? `?${qs}` : ''}`;
+  const url = engineApiUrl(`/service/branch-open-task-counts${qs ? `?${qs}` : ''}`);
   const res = await fetch(url, {
     headers: engineAuthHeaders(),
   });
@@ -237,7 +242,7 @@ export async function fetchWorkInbox(params = {}) {
   if (params.limit != null) q.set('limit', String(params.limit));
   if (params.offset != null) q.set('offset', String(params.offset));
   const qs = q.toString();
-  const url = `${ENGINE_BASE_URL}/api/engine/service/work-inbox${qs ? `?${qs}` : ''}`;
+  const url = engineApiUrl(`/service/work-inbox${qs ? `?${qs}` : ''}`);
   const res = await fetch(url, {
     headers: engineAuthHeaders(),
   });
@@ -254,7 +259,7 @@ export async function fetchProcesses(params = {}) {
     q.set('processInstanceId', String(params.processInstanceId).trim());
   }
   const qs = q.toString();
-  const url = `${ENGINE_BASE_URL}/api/engine/service/processes${qs ? `?${qs}` : ''}`;
+  const url = engineApiUrl(`/service/processes${qs ? `?${qs}` : ''}`);
   const res = await fetch(url, {
     headers: engineAuthHeaders(),
   });
@@ -264,7 +269,7 @@ export async function fetchProcesses(params = {}) {
 }
 
 export async function deleteProcessInstance(processInstanceId) {
-  const res = await fetch(`${ENGINE_BASE_URL}/api/engine/service/instance/${processInstanceId}`, {
+  const res = await fetch(engineApiUrl(`/service/instance/${processInstanceId}`), {
     method: 'DELETE',
     headers: engineAuthHeaders(),
   });
@@ -414,7 +419,7 @@ function normEl(elementId) {
 }
 
 export async function fetchProcessTasks(processInstanceId) {
-  const res = await fetch(`${ENGINE_BASE_URL}/api/engine/service/tasks/${processInstanceId}`, {
+  const res = await fetch(engineApiUrl(`/service/tasks/${processInstanceId}`), {
     headers: engineAuthHeaders(),
   });
   const data = await parseJson(res);
@@ -424,7 +429,7 @@ export async function fetchProcessTasks(processInstanceId) {
 
 /** GET /history/:id — تایم‌لاین یکپارچهٔ سیر کار فرایند */
 export async function fetchProcessHistory(processInstanceId) {
-  const res = await fetch(`${ENGINE_BASE_URL}/api/engine/service/history/${processInstanceId}`, {
+  const res = await fetch(engineApiUrl(`/service/history/${processInstanceId}`), {
     headers: engineAuthHeaders(),
   });
   const data = await parseJson(res);
@@ -775,7 +780,7 @@ export function parseEngineProcessRejectState(envelope) {
 export async function fetchProcessInstance(processInstanceId) {
   if (processInstanceId == null) return null;
   try {
-    const res = await fetch(`${ENGINE_BASE_URL}/api/engine/service/instance/${processInstanceId}`, {
+    const res = await fetch(engineApiUrl(`/service/instance/${processInstanceId}`), {
       method: 'GET',
       headers: engineAuthHeaders(),
     });
@@ -797,7 +802,7 @@ export function mergeApiTasksWithSnapshot(processInstanceId, prevIdMap, apiTasks
 
 export async function completeTaskForm(processInstanceId, taskId, body) {
   const res = await fetch(
-    `${ENGINE_BASE_URL}/api/engine/service/task/form/${processInstanceId}/${taskId}`,
+    engineApiUrl(`/service/task/form/${processInstanceId}/${taskId}`),
     {
       method: 'POST',
       headers: jsonHeaders(),
@@ -812,7 +817,7 @@ export async function completeTaskForm(processInstanceId, taskId, body) {
 /** نیاز به اصلاح — رد مرحله (برگشت به مرحله قبل)؛ بدنه `{ comment }` */
 export async function rejectServiceStep(processInstanceId, taskId, body) {
   const res = await fetch(
-    `${ENGINE_BASE_URL}/api/engine/service/reject/step/${processInstanceId}/${taskId}`,
+    engineApiUrl(`/service/reject/step/${processInstanceId}/${taskId}`),
     {
       method: 'POST',
       headers: jsonHeaders(),
@@ -830,7 +835,7 @@ export async function rejectProcess(processInstanceId, body) {
   if (!comment) {
     throw new Error('ارسال توضیح / دلیل رد فرایند الزامی است.');
   }
-  const res = await fetch(`${ENGINE_BASE_URL}/api/engine/service/reject/process/${processInstanceId}`, {
+  const res = await fetch(engineApiUrl(`/service/reject/process/${processInstanceId}`), {
     method: 'POST',
     headers: jsonHeaders(),
     body: JSON.stringify({ comment }),
@@ -865,7 +870,7 @@ export function sanitizeValuesForEngineJson(value) {
 
 export async function advanceTaskNext(processInstanceId, taskId, body = { approved: true }) {
   const res = await fetch(
-    `${ENGINE_BASE_URL}/api/engine/service/next/${processInstanceId}/${taskId}`,
+    engineApiUrl(`/service/next/${processInstanceId}/${taskId}`),
     {
       method: 'POST',
       headers: jsonHeaders(),
@@ -880,7 +885,7 @@ export async function advanceTaskNext(processInstanceId, taskId, body = { approv
 /** دمو: تایید خودکار مرحلهٔ بازبینی (review1 / review2) وقتی کاربر جاری مجاز به تکمیل نیست */
 export async function demoSkipReviewStep(processInstanceId, taskId) {
   const res = await fetch(
-    `${ENGINE_BASE_URL}/api/engine/service/demo/skip-review/${processInstanceId}/${taskId}`,
+    engineApiUrl(`/service/demo/skip-review/${processInstanceId}/${taskId}`),
     {
       method: 'POST',
       headers: jsonHeaders(),
@@ -897,7 +902,7 @@ const DEMO_REVIEW_ELEMENT_IDS = ['review1', 'review2', 'centralreviewform2'];
 /** اگر فرایند روی sendAgency در WAITING_EXTERNAL مانده، در حالت دمو آن را تکمیل می‌کند. */
 export async function demoMockSendAgency(processInstanceId) {
   const res = await fetch(
-    `${ENGINE_BASE_URL}/api/engine/service/demo/mock-send-agency/${processInstanceId}`,
+    engineApiUrl(`/service/demo/mock-send-agency/${processInstanceId}`),
     {
       method: 'POST',
       headers: jsonHeaders(),

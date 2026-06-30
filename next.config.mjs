@@ -28,6 +28,7 @@ const nextConfig = {
       { source: '/api/engine/:path*', destination: 'http://127.0.0.1:3503/api/engine/:path*' },
       { source: '/api/integration/:path*', destination: 'http://127.0.0.1:3505/api/integration/:path*' },
       { source: '/api/gateway/:path*', destination: 'http://127.0.0.1:3505/:path*' },
+      { source: '/api/pos-agent/:path*', destination: 'http://127.0.0.1:18800/:path*' },
       { source: '/v1/pos/:path*', destination: 'http://127.0.0.1:18800/v1/pos/:path*' },
     ];
   },

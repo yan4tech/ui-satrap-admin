@@ -296,42 +296,44 @@ function refineService4Stage1(value, ctx) {
 }
 
 // ---------------- STEP 0 (متقاضی) ----------------
-export const step0Schema = z
-  .object({
-    service_type: z.literal(4, { message: 'نوع خدمت باید خدمت چهارم باشد.' }),
-    national_id: z.string().regex(/^\d{10}$/, 'کد ملی باید ۱۰ رقم باشد'),
-    mobile: z.string().regex(/^09\d{9}$/, 'شماره موبایل نامعتبر است'),
-    sana_registration_status: SANA_STATUS,
-    applicant_role: APPLICANT_ROLE,
-    postal_code: z.string().regex(/^\d{10}$/, 'کد پستی باید ۱۰ رقم باشد'),
-  })
-  .superRefine((value, ctx) => {
-    const eligibility = validateApplicantNationalId(value.national_id);
-    if (!eligibility.valid) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['national_id'],
-        message: eligibility.message ?? 'کد ملی متقاضی معتبر نیست.',
-      });
-    }
+const step0ObjectSchema = z.object({
+  service_type: z.literal(4, { message: 'نوع خدمت باید خدمت چهارم باشد.' }),
+  national_id: z.string().regex(/^\d{10}$/, 'کد ملی باید ۱۰ رقم باشد'),
+  mobile: z.string().regex(/^09\d{9}$/, 'شماره موبایل نامعتبر است'),
+  sana_registration_status: SANA_STATUS,
+  applicant_role: APPLICANT_ROLE,
+  postal_code: z.string().regex(/^\d{10}$/, 'کد پستی باید ۱۰ رقم باشد'),
+});
 
-    const mobileCheck = validateApplicantMobile(value.national_id, value.mobile);
-    if (!mobileCheck.valid) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['mobile'],
-        message: mobileCheck.message ?? 'شماره موبایل نامعتبر است',
-      });
-    }
+function refineStep0(value, ctx) {
+  const eligibility = validateApplicantNationalId(value.national_id);
+  if (!eligibility.valid) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['national_id'],
+      message: eligibility.message ?? 'کد ملی متقاضی معتبر نیست.',
+    });
+  }
 
-    if (value.sana_registration_status !== 'registered') {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        path: ['sana_registration_status'],
-        message: 'مطابق الزامات، متقاضی باید در سامانه ثنا ثبت‌نام کرده باشد.',
-      });
-    }
-  });
+  const mobileCheck = validateApplicantMobile(value.national_id, value.mobile);
+  if (!mobileCheck.valid) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['mobile'],
+      message: mobileCheck.message ?? 'شماره موبایل نامعتبر است',
+    });
+  }
+
+  if (value.sana_registration_status !== 'registered') {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['sana_registration_status'],
+      message: 'مطابق الزامات، متقاضی باید در سامانه ثنا ثبت‌نام کرده باشد.',
+    });
+  }
+}
+
+export const step0Schema = step0ObjectSchema.superRefine(refineStep0);
 
 // ---------------- STEP 1 (ادعا + نمایندگی + مشمولیت) ----------------
 export const step1Schema = z.object({
@@ -423,7 +425,9 @@ export const reviewSchema = z.object({
 });
 
 // ---------------- STAGE 1 (مرحله اول فرایند) ----------------
-export const service4Stage1Schema = step0Schema.merge(step1Schema).superRefine(refineService4Stage1);
+export const service4Stage1Schema = step0ObjectSchema
+  .merge(step1Schema)
+  .superRefine(refineService4Stage1);
 
 // ---------------- EXPORT ARRAY ----------------
 export const stepSchemas = [

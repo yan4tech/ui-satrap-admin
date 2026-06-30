@@ -1,6 +1,9 @@
 import { paths } from 'src/routes/paths';
-import { PERM, userHasPermission } from 'src/lib/permissions';
-import { servicePathForProcessKey } from 'src/lib/service-entitlement-api';
+import { userHasPermission } from 'src/lib/permissions';
+import {
+  PROCESS_KEY_TO_UI_PERMISSION,
+  servicePathForProcessKey,
+} from 'src/lib/service-entitlement-api';
 
 const SERVICE_NAV_PATHS = new Set([
   paths.dashboard.services.one,
@@ -9,12 +12,9 @@ const SERVICE_NAV_PATHS = new Set([
   paths.dashboard.services.four,
 ]);
 
-const UI_SERVICE_PERM_TO_PATH = [
-  [PERM.ui.servicesOne, paths.dashboard.services.one],
-  [PERM.ui.servicesTwo, paths.dashboard.services.two],
-  [PERM.ui.servicesThree, paths.dashboard.services.three],
-  [PERM.ui.servicesFour, paths.dashboard.services.four],
-];
+const UI_SERVICE_PERM_TO_PATH = Object.entries(PROCESS_KEY_TO_UI_PERMISSION).map(
+  ([processKey, perm]) => [perm, servicePathForProcessKey(processKey)]
+);
 
 /**
  * در حالت شعبه، آیتم‌های منوی خدمات را بر اساس process_keyهای مجاز فیلتر می‌کند.

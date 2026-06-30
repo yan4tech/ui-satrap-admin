@@ -1,5 +1,6 @@
 import axios from 'src/lib/axios';
 import { getApiRequestMode } from 'src/lib/api-mode';
+import { PERM, userHasPermission } from 'src/lib/permissions';
 import { getServiceLabelById } from 'src/lib/service-labels';
 
 const MODE_HEADER = () => ({ mode: getApiRequestMode() });
@@ -104,7 +105,23 @@ export const PROCESS_KEY_TO_SERVICE_PATH = {
   service4: '/dashboard/services/four',
 };
 
+export const PROCESS_KEY_TO_UI_PERMISSION = {
+  service1: PERM.ui.servicesOne,
+  service2: PERM.ui.servicesTwo,
+  service3: PERM.ui.servicesThree,
+  service4: PERM.ui.servicesFour,
+};
+
 export function servicePathForProcessKey(processKey) {
   const key = String(processKey ?? '').trim();
   return PROCESS_KEY_TO_SERVICE_PATH[key] ?? null;
+}
+
+/** همان منطق منوی خدمات: entitlement شعبه یا دسترسی UI مربوط به خدمت. */
+export function canAccessServiceProcess(user, processKey, hasProcessKey) {
+  const key = String(processKey ?? '').trim();
+  if (!key) return false;
+  if (hasProcessKey(key)) return true;
+  const uiPerm = PROCESS_KEY_TO_UI_PERMISSION[key];
+  return uiPerm ? userHasPermission(user, uiPerm) : false;
 }

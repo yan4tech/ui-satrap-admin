@@ -1,27 +1,34 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { Box, Alert, Button, CircularProgress, Typography } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { useAuthContext } from 'src/auth/hooks';
 import { useEntitledServices } from 'src/hooks/use-entitled-services';
+import { canAccessServiceProcess } from 'src/lib/service-entitlement-api';
 
 /**
  * در حالت شعبه، دسترسی به صفحهٔ یک خدمت را بر اساس process_key محدود می‌کند.
  */
 export function ServiceEntitlementGuard({ processKey, children }) {
   const router = useRouter();
+  const { user } = useAuthContext();
   const { isBranchEntitlementActive, hasProcessKey, loading, error, services } =
     useEntitledServices();
+  const canAccess = useMemo(
+    () => canAccessServiceProcess(user, processKey, hasProcessKey),
+    [user, processKey, hasProcessKey]
+  );
 
   useEffect(() => {
     if (loading || !isBranchEntitlementActive) return;
-    if (!hasProcessKey(processKey)) {
+    if (!canAccess) {
       router.replace(paths.dashboard.services.inbox);
     }
-  }, [loading, isBranchEntitlementActive, hasProcessKey, processKey, router]);
+  }, [loading, isBranchEntitlementActive, canAccess, router]);
 
   if (!isBranchEntitlementActive) {
     return children;
@@ -43,7 +50,7 @@ export function ServiceEntitlementGuard({ processKey, children }) {
     );
   }
 
-  if (!hasProcessKey(processKey)) {
+  if (!canAccess) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography variant="h6" gutterBottom>

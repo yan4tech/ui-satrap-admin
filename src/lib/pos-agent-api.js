@@ -1,6 +1,8 @@
 export function getPosAgentBaseUrl() {
   const fromEnv = typeof process !== 'undefined' ? process.env.NEXT_PUBLIC_POS_AGENT_URL : '';
-  return (fromEnv || '').trim().replace(/\/$/, '');
+  const trimmed = (fromEnv || '').trim().replace(/\/$/, '');
+  // Dev/default: same-origin proxy via Next (see next.config rewrites).
+  return trimmed || '/api/pos-agent';
 }
 
 async function parsePosResponse(res) {

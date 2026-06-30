@@ -1,4 +1,5 @@
 import { jsonHeaders, ENGINE_BASE_URL } from 'src/app/dashboard/services/one/engine-api';
+import { buildApiUrl } from 'src/lib/api-url';
 
 // ----------------------------------------------------------------------
 
@@ -104,6 +105,8 @@ import { jsonHeaders, ENGINE_BASE_URL } from 'src/app/dashboard/services/one/eng
  * @property {DashboardKpi[]} kpis
  * @property {ServiceBreakdownItem[]} service_breakdown
  * @property {number[]} weekly_activity
+ * @property {number[]} [monthly_activity]
+ * @property {number} [active_branch_count]
  * @property {BarItem[]} status_distribution
  * @property {BarItem[]} operator_performance
  * @property {InboxPreviewItem[]} pending_reviews
@@ -188,19 +191,24 @@ function unwrapDashboardData(envelope) {
  * @returns {Promise<unknown>}
  */
 async function dashboardRequest(path, { params, signal } = {}) {
-  const url = new URL(`${ENGINE_BASE_URL}/api/engine/dashboard${path}`);
+  let urlString = buildApiUrl(ENGINE_BASE_URL, `/api/engine/dashboard${path}`);
 
   if (params) {
+    const search = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
       if (value !== undefined && value !== null && value !== '') {
-        url.searchParams.set(key, String(value));
+        search.set(key, String(value));
       }
     });
+    const qs = search.toString();
+    if (qs) {
+      urlString += urlString.includes('?') ? `&${qs}` : `?${qs}`;
+    }
   }
 
   let res;
   try {
-    res = await fetch(url.toString(), {
+    res = await fetch(urlString, {
       method: 'GET',
       headers: jsonHeaders(),
       signal,
@@ -241,5 +249,15 @@ export async function fetchBranchOverview({ branchId, signal } = {}) {
 export async function fetchUserOverview({ signal } = {}) {
   return /** @type {Promise<UserOverviewResponse>} */ (
     dashboardRequest('/user/overview', { signal })
+  );
+}
+
+/**
+ * @param {{ signal?: AbortSignal }} [options]
+ * @returns {Promise<BranchOverviewResponse>}
+ */
+export async function fetchCentralOverview({ signal } = {}) {
+  return /** @type {Promise<BranchOverviewResponse>} */ (
+    dashboardRequest('/central/overview', { signal })
   );
 }

@@ -392,3 +392,104 @@ export function faCount(value) {
   if (value == null || value === '') return toFaDigits('0');
   return toFaDigits(value);
 }
+
+const CENTRAL_KPI_ICONS = {
+  'کل درخواست‌ها': 'solar:file-text-bold-duotone',
+  'کاربران فعال': 'solar:users-group-rounded-bold-duotone',
+  'در انتظار بررسی': 'solar:hourglass-line-duotone',
+  'نرخ موفقیت': 'solar:shield-check-bold-duotone',
+};
+
+const CENTRAL_KPI_AVATAR_BY_INDEX = [
+  null,
+  null,
+  { avatarBg: 'warning.lighter', avatarColor: 'warning.main' },
+  { avatarBg: 'success.lighter', avatarColor: 'success.main' },
+];
+
+function sumServiceBreakdownTotals(items) {
+  return (items ?? []).reduce(
+    (acc, item) => ({
+      waitingReview: acc.waitingReview + Number(item.waiting_review ?? 0),
+      waitingRegistryReply: acc.waitingRegistryReply + Number(item.waiting_registry_reply ?? 0),
+      completed: acc.completed + Number(item.completed ?? 0),
+      rejected: acc.rejected + Number(item.rejected ?? 0),
+    }),
+    { waitingReview: 0, waitingRegistryReply: 0, completed: 0, rejected: 0 }
+  );
+}
+
+function mapMonthlyActivityBars(values) {
+  const series = Array.isArray(values) ? values : [];
+  return series.map((value, index) => ({
+    label: `ماه ${index + 1}`,
+    value: Number(value ?? 0),
+    color: 'primary.main',
+  }));
+}
+
+/**
+ * Maps `GET /engine/dashboard/central/overview` response → props for central dashboard view.
+ * @param {BranchOverviewResponse | null | undefined} api
+ */
+export function mapCentralOverview(api) {
+  const branchMapped = mapBranchOverview(api);
+  if (!branchMapped) return null;
+
+  const kpis = mapKpis(api?.kpis, {
+    avatarDefaults: CENTRAL_KPI_AVATAR_BY_INDEX,
+    iconByTitle: CENTRAL_KPI_ICONS,
+  });
+
+  const serviceTotals = sumServiceBreakdownTotals(api?.service_breakdown);
+  const servicesInProgress = serviceTotals.waitingReview + serviceTotals.waitingRegistryReply;
+  const activeBranchCount = Number(api?.active_branch_count ?? 0);
+  const pendingReview =
+    findKpiValue(api?.kpis, 'انتظار') ??
+    serviceTotals.waitingReview ??
+    branchMapped.banner?.inboxCount ??
+    0;
+  const successRate = (api?.kpis ?? []).find((k) => String(k.title ?? '').includes('موفقیت'))?.value ?? '—';
+
+  const lastSyncLabel = branchMapped.lastSyncLabel;
+  const bannerSubtitleParts = [];
+  if (activeBranchCount > 0) {
+    bannerSubtitleParts.push(`${faCount(activeBranchCount)} شعبه فعال`);
+  }
+  if (servicesInProgress > 0) {
+    bannerSubtitleParts.push(`${faCount(servicesInProgress)} خدمت در جریان`);
+  }
+  if (lastSyncLabel) {
+    bannerSubtitleParts.push(`آخرین همگام‌سازی ${lastSyncLabel}`);
+  }
+
+  const monthlyActivity = mapMonthlyActivityBars(api?.monthly_activity);
+  const statusDistribution = branchMapped.statusDistribution.map((item) => {
+    if (item.label.includes('شعبه')) {
+      return { ...item, label: item.label.replace('شعبه', '').trim() || item.label };
+    }
+    return item;
+  });
+
+  return {
+    ...branchMapped,
+    kpis,
+    statusDistribution,
+    monthlyActivity,
+    processKpiByProvince: [],
+    banner: {
+      ...branchMapped.banner,
+      activeBranchCount,
+      servicesInProgress,
+      pendingReview,
+      successRate,
+      subtitle: bannerSubtitleParts.join(' · '),
+    },
+    meta: {
+      ...branchMapped.meta,
+      bannerSubtitle: bannerSubtitleParts.join(' · ') || branchMapped.meta.bannerSubtitle,
+    },
+    pendingTasks: branchMapped.branchAlerts,
+    isEmpty: branchMapped.isEmpty,
+  };
+}

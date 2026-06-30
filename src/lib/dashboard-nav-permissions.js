@@ -17,6 +17,10 @@ export function canViewCompanyDashboard(user) {
   return userHasAnyPermission(user, COMPANY_DASHBOARD_NAV_PERMISSIONS);
 }
 
+export function canViewCentralDashboard(user) {
+  return userHasPermission(user, PERM.ui.dashboardView);
+}
+
 export function canViewBranchDashboard(user) {
   if (userHasPermission(user, PERM.ui.dashboardBranchView)) {
     return true;

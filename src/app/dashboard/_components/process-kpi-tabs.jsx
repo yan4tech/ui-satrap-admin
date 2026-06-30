@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { varAlpha } from 'minimal-shared/utils';
 
-import { Box, Chip, Grid, Stack, Tab, Tabs, Typography } from '@mui/material';
+import { Box, Tab, Chip, Grid, Tabs, Stack, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 import { ServiceLabel } from 'src/components/service-label';

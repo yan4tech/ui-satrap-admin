@@ -1,11 +1,11 @@
 import { varAlpha } from 'minimal-shared/utils';
 
-import { Avatar, Box, Grid, Stack, Typography } from '@mui/material';
+import { Box, Grid, Stack, Avatar, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
-import { DashboardCard } from './dashboard-card';
 import { toFaDigits } from './to-fa-digits';
+import { DashboardCard } from './dashboard-card';
 
 const trendIcon = {
   up: 'solar:arrow-up-bold',

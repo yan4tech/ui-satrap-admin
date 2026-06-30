@@ -1,20 +1,23 @@
 /** عناوین رسمی خدمات — منبع واحد برای تمام UI */
 
-export const SERVICE_DEFINITION_KEYS = ['service1', 'service2', 'service3'];
+export const SERVICE_DEFINITION_KEYS = ['service1', 'service2', 'service3', 'service4'];
 
-/** @type {Record<'service1'|'service2'|'service3', string>} */
+/** @type {Record<'service1'|'service2'|'service3'|'service4', string>} */
 export const SERVICE_LABELS = {
   service1: 'تهیه نقشه ثبتی',
   service2:
     'درج گواهی اقدام موضوع ماده (10) قانون الزام به ثبت رسمی معاملات اموال غیرمنقول',
   service3: 'درج ادعا موضوع ماده (10) قانون الزام به ثبت رسمی معاملات اموال غیرمنقول',
+  service4:
+    'صدور سند مطابق قانون تعیین تکلیف وضعیت اراضی و ساختمان‌های فاقد سند رسمی',
 };
 
-/** نگاشت شناسه عددی خدمت (۱، ۲، ۳) به کلید فرایند */
+/** نگاشت شناسه عددی خدمت (۱، ۲، ۳، ۴) به کلید فرایند */
 export const SERVICE_ID_TO_KEY = {
   1: 'service1',
   2: 'service2',
   3: 'service3',
+  4: 'service4',
 };
 
 /** @param {unknown} processKey */

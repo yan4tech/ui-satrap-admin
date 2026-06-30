@@ -1,4 +1,6 @@
-import { Box, Button, Chip, Divider, List, ListItem, ListItemText, Stack, Typography } from '@mui/material';
+import { Box, Chip, List, Stack, Button, Divider, ListItem, Typography, ListItemText } from '@mui/material';
+
+import { RouterLink } from 'src/routes/components';
 
 import { Iconify } from 'src/components/iconify';
 import { ServiceLabel } from 'src/components/service-label';
@@ -12,10 +14,12 @@ const priorityLabel = { high: 'فوری', medium: 'متوسط', low: 'عادی' 
 export function InboxQueueCard({
   title,
   subheader,
-  items,
+  items = [],
   showAction = false,
   actionLabel = 'مشاهده همه',
+  actionHref,
   onAction,
+  emptyMessage = 'درخواستی برای نمایش وجود ندارد',
 }) {
   return (
     <DashboardCard sx={{ height: '100%' }}>
@@ -39,6 +43,8 @@ export function InboxQueueCard({
           <Button
             size="small"
             color="inherit"
+            component={actionHref ? RouterLink : 'button'}
+            href={actionHref}
             endIcon={<Iconify icon="solar:alt-arrow-left-linear" width={18} />}
             onClick={onAction}
             sx={{ flexShrink: 0 }}
@@ -47,6 +53,11 @@ export function InboxQueueCard({
           </Button>
         ) : null}
       </Stack>
+      {!items.length ? (
+        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2.5, pb: 2.5 }}>
+          {emptyMessage}
+        </Typography>
+      ) : null}
       <List sx={{ py: 0 }}>
         {items.map((item, index) => (
           <Box key={item.id}>

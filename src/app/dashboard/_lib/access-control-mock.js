@@ -118,7 +118,7 @@ const mockBranches = [
   { id: 3, title: 'شعبه شیراز' },
 ];
 
-export { PERMISSION_TYPES, API_METHODS, mockBranches };
+export { API_METHODS, mockBranches, PERMISSION_TYPES };
 
 export function listPermissions() {
   return [...permissions];

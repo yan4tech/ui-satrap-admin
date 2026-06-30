@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 
-import { Box, CircularProgress, Typography } from '@mui/material';
+import { Box, Typography, CircularProgress } from '@mui/material';
 
-import EditBranchView from '../../edit-branch-view';
 import axios from 'src/lib/axios';
 import { getApiRequestMode } from 'src/lib/api-mode';
+
+import EditBranchView from '../../edit-branch-view';
 
 async function fetchBranchById(rawId) {
   const id = Number(rawId);

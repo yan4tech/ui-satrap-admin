@@ -53,6 +53,7 @@ const serviceStatus = [
   { name: SERVICE_LABELS.service1, state: 'فعال', color: 'success' },
   { name: SERVICE_LABELS.service2, state: 'اختلال جزئی', color: 'error' },
   { name: SERVICE_LABELS.service3, state: 'فعال', color: 'success' },
+  { name: SERVICE_LABELS.service4, state: 'فعال', color: 'success' },
 ];
 
 const latestActivities = [
@@ -72,6 +73,7 @@ const serviceBreakdown = [
   dashboardServiceRow('service1', { waitingReview: 42, waitingRegistryReply: 18, completed: 133, rejected: 9 }),
   dashboardServiceRow('service2', { waitingReview: 27, waitingRegistryReply: 12, completed: 98, rejected: 14 }),
   dashboardServiceRow('service3', { waitingReview: 31, waitingRegistryReply: 16, completed: 121, rejected: 7 }),
+  dashboardServiceRow('service4', { waitingReview: 19, waitingRegistryReply: 8, completed: 64, rejected: 5 }),
 ];
 
 const monthlyRequests = [180, 220, 210, 260, 240, 290];
@@ -90,6 +92,7 @@ const processKpiByProvince = [
       dashboardServiceRow('service1', { success: 54, failed: 9, inReview: 12 }),
       dashboardServiceRow('service2', { success: 47, failed: 11, inReview: 14 }),
       dashboardServiceRow('service3', { success: 39, failed: 8, inReview: 10 }),
+      dashboardServiceRow('service4', { success: 22, failed: 4, inReview: 6 }),
     ],
   },
   {
@@ -98,6 +101,7 @@ const processKpiByProvince = [
       dashboardServiceRow('service1', { success: 41, failed: 7, inReview: 9 }),
       dashboardServiceRow('service2', { success: 36, failed: 10, inReview: 11 }),
       dashboardServiceRow('service3', { success: 31, failed: 6, inReview: 8 }),
+      dashboardServiceRow('service4', { success: 18, failed: 3, inReview: 5 }),
     ],
   },
   {
@@ -106,6 +110,7 @@ const processKpiByProvince = [
       dashboardServiceRow('service1', { success: 33, failed: 6, inReview: 7 }),
       dashboardServiceRow('service2', { success: 29, failed: 8, inReview: 9 }),
       dashboardServiceRow('service3', { success: 24, failed: 5, inReview: 6 }),
+      dashboardServiceRow('service4', { success: 15, failed: 2, inReview: 4 }),
     ],
   },
 ];
@@ -121,7 +126,7 @@ export function CentralDashboardView() {
     >
       <InfoBanner
         title="شعبه مرکزی — نمای مدیریتی"
-        subtitle="۱۲ شعبه فعال · ۳ خدمت در جریان · آخرین همگام‌سازی ۳ دقیقه پیش"
+        subtitle="۱۲ شعبه فعال · ۴ خدمت در جریان · آخرین همگام‌سازی ۳ دقیقه پیش"
         icon="solar:buildings-3-bold-duotone"
         chips={[
           { label: 'وضعیت کلی: پایدار', color: 'success', variant: 'soft' },

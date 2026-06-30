@@ -2,8 +2,8 @@ import { Box, Grid, Stack, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
-import { DashboardCard } from './dashboard-card';
 import { toFaDigits } from './to-fa-digits';
+import { DashboardCard } from './dashboard-card';
 
 const ICONS = [
   'solar:inbox-bold-duotone',

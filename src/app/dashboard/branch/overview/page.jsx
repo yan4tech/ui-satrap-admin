@@ -1,204 +1,188 @@
 'use client';
 
-import { Grid } from '@mui/material';
+import { Grid, Alert } from '@mui/material';
+
 import { paths } from 'src/routes/paths';
 import { RouterLink } from 'src/routes/components';
+
+import { useBranchDashboardOverview } from 'src/hooks/use-branch-dashboard-overview';
+
+import { PERM, userHasPermission } from 'src/lib/permissions';
+
 import { Iconify } from 'src/components/iconify';
-import { DashboardPageShell } from '../../_components/dashboard-page-shell';
+
+import { useAuthContext } from 'src/auth/hooks';
+
 import { KpiGrid } from '../../_components/kpi-grid';
-import { HorizontalBarsCard } from '../../_components/horizontal-bars-card';
-import { ServiceBreakdownCards } from '../../_components/service-breakdown-cards';
+import { faCount } from '../../_lib/dashboard-mappers';
 import { InfoBanner } from '../../_components/info-banner';
-import { InboxQueueCard } from '../../_components/inbox-queue-card';
 import { TeamListCard } from '../../_components/team-list-card';
-import { ProgressAlertsCard } from '../../_components/progress-alerts-card';
+import { InboxQueueCard } from '../../_components/inbox-queue-card';
 import { StatusListCard } from '../../_components/status-list-card';
 import { ActivityFeedCard } from '../../_components/activity-feed-card';
-import { toFaDigits } from '../../_components/to-fa-digits';
-import { dashboardServiceRow, SERVICE_LABELS } from 'src/lib/service-labels';
-
-const BRANCH_NAME = 'شعبه مرکزی ولیعصر';
-const BRANCH_CODE = 'TH-001';
-const MANAGER_NAME = 'علی محمدی';
-
-const kpis = [
-  {
-    title: 'کاربران شعبه',
-    value: '58',
-    change: '+2',
-    trend: 'up',
-    icon: 'solar:users-group-rounded-bold-duotone',
-  },
-  {
-    title: 'درخواست امروز',
-    value: '23',
-    change: '+18%',
-    trend: 'up',
-    icon: 'solar:calendar-bold-duotone',
-  },
-  {
-    title: 'در انتظار بررسی',
-    value: '14',
-    change: '-2',
-    trend: 'down',
-    icon: 'solar:hourglass-line-duotone',
-    avatarBg: 'warning.lighter',
-    avatarColor: 'warning.main',
-  },
-  {
-    title: 'تکمیل این ماه',
-    value: '187',
-    change: '+11%',
-    trend: 'up',
-    icon: 'solar:check-circle-bold-duotone',
-    avatarBg: 'success.lighter',
-    avatarColor: 'success.main',
-  },
-];
-
-const serviceBreakdown = [
-  dashboardServiceRow('service1', { waitingReview: 6, waitingRegistryReply: 3, completed: 98, rejected: 2 }),
-  dashboardServiceRow('service2', { waitingReview: 4, waitingRegistryReply: 2, completed: 54, rejected: 3 }),
-  dashboardServiceRow('service3', { waitingReview: 4, waitingRegistryReply: 5, completed: 35, rejected: 1 }),
-];
-
-const weeklyActivity = [12, 18, 15, 22, 19, 23, 14];
-
-const statusDistribution = [
-  { label: 'در انتظار بررسی شعبه', value: 14, color: 'warning.main' },
-  { label: 'در انتظار پاسخ ثبت', value: 10, color: 'info.main' },
-  { label: 'پایان یافته', value: 187, color: 'success.main' },
-  { label: 'ریجکت شده', value: 6, color: 'error.main' },
-];
-
-const operatorPerformance = [
-  { label: 'رضا کریمی', value: 42, color: 'primary.main' },
-  { label: 'مینا احمدی', value: 38, color: 'info.main' },
-  { label: 'حسین نوری', value: 31, color: 'success.main' },
-  { label: 'سارا رضایی', value: 28, color: 'warning.main' },
-];
-
-const teamMembers = [
-  { name: 'رضا کریمی', role: 'اپراتور', status: 'آنلاین', color: 'success' },
-  { name: 'مینا احمدی', role: 'کارشناس', status: 'آنلاین', color: 'success' },
-  { name: 'حسین نوری', role: 'اپراتور', status: 'مشغول', color: 'warning' },
-  { name: 'سارا رضایی', role: 'پشتیبان', status: 'آفلاین', color: 'default' },
-  { name: 'نیما صادقی', role: 'اپراتور', status: 'آنلاین', color: 'success' },
-];
-
-const pendingReviews = [
-  { id: 'REQ-4821', service: SERVICE_LABELS.service1, applicant: 'محمد رضایی', wait: '۲ ساعت', priority: 'high' },
-  { id: 'REQ-4819', service: SERVICE_LABELS.service2, applicant: 'زهرا موسوی', wait: '۵ ساعت', priority: 'medium' },
-  { id: 'REQ-4815', service: SERVICE_LABELS.service3, applicant: 'امیر حسینی', wait: '۱ روز', priority: 'high' },
-  { id: 'REQ-4808', service: SERVICE_LABELS.service1, applicant: 'فاطمه جعفری', wait: '۱ روز', priority: 'low' },
-];
-
-const serviceStatus = [
-  { name: SERVICE_LABELS.service1, state: 'فعال', color: 'success' },
-  { name: SERVICE_LABELS.service2, state: 'فعال', color: 'success' },
-  { name: SERVICE_LABELS.service3, state: 'نیازمند بررسی', color: 'warning' },
-];
-
-const branchAlerts = [
-  { label: '۳ درخواست بیش از ۴۸ ساعت در صف مانده', progress: 80 },
-  { label: 'تکمیل پروفایل ۲ اپراتور جدید', progress: 35 },
-  { label: `بازبینی تنظیمات ${SERVICE_LABELS.service3}`, progress: 50 },
-];
-
-const latestActivities = [
-  { title: 'درخواست REQ-4821 ثبت شد', subtitle: '۸ دقیقه پیش', icon: 'solar:document-add-bold-duotone' },
-  { title: `${SERVICE_LABELS.service1} توسط رضا کریمی تایید شد`, subtitle: '۲۱ دقیقه پیش', icon: 'solar:check-read-bold-duotone' },
-  { title: 'کاربر جدید به شعبه اضافه شد', subtitle: '۴۵ دقیقه پیش', icon: 'solar:user-plus-bold-duotone' },
-  { title: 'گزارش روزانه شعبه صادر شد', subtitle: '۱ ساعت پیش', icon: 'solar:chart-2-bold-duotone' },
-];
+import { DashboardPageShell } from '../../_components/dashboard-page-shell';
+import { HorizontalBarsCard } from '../../_components/horizontal-bars-card';
+import { ProgressAlertsCard } from '../../_components/progress-alerts-card';
+import { DashboardFetchState } from '../../_components/dashboard-fetch-state';
+import { ServiceBreakdownCards } from '../../_components/service-breakdown-cards';
+import { BranchOverviewDashboardSkeleton } from '../../_components/dashboard-section-skeleton';
 
 export default function BranchOverviewPage() {
+  const { user } = useAuthContext();
+  const { data, error, isLoading, enabled, refresh } = useBranchDashboardOverview();
+
+  const hasPermission =
+    enabled || userHasPermission(user, PERM.ui.dashboardBranchView);
+
+  if (!hasPermission) {
+    return (
+      <DashboardPageShell
+        title="داشبورد شعبه"
+        subtitle="دسترسی به این بخش محدود است"
+        badge="مدیر شعبه"
+        accent="primary"
+      >
+        <Alert severity="warning">شما دسترسی مشاهده داشبورد شعبه را ندارید.</Alert>
+      </DashboardPageShell>
+    );
+  }
+
+  const branchName = data?.branchName ?? '…';
+  const branchCode = data?.branchCode ?? '…';
+  const managerName = data?.managerName ?? '…';
+
   return (
     <DashboardPageShell
-      title={`داشبورد شعبه — ${BRANCH_NAME}`}
-      subtitle={`کد شعبه ${BRANCH_CODE} · مدیر شعبه: ${MANAGER_NAME} · وضعیت عملیاتی شعبه در یک نگاه`}
-      actionLabel="گزارش روزانه شعبه"
+      title={`داشبورد شعبه — ${branchName}`}
+      subtitle={`کد شعبه ${branchCode} · مدیر شعبه: ${managerName} · وضعیت عملیاتی شعبه در یک نگاه`}
+      actionLabel="گزارش روزانه"
+      onAction={refresh}
+      actionDisabled={isLoading}
       badge="مدیر شعبه"
       accent="primary"
     >
-      <InfoBanner
-        title={BRANCH_NAME}
-        subtitle="تهران · همه سرویس‌ها فعال · آخرین همگام‌سازی ۳ دقیقه پیش"
-        icon="solar:buildings-bold-duotone"
-        chips={[
-          { label: 'وضعیت: فعال', color: 'success', variant: 'soft' },
-          { label: `صندوق ورودی: ${toFaDigits(14)}`, color: 'warning', variant: 'soft' },
-          { label: `تکمیل ماه: ${toFaDigits(187)}`, color: 'info', variant: 'soft' },
-        ]}
-      />
+      <DashboardFetchState error={error} onRetry={refresh}>
+        {isLoading ? (
+          <BranchOverviewDashboardSkeleton />
+        ) : null}
 
-      <KpiGrid items={kpis} />
+        {!isLoading && data?.isEmpty ? (
+          <Alert severity="info" sx={{ mb: 2 }}>
+            داده‌ای برای نمایش در داشبورد شعبه وجود ندارد.
+          </Alert>
+        ) : null}
 
-      <ServiceBreakdownCards services={serviceBreakdown} sectionTitle="وضعیت خدمات این شعبه" />
+        {!isLoading && data && !data.isEmpty ? (
+          <>
+            <InfoBanner
+              title={data.meta.branchName}
+              subtitle={data.meta.bannerSubtitle}
+              icon="solar:buildings-bold-duotone"
+              chips={[
+                { label: 'وضعیت: فعال', color: 'success', variant: 'soft' },
+                {
+                  label: `صندوق ورودی: ${faCount(data.banner?.inboxCount ?? 0)}`,
+                  color: 'warning',
+                  variant: 'soft',
+                },
+                {
+                  label: `تکمیل ماه: ${faCount(data.banner?.monthCompleted ?? 0)}`,
+                  color: 'info',
+                  variant: 'soft',
+                },
+              ]}
+            />
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <HorizontalBarsCard
-            title="فعالیت ۷ روز اخیر"
-            subheader="تعداد درخواست‌های روزانه"
-            items={weeklyActivity.map((value, index) => ({
-              label: `روز ${index + 1}`,
-              value,
-              color: 'primary.main',
-            }))}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <HorizontalBarsCard title="توزیع وضعیت درخواست‌های شعبه" items={statusDistribution} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
-          <HorizontalBarsCard title="عملکرد اپراتورها (تکمیل‌شده)" items={operatorPerformance} />
-        </Grid>
-      </Grid>
+            <KpiGrid items={data.kpis} />
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 7 }}>
-          <InboxQueueCard
-            title="صف بررسی مدیر شعبه"
-            subheader="درخواست‌هایی که نیاز به اقدام فوری دارند"
-            items={pendingReviews}
-            showAction
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <TeamListCard title="تیم شعبه" members={teamMembers} />
-        </Grid>
-      </Grid>
+            <ServiceBreakdownCards
+              services={data.serviceBreakdown}
+              sectionTitle="وضعیت خدمات این شعبه"
+            />
 
-      <Grid container spacing={2}>
-        <Grid size={{ xs: 12, md: 7 }}>
-          <ProgressAlertsCard title="هشدارها و اقدامات شعبه" tasks={branchAlerts} />
-        </Grid>
-        <Grid size={{ xs: 12, md: 5 }}>
-          <StatusListCard
-            title="وضعیت خدمات شعبه"
-            items={serviceStatus}
-            footerActions={[
-              {
-                component: RouterLink,
-                href: paths.dashboard.services.inbox,
-                variant: 'contained',
-                startIcon: <Iconify icon="solar:inbox-in-bold-duotone" />,
-                children: 'صندوق کار',
-              },
-              {
-                component: RouterLink,
-                href: paths.dashboard.user.search,
-                variant: 'outlined',
-                startIcon: <Iconify icon="solar:user-bold-duotone" />,
-                children: 'کاربران شعبه',
-              },
-            ]}
-          />
-        </Grid>
-      </Grid>
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <HorizontalBarsCard
+                  title="فعالیت ۷ روز اخیر"
+                  subheader="تعداد درخواست‌های روزانه"
+                  items={data.weeklyActivity}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <HorizontalBarsCard
+                  title="توزیع وضعیت درخواست‌های شعبه"
+                  items={data.statusDistribution}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <HorizontalBarsCard
+                  title="عملکرد اپراتورها (تکمیل‌شده)"
+                  items={data.operatorPerformance}
+                />
+              </Grid>
+            </Grid>
 
-      <ActivityFeedCard title="فعالیت‌های اخیر شعبه" activities={latestActivities} />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 7 }}>
+                <InboxQueueCard
+                  title="صف بررسی مدیر شعبه"
+                  subheader="درخواست‌هایی که نیاز به اقدام فوری دارند"
+                  items={data.pendingReviews}
+                  showAction
+                  actionHref={paths.dashboard.services.inbox}
+                  emptyMessage="درخواستی در صف بررسی نیست"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 5 }}>
+                <TeamListCard
+                  title="تیم شعبه"
+                  members={data.teamMembers}
+                  emptyMessage="عضوی در تیم شعبه ثبت نشده است"
+                />
+              </Grid>
+            </Grid>
+
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, md: 7 }}>
+                <ProgressAlertsCard
+                  title="هشدارها و اقدامات شعبه"
+                  tasks={data.branchAlerts}
+                  emptyMessage="هشداری برای نمایش وجود ندارد"
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 5 }}>
+                <StatusListCard
+                  title="وضعیت خدمات شعبه"
+                  items={data.serviceStatus}
+                  emptyMessage="وضعیت خدماتی برای نمایش وجود ندارد"
+                  footerActions={[
+                    {
+                      component: RouterLink,
+                      href: paths.dashboard.services.inbox,
+                      variant: 'contained',
+                      startIcon: <Iconify icon="solar:inbox-in-bold-duotone" />,
+                      children: 'صندوق کار',
+                    },
+                    {
+                      component: RouterLink,
+                      href: paths.dashboard.user.search,
+                      variant: 'outlined',
+                      startIcon: <Iconify icon="solar:user-bold-duotone" />,
+                      children: 'کاربران شعبه',
+                    },
+                  ]}
+                />
+              </Grid>
+            </Grid>
+
+            <ActivityFeedCard
+              title="فعالیت‌های اخیر شعبه"
+              activities={data.latestActivities}
+              emptyMessage="فعالیتی در شعبه ثبت نشده است"
+            />
+          </>
+        ) : null}
+      </DashboardFetchState>
     </DashboardPageShell>
   );
 }

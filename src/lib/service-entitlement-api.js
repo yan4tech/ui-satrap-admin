@@ -101,6 +101,7 @@ export const PROCESS_KEY_TO_SERVICE_PATH = {
   service1: '/dashboard/services/one',
   service2: '/dashboard/services/two',
   service3: '/dashboard/services/three',
+  service4: '/dashboard/services/four',
 };
 
 export function servicePathForProcessKey(processKey) {

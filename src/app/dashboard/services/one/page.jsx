@@ -345,7 +345,14 @@ export function ServiceWorkflowPage({
     setUiStep(getStepperIndexForElementId(t.element_id));
     const el = String(t.element_id ?? '').trim().toLowerCase();
     if (
-      (el === 'review1' || el === 'review2' || el === 'centralreviewform2') &&
+      (el === 'review1' ||
+        el === 'review5' ||
+        el === 'review2' ||
+        el === 'centralreviewform2' ||
+        el === 'stage4_registry_inquiry' ||
+        el === 'stage6_committee' ||
+        el === 'stage8_objection' ||
+        el === 'stage10_committee_review') &&
       String(t.status ?? '').toUpperCase() === 'CREATED'
     ) {
       setFormPhaseComplete(false);

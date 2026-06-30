@@ -1,17 +1,26 @@
-import { Avatar, Box, Chip, Divider, List, ListItem, ListItemAvatar, ListItemText, Typography } from '@mui/material';
+import { Box, Chip, List, Avatar, Divider, ListItem, Typography, ListItemText, ListItemAvatar } from '@mui/material';
 
 import { DashboardCard } from './dashboard-card';
 import { dashboardSectionTitleSx } from './dashboard-styles';
 
-export function TeamListCard({ title, members }) {
+export function TeamListCard({
+  title,
+  members = [],
+  emptyMessage = 'عضوی در تیم شعبه ثبت نشده است',
+}) {
   return (
     <DashboardCard sx={{ height: '100%' }}>
       <Typography variant="h6" sx={{ ...dashboardSectionTitleSx, px: 2.5, pt: 2.5, pb: 1 }}>
         {title}
       </Typography>
+      {!members.length ? (
+        <Typography variant="body2" sx={{ color: 'text.secondary', px: 2.5, pb: 2.5 }}>
+          {emptyMessage}
+        </Typography>
+      ) : null}
       <List sx={{ py: 0 }}>
         {members.map((member, index) => (
-          <Box key={member.name}>
+          <Box key={`${member.name}-${index}`}>
             <ListItem sx={{ py: 1.25, px: 2.5 }}>
               <ListItemAvatar>
                 <Avatar

@@ -4,9 +4,9 @@ import { useState } from 'react';
 
 import {
   Box,
+  Tab,
   Card,
   Chip,
-  Tab,
   Tabs,
   Grid,
   Stack,

@@ -33,9 +33,11 @@ import {
 } from '@mui/material';
 
 import { paths } from 'src/routes/paths';
+import { RouterLink } from 'src/routes/components';
 import { useRouter } from 'src/routes/hooks';
-
+import { usePermissions } from 'src/hooks/use-permissions';
 import { useEntitledServices } from 'src/hooks/use-entitled-services';
+import { PERM } from 'src/lib/permissions';
 
 import { DEFINITION_LABELS, SERVICE_LABEL_OPTIONS } from 'src/lib/service-labels';
 
@@ -52,6 +54,37 @@ import {
 } from '../one/engine-api';
 
 const DEFINITION_OPTIONS = [{ value: '', label: 'همه' }, ...SERVICE_LABEL_OPTIONS];
+
+/** کارت service3 — الگوی service4 (فقط entitlement و title عوض می‌شود) */
+const SERVICE3_LAUNCH_CARD = {
+  processKey: 'service3',
+  permission: PERM.ui.servicesThree,
+  href: paths.dashboard.services.three,
+  badge: DEFINITION_LABELS.service3,
+  title: 'درج ادعا موضوع ماده (10) قانون الزام به ثبت رسمی معاملات اموال غیرمنقول',
+  icon: 'solar:document-add-bold-duotone',
+  accent: 'warning',
+};
+
+const SERVICE4_LAUNCH_CARD = {
+  ...SERVICE3_LAUNCH_CARD,
+  processKey: 'service4',
+  permission: PERM.ui.servicesFour,
+  href: paths.dashboard.services.four,
+  badge: DEFINITION_LABELS.service4,
+  title: 'صدور سند مطابق قانون تعیین تکلیف وضعیت اراضی و ساختمان‌های فاقد سند رسمی',
+  accent: 'secondary',
+};
+
+const SERVICE_LAUNCH_CARDS = [SERVICE3_LAUNCH_CARD, SERVICE4_LAUNCH_CARD];
+
+function isServiceLaunchCardVisible(card, { canPermission, isBranchEntitlementActive, processKeys }) {
+  if (!canPermission(card.permission)) return false;
+  if (isBranchEntitlementActive && processKeys.length > 0) {
+    return processKeys.includes(card.processKey);
+  }
+  return true;
+}
 
 const PROCESS_STATUS_LABELS = {
   RUNNING: 'در حال اجرا',
@@ -240,6 +273,7 @@ function taskStatusColor(status) {
 
 export default function ServicesListPage() {
   const router = useRouter();
+  const { can: canPermission } = usePermissions();
   const { isBranchEntitlementActive, processKeys } = useEntitledServices();
   const [allRows, setAllRows] = useState([]);
   const [submittedFilters, setSubmittedFilters] = useState(defaultFilters);
@@ -293,6 +327,18 @@ export default function ServicesListPage() {
       ...DEFINITION_OPTIONS.filter((o) => o.value && processKeys.includes(o.value)),
     ];
   }, [isBranchEntitlementActive, processKeys]);
+
+  const visibleLaunchCards = useMemo(
+    () =>
+      SERVICE_LAUNCH_CARDS.filter((card) =>
+        isServiceLaunchCardVisible(card, {
+          canPermission,
+          isBranchEntitlementActive,
+          processKeys,
+        })
+      ),
+    [canPermission, isBranchEntitlementActive, processKeys]
+  );
 
   const filteredRows = useMemo(() => {
     const createdFrom = parseFilterDay(submittedFilters.createdFrom);
@@ -370,6 +416,10 @@ export default function ServicesListPage() {
 
       if (key === 'service3') {
         router.push(`${paths.dashboard.services.three}${qs}`);
+        return;
+      }
+      if (key === 'service4') {
+        router.push(`${paths.dashboard.services.four}${qs}`);
         return;
       }
       if (key === 'service2') {
@@ -548,6 +598,73 @@ export default function ServicesListPage() {
         </Button>{' '}
         انجام دهید.
       </Alert>
+
+      {visibleLaunchCards.length > 0 ? (
+        <Grid container spacing={2}>
+          {visibleLaunchCards.map((card) => (
+            <Grid key={card.processKey} size={{ xs: 12, md: 6 }}>
+              <Card
+                component={RouterLink}
+                href={card.href}
+                sx={{
+                  height: '100%',
+                  borderRadius: 3,
+                  border: '1px solid',
+                  borderColor: 'divider',
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  transition: (theme) =>
+                    theme.transitions.create(['box-shadow', 'border-color', 'transform'], {
+                      duration: theme.transitions.duration.shorter,
+                    }),
+                  '&:hover': {
+                    borderColor: `${card.accent}.main`,
+                    boxShadow: (theme) => theme.shadows[8],
+                    transform: 'translateY(-2px)',
+                  },
+                }}
+              >
+                <CardContent sx={{ p: { xs: 2, md: 2.5 } }}>
+                  <Stack spacing={1.5}>
+                    <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                      <Box
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 2,
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          bgcolor: `${card.accent}.lighter`,
+                          color: `${card.accent}.main`,
+                          flexShrink: 0,
+                        }}
+                      >
+                        <Icon icon={card.icon} width={24} />
+                      </Box>
+                      <Box sx={{ minWidth: 0, flex: 1 }}>
+                        <Chip label={card.badge} size="small" color={card.accent} variant="soft" sx={{ mb: 1 }} />
+                        <Typography variant="subtitle1" sx={{ fontWeight: 700, lineHeight: 1.5 }}>
+                          {card.title}
+                        </Typography>
+                      </Box>
+                    </Stack>
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      color={card.accent}
+                      endIcon={<Icon icon="solar:arrow-left-linear" width={16} />}
+                      sx={{ alignSelf: 'flex-start' }}
+                    >
+                      ورود به خدمت
+                    </Button>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Grid>
+          ))}
+        </Grid>
+      ) : null}
 
       <Card
         sx={{

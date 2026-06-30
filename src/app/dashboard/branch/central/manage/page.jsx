@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { tenantCentralBranchPath } from 'src/lib/dashboard-access';
+
 import { useAuthContext } from 'src/auth/hooks';
 
 /** مسیر قدیمی — هدایت به ویرایش شعبه مرکزی در مدیریت شعبات */

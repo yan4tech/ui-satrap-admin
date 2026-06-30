@@ -2,7 +2,7 @@
 
 import { varAlpha } from 'minimal-shared/utils';
 
-import { Box, Button, Chip, Stack, Typography } from '@mui/material';
+import { Box, Chip, Stack, Button, Typography } from '@mui/material';
 
 import { Iconify } from 'src/components/iconify';
 
@@ -12,6 +12,8 @@ export function DashboardPageShell({
   title,
   subtitle,
   actionLabel,
+  onAction,
+  actionDisabled = false,
   badge,
   children,
   accent = 'primary',
@@ -55,7 +57,17 @@ export function DashboardPageShell({
               <Button
                 variant="contained"
                 size="large"
-                startIcon={<Iconify icon="solar:download-minimalistic-bold-duotone" />}
+                startIcon={
+                  <Iconify
+                    icon={
+                      onAction
+                        ? 'solar:refresh-circle-bold-duotone'
+                        : 'solar:download-minimalistic-bold-duotone'
+                    }
+                  />
+                }
+                onClick={onAction}
+                disabled={actionDisabled}
                 sx={{ flexShrink: 0, px: 2.5 }}
               >
                 {actionLabel}
